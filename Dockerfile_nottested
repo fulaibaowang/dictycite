@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- Python deps ---
 RUN python3 -m pip install --upgrade pip setuptools wheel \
  && python3 -m pip install \
-      requests pandas tqdm rpy2
+      requests pandas tqdm rpy2 polars
 
 # --- R deps (tidypmc) ---
 # Use a fixed CRAN mirror for reproducible installs.

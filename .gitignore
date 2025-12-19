@@ -1,2 +1,4 @@
 *.ipynb_checkpoints
 .venv
+curator_notes.parquet
+.DS_Store

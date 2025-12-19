@@ -29,7 +29,7 @@ python -m pip install --upgrade pip setuptools wheel
 ## 5) Install packages (example: pandas)
 
 ```bash
-pip install pandas jupyterlab ipykernel
+pip install pandas jupyterlab ipykernel polars
 ```
 
 ```bash
