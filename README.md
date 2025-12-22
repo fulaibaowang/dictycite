@@ -9,7 +9,7 @@ python dicty_curator_notes.py --limit 10
 
 Run the full dataset
 '''
-python get_curated_notes.py --limit 0 --sleep-base 0.35 --sleep-jitter 0.10
+python get_curated_notes.py --limit 0 --sleep-base 0.25 --sleep-jitter 0.10
 '''
 
 run with docker

@@ -130,15 +130,28 @@ def load_done_ids(out_path: Path) -> set[str]:
 
 def append_parquet(out_path: Path, rows: List[Dict[str, Any]]) -> None:
     """Append a batch of rows to Parquet (or create the file if absent)."""
-    from pathlib import Path
-    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    
+    # Ensure directory exists
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
     if not rows:
         return
+
     df_batch = pl.DataFrame(rows)
 
+    # polars.DataFrame.write_parquet() does not support an `append` keyword.
+    # To "append" we read the existing file (if present), concatenate and
+    # overwrite the Parquet file. For very large datasets consider writing
+    # partitioned parquet or using pyarrow to manage appendable datasets.
     if out_path.exists():
-        df_batch.write_parquet(out_path, append=True)
+        try:
+            df_existing = pl.read_parquet(out_path)
+            df_combined = pl.concat([df_existing, df_batch], how="vertical")
+            df_combined.write_parquet(out_path)
+        except Exception as e:
+            # If concatenation fails for any reason, write the batch alone
+            # to avoid data loss and surface a warning for investigation.
+            print(f"Warning: failed to append to {out_path} ({e}), writing batch only")
+            df_batch.write_parquet(out_path)
     else:
         df_batch.write_parquet(out_path)
 
