@@ -2,3 +2,4 @@
 .venv
 curator_notes.parquet
 .DS_Store
+out_curator_notes
