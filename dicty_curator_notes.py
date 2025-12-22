@@ -130,6 +130,9 @@ def load_done_ids(out_path: Path) -> set[str]:
 
 def append_parquet(out_path: Path, rows: List[Dict[str, Any]]) -> None:
     """Append a batch of rows to Parquet (or create the file if absent)."""
+    from pathlib import Path
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    
     if not rows:
         return
     df_batch = pl.DataFrame(rows)
@@ -210,7 +213,7 @@ def run(
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scrape dictyBase Curator Notes into a Parquet file.")
-    p.add_argument("--out", default="curator_notes.parquet", help="Output parquet path (default: curator_notes.parquet)")
+    p.add_argument("--out", default="output/curator_notes.parquet", help="Output parquet path (default: curator_notes.parquet)")
     p.add_argument("--limit", type=int, default=10, help="How many genes to process (default: 10). Use 0 for all.")
     p.add_argument("--batch-size", type=int, default=200, help="Write to Parquet every N rows (default: 200).")
     p.add_argument("--timeout", type=float, default=15.0, help="Request timeout in seconds (default: 15).")
