@@ -1,30 +1,60 @@
+import os
 import requests
 import xml.etree.ElementTree as ET
-from typing import Tuple
+from typing import Tuple, Optional
+import time
 
 
-def pmid_to_apa(pmid: str) -> Tuple[str, str]:
+def pmid_to_apa(pmid: str, api_key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
     """
     Given a PubMed ID (PMID), fetch metadata from NCBI and return APA citations.
 
-    Args:
-        pmid: PubMed ID as string
+    Supports `api_key` (overrides env var `NCBI_API_KEY`). Implements retries
+    with exponential backoff on 5xx/network errors.
 
-    Returns:
-        Tuple of (full_citation, short_citation):
-        - full: APA-style reference list citation
-        - short: in-text APA citation (e.g., "Smith et al., 2020")
+    Returns (full, short) on success, or (None, None) on failure.
     """
+    if api_key is None:
+        api_key = os.getenv("NCBI_API_KEY")
+
     # Fetch article data from NCBI
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {"db": "pubmed", "id": pmid, "retmode": "xml"}
-    response = requests.get(url, params=params)
-    response.raise_for_status()
+    if api_key:
+        params["api_key"] = api_key
 
-    root = ET.fromstring(response.text)
+    resp = None
+    attempts = 3
+    backoff = 1
+    for attempt in range(attempts):
+        try:
+            resp = requests.get(url, params=params, timeout=10)
+            if resp.status_code >= 500:
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            resp.raise_for_status()
+            break
+        except requests.RequestException as e:
+            if attempt < attempts - 1:
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            print(f"Warning: failed to fetch metadata for PMID {pmid}: {e}")
+            return (None, None)
+
+    if resp is None:
+        return (None, None)
+
+    try:
+        root = ET.fromstring(resp.text)
+    except Exception as e:
+        print(f"Warning: could not parse XML for PMID {pmid}: {e}")
+        return (None, None)
+
     article = root.find(".//PubmedArticle")
     if article is None:
-        return ("Article not found.", "Article not found.")
+        return (None, None)
 
     # Extract fields
     article_title = article.findtext(".//ArticleTitle")

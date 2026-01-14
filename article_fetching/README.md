@@ -55,6 +55,30 @@ python fetch.py \
     --get_text_from ncbi
 ```
 
+### Docker & NCBI API key
+
+You can run the fetcher in Docker. Passing an `NCBI_API_KEY` via env increases your allowed request rate and reduces transient failures (recommended for production runs):
+
+```bash
+docker run --rm \
+  -v "$(pwd)/article_fetching/output:/app/output" \
+  -e NCBI_API_KEY="YOUR_KEY" \
+  dicty-fetch \
+  --query 'OPEN_ACCESS:y AND "Dictyostelium discoideum"' \
+  --output_path /app/output \
+  --get_text_from ncbi
+```
+
+If you don't set a key, the script will still run but with default (lower) rate limits.
+
+### Production tips
+
+- Use `--max_records` to test with small batches before a full run (e.g. `--max_records 100`).
+- Split very large runs by year ranges (e.g., `FIRST_PDATE:[2000 TO 2010]`) to avoid burst traffic and to make resumes easier.
+- The script writes one JSON file per article, named by `pmcid` or `pmid` or `epmc id` (in that order), so re-running is resumable—consider deduping or skipping existing files if desired.
+- Consider using Docker resource limits (e.g., `--cpus`/`--memory`) and monitoring disk usage since full-text fetches can be large.
+- `pmid_to_apa()` now supports the `NCBI_API_KEY` environment variable and includes retry/backoff on 5xx errors to reduce transient failures.
+
 ### Output Format
 
 Each JSON file contains the following fields:

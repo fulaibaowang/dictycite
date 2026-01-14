@@ -125,6 +125,10 @@ def fetch(
             break
 
         for record in results:
+            # stop processing new records if we've already reached the requested limit
+            if max_records is not None and records_fetched >= max_records:
+                break
+
             epmc_id = record.get("id", None)  # Europe PMC ID
             pmid = record.get("pmid", None)  # PubMed ID
             pmcid = record.get("pmcid", None)  # PubMed Central ID
@@ -207,7 +211,13 @@ def fetch(
             pbar.update(1)
 
             if max_records is not None and records_fetched >= max_records:
+                print(f"Reached max_records={max_records}. Stopping.")
                 break
+
+        # After finishing this batch, stop entirely if we've reached the requested max
+        if max_records is not None and records_fetched >= max_records:
+            print(f"Reached max_records={max_records}. Stopping.")
+            break
 
         cursor = data.get("nextCursorMark")
         if not cursor:

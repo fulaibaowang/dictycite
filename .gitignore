@@ -3,3 +3,4 @@
 curator_notes.parquet
 .DS_Store
 output/
+NCBI_API_KEY
