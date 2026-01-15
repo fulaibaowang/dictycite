@@ -4,3 +4,4 @@ curator_notes.parquet
 .DS_Store
 output/
 NCBI_API_KEY
+dictybase_files/dicty21/dicty21.Data/
