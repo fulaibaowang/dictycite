@@ -6,7 +6,6 @@ import requests
 from tqdm import tqdm
 from datetime import datetime
 
-from utils.citation import pmid_to_apa
 from utils.get_text import (
     get_epmc_text,
     get_epmc_text_my,
@@ -152,31 +151,17 @@ def fetch(
             except (AttributeError, TypeError):
                 journal = None
 
-            # get citation
-            # pmid can be None for many PMC records; guard the ncbi request
-            apa_full, apa_short = (None, None)
-            if pmid:
-                try:
-                    apa_full, apa_short = pmid_to_apa(pmid)
-                except Exception as e:
-                    print(f"Warning: failed to fetch citation for PMID {pmid}: {e}")
-
             output_record = {
                 "id": epmc_id,
                 "pmid": pmid,
                 "pmcid": pmcid,
                 "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else None,
-                # "urlPDF": None,
                 "title": record.get("title", None),
                 "authors": record.get("authorString", None),
                 "journal": journal,
                 "year": record.get("pubYear", None),
                 "doi": record.get("doi", None),
                 "license": record.get("license", None),
-                "citation": {
-                    "apa": apa_full,
-                    "apa_short": apa_short,
-                },
                 "abstract": record.get("abstractText", None),
                 "text": None,
             }

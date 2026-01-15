@@ -1,27 +1,20 @@
-import os
 import requests
 import xml.etree.ElementTree as ET
 from typing import Tuple, Optional
 import time
 
 
-def pmid_to_apa(pmid: str, api_key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+def pmid_to_apa(pmid: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Given a PubMed ID (PMID), fetch metadata from NCBI and return APA citations.
 
-    Supports `api_key` (overrides env var `NCBI_API_KEY`). Implements retries
-    with exponential backoff on 5xx/network errors.
+    Implements retries with exponential backoff on 5xx/network errors.
 
     Returns (full, short) on success, or (None, None) on failure.
     """
-    if api_key is None:
-        api_key = os.getenv("NCBI_API_KEY")
-
     # Fetch article data from NCBI
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {"db": "pubmed", "id": pmid, "retmode": "xml"}
-    if api_key:
-        params["api_key"] = api_key
 
     resp = None
     attempts = 3
