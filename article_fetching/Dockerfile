@@ -11,6 +11,7 @@ RUN apt-get update \
        build-essential \
        python3-dev \
        wget \
+       git \
        ca-certificates \
        libxml2-dev \
        libssl-dev \
@@ -37,9 +38,7 @@ RUN Rscript -e "if(!requireNamespace('tidypmc', quietly=TRUE)) install.packages(
 # Copy your script into the image
 RUN git clone https://github.com/fulaibaowang/dictycite.git
 
-# Create app dir and copy fetch + utils
-WORKDIR /app/article_fetching
-COPY /dictycite/article_fetching /app/article_fetching
+WORKDIR /dictycite/article_fetching
 
 # Default entrypoint runs fetch.py; pass args through docker run
 ENTRYPOINT ["python", "fetch.py"]
