@@ -10,7 +10,7 @@ TIMEOUT = 45
 # ---------------- HTTP ----------------
 def _get(url: str, params: dict | None = None) -> str:
     """
-    Fetch URL with retry logic for 503 errors (transient server unavailability).
+    Fetch URL with retry logic for 5xx and 4xx errors (transient issues).
     Retries up to 3 times with exponential backoff.
     """
     max_retries = 3
@@ -22,38 +22,27 @@ def _get(url: str, params: dict | None = None) -> str:
                 url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT
             )
 
-            # If we got a 503, retry with backoff (transient)
-            if r.status_code == 503:
+            # If any HTTP error, retry with backoff
+            if 400 <= r.status_code < 600:
                 if attempt < max_retries - 1:
                     time.sleep(backoff)
                     backoff *= 2
                     continue
-                # final attempt: raise for status to produce HTTPError
-                r.raise_for_status()
-
-            # For other HTTP error codes (4xx/5xx except 503), do NOT retry here
-            if 400 <= r.status_code < 600:
-                # raise immediately (e.g., 404)
+                # final attempt: raise for status
                 r.raise_for_status()
 
             return r.text
 
-        except requests.HTTPError as e:
-            # If HTTPError came from a 503 and we have retries left, continue; else re-raise
-            resp = getattr(e, 'response', None)
-            status = resp.status_code if resp is not None else None
-            if status == 503 and attempt < max_retries - 1:
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
                 time.sleep(backoff)
                 backoff *= 2
                 continue
             raise
 
-        except requests.RequestException:
-            # For non-HTTP errors (ConnectionError, Timeout), do NOT retry here — re-raise
-            raise
-
     # Shouldn't reach here
     raise requests.RequestException(f"Failed to fetch {url} after {max_retries} attempts")
+
 
 
 # ---------------- Text utils ----------------
