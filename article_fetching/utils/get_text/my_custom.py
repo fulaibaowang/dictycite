@@ -15,32 +15,44 @@ def _get(url: str, params: dict | None = None) -> str:
     """
     max_retries = 3
     backoff = 1
-    
+
     for attempt in range(max_retries):
         try:
             r = requests.get(
                 url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT
             )
-            
-            # If 503, retry with backoff
+
+            # If we got a 503, retry with backoff (transient)
             if r.status_code == 503:
                 if attempt < max_retries - 1:
                     time.sleep(backoff)
                     backoff *= 2
                     continue
-                # If final attempt also 503, raise it
+                # final attempt: raise for status to produce HTTPError
                 r.raise_for_status()
-            
-            r.raise_for_status()
+
+            # For other HTTP error codes (4xx/5xx except 503), do NOT retry here
+            if 400 <= r.status_code < 600:
+                # raise immediately (e.g., 404)
+                r.raise_for_status()
+
             return r.text
-        except requests.RequestException as e:
-            if attempt < max_retries - 1:
+
+        except requests.HTTPError as e:
+            # If HTTPError came from a 503 and we have retries left, continue; else re-raise
+            resp = getattr(e, 'response', None)
+            status = resp.status_code if resp is not None else None
+            if status == 503 and attempt < max_retries - 1:
                 time.sleep(backoff)
                 backoff *= 2
                 continue
             raise
-    
-    # Shouldn't reach here, but safeguard
+
+        except requests.RequestException:
+            # For non-HTTP errors (ConnectionError, Timeout), do NOT retry here — re-raise
+            raise
+
+    # Shouldn't reach here
     raise requests.RequestException(f"Failed to fetch {url} after {max_retries} attempts")
 
 
