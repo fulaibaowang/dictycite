@@ -1,6 +1,7 @@
 import requests
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional
+import time
 
 USER_AGENT = "pmcid-sections/1.0 (you@example.com)"
 TIMEOUT = 45
@@ -8,11 +9,39 @@ TIMEOUT = 45
 
 # ---------------- HTTP ----------------
 def _get(url: str, params: dict | None = None) -> str:
-    r = requests.get(
-        url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT
-    )
-    r.raise_for_status()
-    return r.text
+    """
+    Fetch URL with retry logic for 503 errors (transient server unavailability).
+    Retries up to 3 times with exponential backoff.
+    """
+    max_retries = 3
+    backoff = 1
+    
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(
+                url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT
+            )
+            
+            # If 503, retry with backoff
+            if r.status_code == 503:
+                if attempt < max_retries - 1:
+                    time.sleep(backoff)
+                    backoff *= 2
+                    continue
+                # If final attempt also 503, raise it
+                r.raise_for_status()
+            
+            r.raise_for_status()
+            return r.text
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            raise
+    
+    # Shouldn't reach here, but safeguard
+    raise requests.RequestException(f"Failed to fetch {url} after {max_retries} attempts")
 
 
 # ---------------- Text utils ----------------
