@@ -165,17 +165,20 @@ def fetch(
                 "abstract": record.get("abstractText", None),
                 "text": None,
             }
-
             # fetch full text
             if get_text_from is not None and pmcid is not None:
-                if get_text_from == "ncbi":
-                    output_record["text"] = get_ncbi_text(pmcid)
-                elif get_text_from == "epmc":
-                    output_record["text"] = get_epmc_text(pmcid)
-                elif get_text_from == "epmc_my":
-                    output_record["text"] = get_epmc_text_my(pmcid)
-                elif get_text_from == "ncbi_my":
-                    output_record["text"] = get_ncbi_text_my(pmcid)
+                try:
+                    if get_text_from == "ncbi":
+                        output_record["text"] = get_ncbi_text(pmcid)
+                    elif get_text_from == "epmc":
+                        output_record["text"] = get_epmc_text(pmcid)
+                    elif get_text_from == "epmc_my":
+                        output_record["text"] = get_epmc_text_my(pmcid)
+                    elif get_text_from == "ncbi_my":
+                        output_record["text"] = get_ncbi_text_my(pmcid)
+                except Exception as e:
+                    print(f"Warning: failed to fetch text for {pmcid}: {e}")
+                    # continue with text=None; don't crash the entire batch
 
             # if fetch_pdf:
             #    for ft in record.get("fullTextUrlList", {}).get("fullTextUrl", []):
