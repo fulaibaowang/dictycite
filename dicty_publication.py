@@ -17,6 +17,10 @@ Resume behavior:
   - Resume keyed off gene_id: once a gene_id appears in output, it’s skipped on later runs.
   - Genes with no References tab are recorded as a marker row:
       (gene_id, None, None)
+
+Optional gene list behavior:
+  - If --gene-list PATH is provided, only those gene IDs (one per line) are processed.
+    (Blank lines and lines starting with # are ignored.)
 """
 
 from __future__ import annotations
@@ -99,6 +103,16 @@ def load_genes_status() -> pl.DataFrame:
     )
     genes_status = df_status.select(df_status.columns[0]).unique()
     return genes_status
+
+def load_gene_list(path: str) -> pl.Series:
+    """Load gene IDs from a text file (one per line). Lines starting with # are ignored."""
+    ids: List[str] = []
+    for line in Path(path).read_text().splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        ids.append(s)
+    return pl.Series(ids, dtype=pl.Utf8)
 
 def load_done_ids(out_path: Path) -> set[str]:
     """If output exists, load processed gene IDs to enable resume."""
@@ -311,11 +325,15 @@ def run(
     sleep_jitter: float,
     max_retries: int,
     retry_backoff_base: float,
+    gene_list_path: str | None,
 ) -> None:
     session = make_session()
 
-    genes_status = load_genes_status()
-    gene_series = genes_status.to_series()
+    if gene_list_path:
+        gene_series = load_gene_list(gene_list_path)
+    else:
+        genes_status = load_genes_status()
+        gene_series = genes_status.to_series()
 
     if limit is not None:
         gene_series = gene_series.head(limit)
@@ -406,6 +424,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--sleep-jitter", type=float, default=0.10, help="Additional random jitter in seconds (default: 0.10).")
     p.add_argument("--max-retries", type=int, default=3, help="Max retries per request (default: 3).")
     p.add_argument("--retry-backoff-base", type=float, default=0.8, help="Backoff base seconds (default: 0.8).")
+    p.add_argument(
+        "--gene-list",
+        default=None,
+        help="Optional path to a text file with gene IDs (one per line). If set, only those genes are processed.",
+    )
     return p.parse_args()
 
 def main() -> None:
@@ -425,6 +448,7 @@ def main() -> None:
         sleep_jitter=args.sleep_jitter,
         max_retries=args.max_retries,
         retry_backoff_base=args.retry_backoff_base,
+        gene_list_path=args.gene_list,
     )
 
 if __name__ == "__main__":
