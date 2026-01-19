@@ -1,5 +1,23 @@
 # dictycite
 
+In order to prepare a training set of claim <-> citation pair, I fetched
+- [curator_notes on dictybase](#dicty_curator_notespy), these are curator notes (claims) with internal dictybase publication ids
+
+|                                | Count |
+|--------------------------------|-------|
+| Curator notes (genes)          | 1,079 |
+| Claims (from curator notes)    | 2,677 |
+
+
+- [A mapping file of internal dictybase publication ids to pmids](#dicty_publicationpy), so that we can link the claims to pmids. These info was not so straightforward to fetch from dictybase but luckily possible.
+
+publications in curator notes 1410
+publications dictybase mapped to pmid 4341
+publications in curator notes that not mapped (no pmid) 29
+
+- [A full list of dicty literature in EPMC/PubMed](#article_fetchingfetchpy)
+
+
 ## dicty_curator_notes.py 
 
 This script loop all genes over dictybase_files/DDB_G-curation_status.txt and fetch curator notes when existing.

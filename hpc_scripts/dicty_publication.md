@@ -22,7 +22,24 @@ inside the container, inscrease time out to 90 is necessary:
 
 ```
 cd /dictycite
-python /dictycite/dicty_curator_notes.py --limit 0   --timeout 90 --sleep-base 0.5 --sleep-jitter 0.10 --out "/work/output/gene_publication_pmid.parquet"
+python /dictycite/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/gene_publication_pmid.parquet"
 ```
 
 
+## rerun with a list IDs
+sometimes some IDS are not accessible at the moment like this:
+```
+DDB_G0288707: failed to fetch/parse gene page (500 Server Error: Internal Server Error for url: http://dictybase.org/gene/DDB_G0288707)
+DDB_G3953806: failed to fetch/parse gene page (500 Server Error: Internal Server Error for url: http://dictybase.org/gene/DDB_G3953806)                                                                         
+```
+
+these genes can be rerun in a list with  --gene-list
+```
+python3 dicty_publication.py \
+  --gene-list /work/failed_ids.txt \
+  --out /work/output/gene_publication_pmid_rerun_failed.parquet \
+  --timeout 60 --max-retries 4 \
+  --sleep-base 0.5 --sleep-jitter 0.1
+```
+
+then merge two lists (overwrite those IDS with the results in retries).

@@ -42,7 +42,6 @@ for start in 1980 1990 2000 2010 2020; do
     --query "OPEN_ACCESS:y AND \"Dictyostelium discoideum\" AND FIRST_PDATE:[$start TO $end]" \
     --output_path "$output_dir" \
     --get_text_from epmc_my
-    --delay 0.2
   
   echo "Batch $start-$end completed."
   echo ""
@@ -57,3 +56,55 @@ python fetch.py \
   --get_text_from epmc_my
 
 ```
+
+## warnings
+Also with retry function, sometimes the server is temporary down, or the full text is really not accessible. I cannot avoid cases that fetching failed
+```
+Warning: failed to fetch text for PMC4863597: 404 Client Error: Not Found for url: https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4863597/fullTextXML                                                                                                                                                                                                                                                                                                                        
+```
+
+construct a query with multiple PMCIDs manually
+```
+cat > pmcids_retry.txt << EOF
+PMC11574339
+PMC11443511
+PMC10470824
+PMC7554988
+PMC7943716
+PMC12618226
+PMC10397335
+PMC4863597
+PMC5073093
+PMC4940160
+PMC4967854
+PMC6080930
+PMC6066244
+PMC6262434
+PMC6893374
+PMC4792144
+PMC4891362
+PMC4931340
+PMC3216324
+PMC6593199
+PMC4937987
+PMC4730333
+PMC3572115
+PMC3927604
+PMC4298681
+PMC4436052
+PMC3788181
+PMC3321182
+PMC5841363
+PMC3083684
+PMC4784174
+EOF
+
+# Convert to query string
+QUERY=$(awk '{printf "%sPMCID:%s", (NR==1?"":" OR "), $1}' pmcids_retry.txt)
+echo "$QUERY"
+
+python fetch.py --query "$QUERY" --output_path /app/output/retry --get_text_from epmc_my 
+
+```
+
+If any IDs remain 404 error, let it be.
