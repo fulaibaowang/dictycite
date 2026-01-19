@@ -32,6 +32,7 @@ mkdir -p "$BASE_OUTPUT"
 for start in 1980 1990 2000 2010 2020; do
   end=$((start + 9))
   output_dir="$BASE_OUTPUT/${start}-${end}"
+  log_file="$BASE_OUTPUT/${start}-${end}.log"
   
   echo "=========================================="
   echo "Fetching articles from $start to $end..."
@@ -39,9 +40,10 @@ for start in 1980 1990 2000 2010 2020; do
   echo "=========================================="
   
   python fetch.py \
-    --query "OPEN_ACCESS:y AND \"Dictyostelium discoideum\" AND FIRST_PDATE:[$start TO $end]" \
+    --query "Dictyostelium AND FIRST_PDATE:[$start TO $end]" \
     --output_path "$output_dir" \
-    --get_text_from epmc_my
+    --get_text_from epmc_my \
+    2>&1 | tee "$log_file"
   
   echo "Batch $start-$end completed."
   echo ""

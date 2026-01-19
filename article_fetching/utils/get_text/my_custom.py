@@ -10,7 +10,8 @@ TIMEOUT = 45
 # ---------------- HTTP ----------------
 def _get(url: str, params: dict | None = None) -> str:
     """
-    Fetch URL with retry logic for 5xx and 4xx errors (transient issues).
+    Fetch URL with retry logic for 503 errors (transient server overload).
+    Does NOT retry 404 (permanent - content not found).
     Retries up to 3 times with exponential backoff.
     """
     max_retries = 3
@@ -22,8 +23,12 @@ def _get(url: str, params: dict | None = None) -> str:
                 url, params=params or {}, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT
             )
 
-            # If any HTTP error, retry with backoff
-            if 400 <= r.status_code < 600:
+            # 404 = permanent failure, raise immediately (no retry)
+            if r.status_code == 404:
+                r.raise_for_status()
+
+            # 503 = transient (server overload), retry with backoff
+            if r.status_code == 503:
                 if attempt < max_retries - 1:
                     time.sleep(backoff)
                     backoff *= 2
@@ -31,9 +36,14 @@ def _get(url: str, params: dict | None = None) -> str:
                 # final attempt: raise for status
                 r.raise_for_status()
 
+            # Other errors (5xx): raise immediately
+            if 500 <= r.status_code < 600:
+                r.raise_for_status()
+
             return r.text
 
         except requests.RequestException as e:
+            # Network errors: retry
             if attempt < max_retries - 1:
                 time.sleep(backoff)
                 backoff *= 2
