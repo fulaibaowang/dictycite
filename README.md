@@ -11,11 +11,16 @@ In order to prepare a training set of claim <-> citation pair, I fetched
 
 - [A mapping file of internal dictybase publication ids to pmids](#dicty_publicationpy), so that we can link the claims to pmids. These info was not so straightforward to fetch from dictybase but luckily possible.
 
-- [A full list of dicty literature in EPMC/PubMed](#article_fetchingfetchpy)
-
-publications dictybase mapped to pmid 4341
+All publications on dictybase with pmid 4341
 publications in curator notes 1410
 publications in curator notes that not mapped (no pmid) 29
+
+- [A full list of dicty literature in EPMC/PubMed](#article_fetchingfetchpy)
+All Dictyostelium publications 
+With abstract
+With abstract and full text
+Overlapped with
+
 
 
 ## dicty_curator_notes.py 
