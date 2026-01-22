@@ -25,7 +25,7 @@ In order to prepare a training set of claim citation pair, I fetched
 | Claims with titles/abstracts                     | 2,020 |
 | Publications cited by these claims               | 1,340 |
 
-Three sources were linked and cleaned up with **dastasets.ipynb**, result in output file **output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet**
+Three sources were linked and cleaned up with **notebooks/dastasets.ipynb**, result in output file **output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet**
 
 ## dicty_curator_notes.py 
 

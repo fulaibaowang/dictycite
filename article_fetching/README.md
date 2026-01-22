@@ -231,8 +231,9 @@ You can run the fetcher in Docker.
 ```bash
 docker run --rm \
   -v "$(pwd)/article_fetching/output:/app/output" \
-  fulaibaowang/dictyfetch:14.01.2026 \
-  --query 'OPEN_ACCESS:y AND "Dictyostelium discoideum"' \
+  fulaibaowang/dictyfetch:19.01.2026 \
+  --query "Dictyostelium discoideum" \ ##--query 'OPEN_ACCESS:y AND "Dictyostelium discoideum"' \
   --output_path /app/output \
   --get_text_from epmc_my
   --max_records 2
+  ```
