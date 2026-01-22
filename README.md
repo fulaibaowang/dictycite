@@ -1,27 +1,31 @@
 # dictycite
 
-In order to prepare a training set of claim <-> citation pair, I fetched
-- [curator_notes on dictybase](#dicty_curator_notespy), these are curator notes (claims) with internal dictybase publication ids
+In order to prepare a training set of claim citation pair, I fetched
+- [curator_notes on dictybase](#dicty_curator_notespy), these are curator notes (claims) with internal dictybase_publication_ids
 
 |                                | Count |
 |--------------------------------|-------|
 | Curator notes (genes)          | 1,079 |
-| Claims (from curator notes)    | 2,677 |
+| Claims (from curator notes)    | 2,063 |
 
 
-- [A mapping file of internal dictybase publication ids to pmids](#dicty_publicationpy), so that we can link the claims to pmids. These info was not so straightforward to fetch from dictybase but luckily possible.
+- [A mapping file of internal dictybase publication ids to pmids](#dicty_publicationpy), so that we can link the claims <-> dictybase_publication_ids <-> pmids. These info was not so straightforward to fetch from dictybase but luckily possible.
 
-All publications on dictybase with pmid 4341
-publications in curator notes 1410
-publications in curator notes that not mapped (no pmid) 29
-
-- [A full list of dicty literature in EPMC/PubMed](#article_fetchingfetchpy)
-All Dictyostelium publications 
-With abstract
-With abstract and full text
-Overlapped with
+|                                               | Count |
+|-----------------------------------------------|-------|
+| All dictyBase publications with PMID          | 4,341 |
+| Publications in curator notes with PMID       | 1,372 |
 
 
+- [A full list of dicty literature in EPMC/PubMed](#article_fetchingfetchpy), from which we can get claims <-> pmids <-> titles/abstract
+
+|                                                  | Count |
+|--------------------------------------------------|-------|
+| All Dictyostelium publications on EPMC           | 20,447 |
+| Claims with titles/abstracts                     | 2,020 |
+| Publications cited by these claims               | 1,340 |
+
+Three sources were linked and cleaned up with **dastasets.ipynb**, result in output file **output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet**
 
 ## dicty_curator_notes.py 
 
