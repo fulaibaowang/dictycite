@@ -1,4 +1,4 @@
-# dictycite
+# fetch data and inital cleaning
 
 In order to prepare a training set of claim citation pair, I fetched
 - [curator_notes on dictybase](#dicty_curator_notespy), these are curator notes (claims) with internal dictybase_publication_ids
@@ -59,3 +59,10 @@ docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaiba
 
 Fetch literatures on EPMC. More instruction and docker usage in 
 [article_fetching/README.md](article_fetching/README.md).
+
+# gold datasets
+
+## Silver
+With **notebooks/dastasets.ipynb** I curate the dataset furthur more.
+
+I grouped the claims into groups when pairwise TF-IDF value > 0.6.
