@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: dicty (Python 3.14 venv)
+#     display_name: .venv (3.14.2)
 #     language: python
-#     name: dicty-py314
+#     name: python3
 # ---
 
 # %%
@@ -29,17 +29,6 @@ print(data['response'])
 
 # %% [markdown]
 # test
-
-# %% [markdown]
-# 1+1 
-
-# %%
-1+1
-
-
-# %%
-1+1
-
 
 # %%
 1+1
