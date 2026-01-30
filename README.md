@@ -62,7 +62,13 @@ Fetch literatures on EPMC. More instruction and docker usage in
 
 # gold datasets
 
-## Silver
 With **notebooks/dastasets.ipynb** I curate the dataset furthur more.
+- I cleanuped "()[];.."
+- I grouped the claims into groups when pairwise TF-IDF value > 0.6.
+- achieve ~1700 claims
 
-I grouped the claims into groups when pairwise TF-IDF value > 0.6.
+Then I use BM25 method in **nBM25_query.ipynb** and eval the recall and MRR with bioASQ method. While we achieve a good recall@200 (see plots) with BM25 baseline, and our method of alias expansion worked, I can see this is clearly not a ground truth dataset because many claims are not fully supported (briefly mentioned) by abastract. Although BM25 method, a reranker might not furthur help.
+
+To evaluate a reranker, I would do one of the followings:
+- go with BioASQ dataset
+- furthur curate gold claim dataset (with help of llm and good prompts)
