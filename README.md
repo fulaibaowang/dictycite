@@ -70,5 +70,27 @@ With **notebooks/dastasets.ipynb** I curate the dataset furthur more.
 Then I use BM25 method in **nBM25_query.ipynb** and eval the recall and MRR with bioASQ method. While we achieve a good recall@200 (see plots) with BM25 baseline, and our method of alias expansion worked, I can see this is clearly not a ground truth dataset because many claims are not fully supported (briefly mentioned) by abastract. Although BM25 method, a reranker might not furthur help.
 
 To evaluate a reranker, I would do one of the followings:
-- go with BioASQ dataset
 - furthur curate gold claim dataset (with help of llm and good prompts)
+- go with BioASQ dataset
+
+## dicty_claim_labeler.py
+
+Further curated the gold claim–citation pairs using LLM-based labeling with **dicty_claim_labeler.py**:
+- Labels each claim–citation pair with two judgments:
+  - **doc_match**: whether the paper is the correct document-level citation for the claim (`yes`, `no`, `unclear`)
+  - **evidence_level**: whether the abstract explicitly supports the core claim and/or details (`abstract_supports_detail`, `abstract_supports_core`, `needs_fulltext`, `not_applicable`)
+- Designed structured prompt template 
+- Features resume-safe JSONL output, retry logic with backoff, and optional abstract truncation
+- Input: `output/cleaned/gold_with_query_expand_flat.tsv`
+- Output: `output/llm_labels_goldset.jsonl`
+
+Example usage:
+```bash
+python dicty_claim_labeler.py \
+  --input output/cleaned/gold_with_query_expand_flat.tsv \
+  --output output/labels.jsonl \
+  --url https://chat.fri.uni-lj.si/ollama/api/generate \
+  --model llama3.3:latest \
+  --key-file llama_API_KEY \
+  --sleep-s 0.5
+```

@@ -25,6 +25,9 @@ URL = "https://chat.fri.uni-lj.si/ollama/api/generate"
 MODEL = "llama3.3:latest"
 
 
+# %% [markdown]
+# # 1) Prompt template (your “good” prompt, parameterized)
+
 # %%
 PROMPT_TEMPLATE = """You are labeling curator-note **claim–citation** pairs for a retrieval benchmark in *Dictyostelium discoideum*.
 
@@ -91,7 +94,100 @@ Return ONLY this JSON object, with no extra text and no extra keys:
   "evidence_level": "abstract_supports_detail|abstract_supports_core|needs_fulltext|not_applicable",
   "reason": "max 25 words, concrete."
 }}
+```
+Input begins
+
+CLAIM_QUERY:
+{claim_query}
+
+PAPER_TITLE:
+{title}
+
+PAPER_ABSTRACT:
+{abstract}
+
+Input ends
 
 """
+
+# %% [markdown]
+# ## 2) API call function (with robust JSON extraction)
+#
+# LLMs sometimes wrap JSON in extra text. This parser grabs the first JSON object it sees.
+
+# %%
+JSON_OBJ_RE = re.compile(r"\{.*\}", re.DOTALL)
+
+def call_llm(prompt: str, timeout=120) -> str:
+    r = requests.post(
+        URL,
+        headers={"Authorization": f"Bearer {key}"},
+        json={"model": MODEL, "stream": False, "prompt": prompt},
+        timeout=timeout,
+    )
+    r.raise_for_status()
+    data = json.loads(r.text)
+    return data["response"]
+
+def parse_label_json(text: str) -> dict:
+    m = JSON_OBJ_RE.search(text)
+    if not m:
+        raise ValueError(f"No JSON object found in response:\n{text[:500]}")
+    return json.loads(m.group(0))
+
+
+# %% [markdown]
+# # 3) Load TSV + run a few examples
+
+# %%
+TSV_PATH = "../output/cleaned/gold_with_query_expand_flat.tsv"  # <-- change
+df = pd.read_csv(TSV_PATH, sep="\t", dtype=str).fillna("")
+df.head()
+
+
+# %%
+sample = df.sample(n=3, random_state=0)  # or df.head(3)
+sample[["group_claim_id", "pmid", "query_expand", "title", "abstract_clean"]]
+
+
+# %%
+# Test specific group_claim_id cases
+test_ids = ["5", "15", "1262","1002","109"]
+sample = df[df["group_claim_id"].isin(test_ids)].copy()
+sample[["group_claim_id", "pmid", "query_expand", "title", "abstract_clean"]]
+
+# %%
+results = []
+
+for _, row in sample.iterrows():
+    group_claim_id = row["group_claim_id"]
+    pmid = row["pmid"]
+    claim_query = row["query_expand"] or row["query"]  # fallback if needed
+    title = row["title"]
+    abstract = row["abstract_clean"]
+
+    prompt = PROMPT_TEMPLATE.format(
+        claim_query=claim_query.strip(),
+        title=title.strip(),
+        abstract=abstract.strip(),
+    )
+
+    raw = call_llm(prompt)
+    try:
+        out = parse_label_json(raw)
+    except Exception as e:
+        out = {"doc_match": "unclear", "evidence_level": "needs_fulltext", "reason": f"parse_error: {e}"}
+
+    # add your required keys
+    out["group_claim_id"] = group_claim_id
+    out["pmid"] = pmid
+
+    results.append(out)
+
+pd.DataFrame(results)
+
+
+# %% [markdown]
+# # production script is dicty_claim_labeler.py
 
 # %%
