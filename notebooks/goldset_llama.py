@@ -17,6 +17,7 @@
 import requests, json, re, time
 import pandas as pd
 from pathlib import Path
+import json
 
 
 # %%
@@ -189,5 +190,173 @@ pd.DataFrame(results)
 
 # %% [markdown]
 # # production script is dicty_claim_labeler.py
+
+# %%
+
+# %% [markdown]
+# ## Compare labels across three runs
+
+# %%
+def load_jsonl(path):
+    records = []
+    with open(path, 'r') as f:
+        for line in f:
+            records.append(json.loads(line))
+    return pd.DataFrame(records)
+
+run1 = load_jsonl("../output/llm_labels_goldset_run1.jsonl")
+run2 = load_jsonl("../output/llm_labels_goldset_run2.jsonl")
+run3 = load_jsonl("../output/llm_labels_goldset_run3.jsonl")
+
+print(f"Run1: {len(run1)} records")
+print(f"Run2: {len(run2)} records")
+print(f"Run3: {len(run3)} records")
+
+# %%
+# Merge all three runs on (group_claim_id, pmid)
+merged = (
+    run1.rename(columns={
+        "doc_match": "doc_match_1",
+        "evidence_level": "evidence_1",
+        "reason": "reason_1"
+    })
+    .merge(
+        run2.rename(columns={
+            "doc_match": "doc_match_2",
+            "evidence_level": "evidence_2",
+            "reason": "reason_2"
+        }),
+        on=["group_claim_id", "pmid"],
+        how="outer"
+    )
+    .merge(
+        run3.rename(columns={
+            "doc_match": "doc_match_3",
+            "evidence_level": "evidence_3",
+            "reason": "reason_3"
+        }),
+        on=["group_claim_id", "pmid"],
+        how="outer"
+    )
+)
+
+print(f"Total pairs: {len(merged)}")
+merged.head()
+
+
+# %%
+# Identify disagreements with custom logic
+#
+# For doc_match:
+#   - Disagreement = when "yes" vs "no" OR "yes" vs "unclear"
+#   - NO disagreement = when "no" vs "unclear"
+#   (i.e., only "yes" paired with non-yes counts as disagreement)
+#
+# For evidence_level:
+#   - Disagreement = when "abstract_supports_detail" or "abstract_supports_core" vs "needs_fulltext"
+#   - NO disagreement = when "abstract_supports_detail" vs "abstract_supports_core"
+#   (i.e., any explicit support vs needs_fulltext counts as disagreement)
+
+def doc_match_disagree(v1, v2):
+    """Returns True if v1 and v2 represent a meaningful disagreement."""
+    pair = {v1, v2}
+    # Disagreement only if "yes" is paired with "no" or "unclear"
+    if "yes" in pair and ("no" in pair or "unclear" in pair):
+        return True
+    return False
+
+def evidence_disagree(v1, v2):
+    """Returns True if v1 and v2 represent a meaningful disagreement."""
+    supports = {"abstract_supports_detail", "abstract_supports_core"}
+    pair = {v1, v2}
+    # Disagreement if one is explicit support and the other is needs_fulltext
+    if (pair & supports) and "needs_fulltext" in pair:
+        return True
+    return False
+
+# Check all pairwise comparisons for doc_match
+merged["doc_match_disagree"] = (
+    merged.apply(lambda r: 
+        doc_match_disagree(r["doc_match_1"], r["doc_match_2"]) or
+        doc_match_disagree(r["doc_match_1"], r["doc_match_3"]) or
+        doc_match_disagree(r["doc_match_2"], r["doc_match_3"]),
+        axis=1
+    )
+)
+
+# Check all pairwise comparisons for evidence_level
+merged["evidence_disagree"] = (
+    merged.apply(lambda r: 
+        evidence_disagree(r["evidence_1"], r["evidence_2"]) or
+        evidence_disagree(r["evidence_1"], r["evidence_3"]) or
+        evidence_disagree(r["evidence_2"], r["evidence_3"]),
+        axis=1
+    )
+)
+
+merged["any_disagree"] = merged["doc_match_disagree"] | merged["evidence_disagree"]
+
+# Summary statistics
+print("=" * 60)
+print("Disagreement Statistics (custom logic):")
+print("=" * 60)
+print(f"Total pairs: {len(merged)}")
+print(f"doc_match disagreements: {merged['doc_match_disagree'].sum()} ({100*merged['doc_match_disagree'].mean():.1f}%)")
+print(f"evidence_level disagreements: {merged['evidence_disagree'].sum()} ({100*merged['evidence_disagree'].mean():.1f}%)")
+print(f"Any disagreement: {merged['any_disagree'].sum()} ({100*merged['any_disagree'].mean():.1f}%)")
+print(f"Full agreement: {(~merged['any_disagree']).sum()} ({100*(~merged['any_disagree']).mean():.1f}%)")
+
+# %%
+# Show examples of disagreements
+disagreements = merged[~merged["all_same"]].copy()
+
+# Join with original data to see the query and abstract
+disagreements_full = disagreements.merge(
+    df[["group_claim_id", "pmid", "query_expand", "query", "title", "abstract_clean"]],
+    on=["group_claim_id", "pmid"],
+    how="left"
+)
+
+print(f"\nShowing {min(5, len(disagreements_full))} examples with disagreements:\n")
+
+for i, row in disagreements_full.head(5).iterrows():
+    print("=" * 80)
+    print(f"Group Claim ID: {row['group_claim_id']} | PMID: {row['pmid']}")
+    print("-" * 80)
+    print(f"QUERY: {row['query_expand'] or row['query']}")
+    print(f"\nTITLE: {row['title']}")
+    print(f"\nABSTRACT: {row['abstract_clean'][:300]}...")
+    print("\n" + "-" * 80)
+    print("LABELS:")
+    print(f"  Run1: doc_match={row['doc_match_1']:20s} | evidence={row['evidence_1']}")
+    print(f"  Run2: doc_match={row['doc_match_2']:20s} | evidence={row['evidence_2']}")
+    print(f"  Run3: doc_match={row['doc_match_3']:20s} | evidence={row['evidence_3']}")
+    print("\nREASONS:")
+    print(f"  Run1: {row['reason_1']}")
+    print(f"  Run2: {row['reason_2']}")
+    print(f"  Run3: {row['reason_3']}")
+    print("=" * 80)
+    print()
+
+# %%
+# Breakdown of disagreement types
+print("Disagreement breakdown:\n")
+
+doc_disagree = merged[~merged["doc_match_same"]]
+print(f"doc_match disagreements: {len(doc_disagree)}")
+if len(doc_disagree) > 0:
+    print("  Examples of doc_match variations:")
+    for _, row in doc_disagree.head(3).iterrows():
+        print(f"    Group {row['group_claim_id']}, PMID {row['pmid']}: {row['doc_match_1']} / {row['doc_match_2']} / {row['doc_match_3']}")
+
+print()
+
+evidence_disagree = merged[~merged["evidence_same"]]
+print(f"evidence_level disagreements: {len(evidence_disagree)}")
+if len(evidence_disagree) > 0:
+    print("  Examples of evidence_level variations:")
+    for _, row in evidence_disagree.head(3).iterrows():
+        print(f"    Group {row['group_claim_id']}, PMID {row['pmid']}:")
+        print(f"      {row['evidence_1'][:30]:30s} / {row['evidence_2'][:30]:30s} / {row['evidence_3'][:30]:30s}")
 
 # %%
