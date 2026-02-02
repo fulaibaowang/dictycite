@@ -27,7 +27,10 @@ MODEL = "llama3.3:latest"
 
 
 # %% [markdown]
-# # 1) Prompt template (your “good” prompt, parameterized)
+# # run llama
+
+# %% [markdown]
+# ## 1) Prompt template (your “good” prompt, parameterized)
 
 # %%
 PROMPT_TEMPLATE = """You are labeling curator-note **claim–citation** pairs for a retrieval benchmark in *Dictyostelium discoideum*.
@@ -138,7 +141,7 @@ def parse_label_json(text: str) -> dict:
 
 
 # %% [markdown]
-# # 3) Load TSV + run a few examples
+# ## 3) Load TSV + run a few examples
 
 # %%
 TSV_PATH = "../output/cleaned/gold_with_query_expand_flat.tsv"  # <-- change
@@ -189,20 +192,34 @@ pd.DataFrame(results)
 
 
 # %% [markdown]
-# # production script is dicty_claim_labeler.py
-
-# %%
+# # production script: dicty_claim_labeler.py
 
 # %% [markdown]
-# ## Compare labels across three runs
+# we do this three times and check agreements across three replicates
+#
+# results:
+#
+# output/llm_labels_goldset_run1.jsonl
+#
+# output/llm_labels_goldset_run2.jsonl
+#
+# output/llm_labels_goldset_run3.jsonl
+
+# %% [markdown]
+# # Compare labels across three runs
 
 # %%
 def load_jsonl(path):
-    records = []
-    with open(path, 'r') as f:
+    rec = []
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            records.append(json.loads(line))
-    return pd.DataFrame(records)
+            line = line.strip()
+            if line:
+                rec.append(json.loads(line))
+    df = pd.DataFrame(rec)
+    df["group_claim_id"] = df["group_claim_id"].astype(str)
+    df["pmid"] = df["pmid"].astype(str)
+    return df
 
 run1 = load_jsonl("../output/llm_labels_goldset_run1.jsonl")
 run2 = load_jsonl("../output/llm_labels_goldset_run2.jsonl")
@@ -212,7 +229,21 @@ print(f"Run1: {len(run1)} records")
 print(f"Run2: {len(run2)} records")
 print(f"Run3: {len(run3)} records")
 
-# %%
+# Check for error cases
+print("\n" + "=" * 60)
+print("ERROR CHECK:")
+print("=" * 60)
+
+for run_num, df_run in [(1, run1), (2, run2), (3, run3)]:
+    error_mask = df_run["reason"].str.contains("error:", na=False)
+    n_errors = error_mask.sum()
+    if n_errors > 0:
+        print(f"\n⚠️  Run{run_num}: {n_errors} error cases found!")
+        print(f"Error types in Run{run_num}:")
+        print(df_run[error_mask]["reason"].value_counts())
+    else:
+        print(f"✓ Run{run_num}: No errors")
+
 # Merge all three runs on (group_claim_id, pmid)
 merged = (
     run1.rename(columns={
@@ -308,7 +339,7 @@ print(f"Full agreement: {(~merged['any_disagree']).sum()} ({100*(~merged['any_di
 
 # %%
 # Show examples of disagreements
-disagreements = merged[~merged["all_same"]].copy()
+disagreements = merged[merged["any_disagree"]].copy()
 
 # Join with original data to see the query and abstract
 disagreements_full = disagreements.merge(
@@ -317,7 +348,7 @@ disagreements_full = disagreements.merge(
     how="left"
 )
 
-print(f"\nShowing {min(5, len(disagreements_full))} examples with disagreements:\n")
+print(f"\nShowing {min(3, len(disagreements_full))} examples with disagreements:\n")
 
 for i, row in disagreements_full.head(5).iterrows():
     print("=" * 80)
@@ -338,25 +369,92 @@ for i, row in disagreements_full.head(5).iterrows():
     print("=" * 80)
     print()
 
+# %% [markdown]
+# **Full agreement: 2028 (95.7%)**, this is good
+
+# %% [markdown]
+# # Summary: Agreement Tables
+
 # %%
-# Breakdown of disagreement types
-print("Disagreement breakdown:\n")
 
-doc_disagree = merged[~merged["doc_match_same"]]
-print(f"doc_match disagreements: {len(doc_disagree)}")
-if len(doc_disagree) > 0:
-    print("  Examples of doc_match variations:")
-    for _, row in doc_disagree.head(3).iterrows():
-        print(f"    Group {row['group_claim_id']}, PMID {row['pmid']}: {row['doc_match_1']} / {row['doc_match_2']} / {row['doc_match_3']}")
+# --- Agreement flags using your custom logic ---
+supports = {"abstract_supports_detail", "abstract_supports_core"}
 
-print()
+has_yes = merged[["doc_match_1","doc_match_2","doc_match_3"]].eq("yes").any(axis=1)
+has_no_or_unclear = merged[["doc_match_1","doc_match_2","doc_match_3"]].isin(["no","unclear"]).any(axis=1)
+doc_match_agreement = (~(has_yes & has_no_or_unclear)).astype(int)
 
-evidence_disagree = merged[~merged["evidence_same"]]
-print(f"evidence_level disagreements: {len(evidence_disagree)}")
-if len(evidence_disagree) > 0:
-    print("  Examples of evidence_level variations:")
-    for _, row in evidence_disagree.head(3).iterrows():
-        print(f"    Group {row['group_claim_id']}, PMID {row['pmid']}:")
-        print(f"      {row['evidence_1'][:30]:30s} / {row['evidence_2'][:30]:30s} / {row['evidence_3'][:30]:30s}")
+has_support = merged[["evidence_1","evidence_2","evidence_3"]].isin(supports).any(axis=1)
+has_needs = merged[["evidence_1","evidence_2","evidence_3"]].eq("needs_fulltext").any(axis=1)
+evidence_agreement = (~(has_support & has_needs)).astype(int)
+
+# --- Table 1: agreement summary ---
+agreement_table = merged[["group_claim_id","pmid"]].copy()
+agreement_table["doc_match_agreement"] = doc_match_agreement
+agreement_table["evidence_level_agreement"] = evidence_agreement
+
+
+# %%
+agreement_table.head()
+
+# %%
+# --- Table 2: fully agreed subset (both dimensions) ---
+mask_full = (doc_match_agreement.astype(bool) & evidence_agreement.astype(bool))
+
+full_agreement_table = merged.loc[mask_full, ["group_claim_id","pmid"]].copy()
+
+# pick a representative label for doc_match:
+# if any yes -> yes, else if any no -> no, else unclear
+full_agreement_table["doc_match"] = (
+    merged.loc[mask_full, ["doc_match_1","doc_match_2","doc_match_3"]]
+    .apply(lambda r: "yes" if (r=="yes").any() else ("no" if (r=="no").any() else "unclear"), axis=1)
+)
+
+# pick a representative evidence label:
+# if any supports_detail -> detail, elif any supports_core -> core, else needs_fulltext
+full_agreement_table["evidence_level"] = (
+    merged.loc[mask_full, ["evidence_1","evidence_2","evidence_3"]]
+    .apply(lambda r: "abstract_supports_detail" if (r=="abstract_supports_detail").any()
+                   else ("abstract_supports_core" if (r=="abstract_supports_core").any()
+                         else "needs_fulltext"),
+           axis=1)
+)
+
+# %%
+full_agreement_table.head()
+
+# %%
+# Stats
+print("Total pairs:", len(agreement_table))
+print("Doc agreement:", agreement_table["doc_match_agreement"].mean())
+print("Evidence agreement:", agreement_table["evidence_level_agreement"].mean())
+print("Fully agreed:", len(full_agreement_table))
+
+print("\ndoc_match stats (fully agreed):")
+print(full_agreement_table["doc_match"].value_counts(dropna=False))
+
+print("\nevidence_level stats (fully agreed):")
+print(full_agreement_table["evidence_level"].value_counts(dropna=False))
+
+
+# %%
+# Save
+out_dir = Path("../output")
+out_dir.mkdir(parents=True, exist_ok=True)
+
+agreement_table.to_csv(out_dir / "llama_agreement_summary.tsv", sep="\t", index=False)
+full_agreement_table.to_csv(out_dir / "llama_full_agreement_cases.tsv", sep="\t", index=False)
+
+print("Saved tables to", out_dir)
+
+# %% [markdown]
+# we will use
+# **doc_match=yes, evidence=abstract_supports_core  | abstract_supports_detail** as gold sets
+
+# %% [markdown]
+# we can intesect **output/cleaned/gold_with_query_expand.parquet** and **output/cleaned/gold_with_query_expand_flat.tsv** to get the filter dataset
+
+# %% [markdown]
+# TODO: current expansion adds some noises, e.g AT, and might needs fix
 
 # %%

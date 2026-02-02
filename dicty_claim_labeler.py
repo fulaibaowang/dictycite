@@ -179,6 +179,7 @@ def main():
     ap.add_argument("--max_retries", type=int, default=3, help="Max retries per row")
     ap.add_argument("--abstract_max_chars", type=int, default=4500, help="Truncate abstract to this many chars")
     ap.add_argument("--progress_every", type=int, default=50, help="Print progress every N new requests")
+    ap.add_argument("--raise_on_error", type=bool, default=True, help="Raise exception on errors (default: True). Set False to silently continue.")
     args = ap.parse_args()
 
     bearer_key = load_key(args.key_path)
@@ -245,10 +246,14 @@ def main():
                     time.sleep(1.5 * attempt)
 
             if last_err is not None or parsed is None:
+                error_msg = f"error:{type(last_err).__name__}" if last_err else "error:unknown"
+                if args.raise_on_error:
+                    raise RuntimeError(f"[Group {gid}, PMID {pmid}] Failed after {args.max_retries} retries: {last_err}")
+                # Silent fallback (only if raise_on_error=False)
                 parsed = {
                     "doc_match": "unclear",
                     "evidence_level": "needs_fulltext",
-                    "reason": f"error:{type(last_err).__name__}" if last_err else "error:unknown",
+                    "reason": error_msg,
                 }
 
             record = {
