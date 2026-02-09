@@ -20,7 +20,6 @@ import json
 import os
 import re
 import time
-from pathlib import Path
 from typing import Dict, Tuple, Set
 
 import pandas as pd
@@ -90,8 +89,11 @@ VALID_EVIDENCE = {
 }
 
 
-def load_key(key_path: str) -> str:
-    return Path(key_path).read_text(encoding="utf-8").strip()
+def load_key_from_env() -> str:
+    key = os.getenv("LLAMA_API_KEY", "").strip()
+    if not key:
+        raise ValueError("Missing LLAMA_API_KEY in environment")
+    return key
 
 
 def load_done_keys(jsonl_path: str) -> Set[Tuple[str, str]]:
@@ -171,7 +173,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input_tsv", required=True, help="Input TSV path")
     ap.add_argument("--output_jsonl", required=True, help="Output JSONL path (append/resume)")
-    ap.add_argument("--key_path", default="../llama_API_KEY", help="Path to bearer token file")
     ap.add_argument("--url", default="https://chat.fri.uni-lj.si/ollama/api/generate", help="API endpoint")
     ap.add_argument("--model", default="llama3.3:latest", help="Model name")
     ap.add_argument("--sleep_s", type=float, default=0.05, help="Sleep between requests")
@@ -182,7 +183,7 @@ def main():
     ap.add_argument("--raise_on_error", type=bool, default=True, help="Raise exception on errors (default: True). Set False to silently continue.")
     args = ap.parse_args()
 
-    bearer_key = load_key(args.key_path)
+    bearer_key = load_key_from_env()
 
     df = pd.read_csv(args.input_tsv, sep="\t", dtype=str).fillna("")
 

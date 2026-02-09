@@ -22,7 +22,7 @@ inside the container, inscrease time out to 90 is necessary:
 
 ```
 cd /dictycite
-python /dictycite/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/gene_publication_pmid.parquet"
+python /dictycite/scripts/public/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/gene_publication_pmid.parquet"
 ```
 
 
@@ -35,7 +35,7 @@ DDB_G3953806: failed to fetch/parse gene page (500 Server Error: Internal Server
 
 these genes can be rerun in a list with  --gene-list
 ```
-python3 dicty_publication.py \
+python3 scripts/public/dicty_publication.py \
   --gene-list /work/failed_ids.txt \
   --out /work/output/gene_publication_pmid_rerun_failed.parquet \
   --timeout 60 --max-retries 4 \

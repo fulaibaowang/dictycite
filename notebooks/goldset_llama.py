@@ -14,6 +14,7 @@
 # ---
 
 # %%
+import os
 import requests, json, re, time
 import pandas as pd
 from pathlib import Path
@@ -21,7 +22,9 @@ import json
 
 
 # %%
-key = Path("../llama_API_KEY").read_text().strip()
+key = os.getenv("LLAMA_API_KEY", "").strip()
+if not key:
+    raise ValueError("Missing LLAMA_API_KEY in environment")
 URL = "https://chat.fri.uni-lj.si/ollama/api/generate"
 MODEL = "llama3.3:latest"
 
@@ -192,7 +195,7 @@ pd.DataFrame(results)
 
 
 # %% [markdown]
-# # production script: dicty_claim_labeler.py
+# # production script: scripts/public/dicty_claim_labeler.py
 
 # %% [markdown]
 # we do this three times and check agreements across three replicates

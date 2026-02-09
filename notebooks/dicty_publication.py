@@ -302,7 +302,7 @@ print(df2)
 # # full result
 
 # %% [markdown]
-# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:16.01.2026 python /dictycite/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/dictycite/output/gene_publication_pmid.parquet"
+# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:16.01.2026 python /dictycite/scripts/public/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/dictycite/output/gene_publication_pmid.parquet"
 #
 # takes around 10 hrs
 
