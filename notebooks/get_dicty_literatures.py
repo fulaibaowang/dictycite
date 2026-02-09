@@ -443,7 +443,7 @@ import polars as pl
 # ## jsons of EPMC
 
 # %%
-DATA_DIR = Path("article_fetching/output/all_cleaned")
+DATA_DIR = Path("scripts/public/article_fetching/output/all_cleaned")
 
 
 # %%

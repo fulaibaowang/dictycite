@@ -39,9 +39,9 @@ docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 \
 
 ## EPMC full-text fetch
 
-The full fetch workflow is in article_fetching. See:
+The full fetch workflow is in scripts/public/article_fetching. See:
 
-- article_fetching/README.md
+- scripts/public/article_fetching/README.md
 
 ## LLM labeling (goldset)
 

@@ -10,11 +10,11 @@ cd tmp2
 frida srun
 
 ```
-mkdir -p article_fetching/output
+mkdir -p scripts/public/article_fetching/output
 srun -p dev --time=12:00:00 -c 4 \
   --container-image=fulaibaowang/dictyfetch:19.01.2026 \
   --container-mount-home \
-  --container-mounts "${PWD}/article_fetching/output:/app/output,${PWD}:/work" \
+  --container-mounts "${PWD}/scripts/public/article_fetching/output:/app/output,${PWD}:/work" \
   --container-workdir /work \
   --pty bash
 ```
@@ -22,7 +22,7 @@ srun -p dev --time=12:00:00 -c 4 \
 inside the container:
 
 ```
-cd /dictycite/article_fetching
+cd /dictycite/scripts/public/article_fetching
 
 BASE_OUTPUT="/app/output"
 mkdir -p "$BASE_OUTPUT"

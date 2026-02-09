@@ -38,7 +38,7 @@ RUN Rscript -e "if(!requireNamespace('tidypmc', quietly=TRUE)) install.packages(
 # Copy your script into the image
 RUN git clone https://github.com/fulaibaowang/dictycite.git
 
-WORKDIR /dictycite/article_fetching
+WORKDIR /dictycite/scripts/public/article_fetching
 
 # Default entrypoint runs fetch.py; pass args through docker run
 ENTRYPOINT ["python", "fetch.py"]

@@ -4,8 +4,8 @@
 #SBATCH -c 2
 #SBATCH --time=72:00:00
 #SBATCH --array=0-5
-#SBATCH -o article_fetching/output/slurm-%x-%A_%a.out
-#SBATCH -e article_fetching/output/slurm-%x-%A_%a.err
+#SBATCH -o scripts/public/article_fetching/output/slurm-%x-%A_%a.out
+#SBATCH -e scripts/public/article_fetching/output/slurm-%x-%A_%a.err
 
 set -euo pipefail
 
@@ -15,16 +15,16 @@ range="${ranges[$SLURM_ARRAY_TASK_ID]}"
 start="${range%-*}"
 end="${range#*-}"
 
-mkdir -p article_fetching/output
+mkdir -p scripts/public/article_fetching/output
 
 srun \
   --container-image=fulaibaowang/dictyfetch:19.01.2026 \
   --container-mount-home \
-  --container-mounts "${PWD}/article_fetching/output:/app/output,${PWD}:/work" \
+  --container-mounts "${PWD}/scripts/public/article_fetching/output:/app/output,${PWD}:/work" \
   --container-workdir /work \
   bash -lc "
     set -euo pipefail
-    cd /dictycite/article_fetching
+    cd /dictycite/scripts/public/article_fetching
     BASE_OUTPUT=/app/output
 
     echo \"Running range: $start-$end\"

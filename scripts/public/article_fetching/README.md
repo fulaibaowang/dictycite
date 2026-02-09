@@ -230,7 +230,7 @@ You can run the fetcher in Docker.
 
 ```bash
 docker run --rm \
-  -v "$(pwd)/article_fetching/output:/app/output" \
+  -v "$(pwd)/scripts/public/article_fetching/output:/app/output" \
   fulaibaowang/dictyfetch:19.01.2026 \
   --query "Dictyostelium discoideum" \ ##--query 'OPEN_ACCESS:y AND "Dictyostelium discoideum"' \
   --output_path /app/output \
