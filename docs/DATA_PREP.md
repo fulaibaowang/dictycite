@@ -87,27 +87,6 @@ EPMC JSON:
 
 - `output/cleaned/dicty_gold_llm_public.json`
 - `output/cleaned/articles_all_cleaned_abstract.json`
-- `output/llm_labels_goldset_run1.jsonl`
-- `output/llm_labels_goldset_run2.jsonl`
-- `output/llm_labels_goldset_run3.jsonl`
-
-## Intermediate outputs (paths)
-
-These are intermediate files generated across the pipeline steps:
-
-- `output/curator_notes.parquet`
-- `output/curator_claims.parquet`
-- `output/publications.parquet`
-- `output/gene_publication_pmid.parquet`
-- `output/cleaned/articles_all_cleaned_abstract.parquet`
-- `output/cleaned/articles_all_cleaned_abstract.jsonl`
-- `output/cleaned/claim_cleaned_long_pmids_nonNA.parquet`
-- `output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet`
-- `output/cleaned/gold_with_query_expand.parquet`
-- `output/cleaned/gold_with_query_expand_flat.tsv`
-- `output/cleaned/golden_grouped.parquet`
-- `tmp/golden_flat.tsv`
-- `output/llm_labels_*.jsonl`
 
 ## Summary (short)
 
