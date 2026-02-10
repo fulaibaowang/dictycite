@@ -30,4 +30,6 @@ Dicty literature from EPMC/PubMed:
 
 Linked sources and cleaned dataset (from [notebooks/datasets_merge_clean.ipynb](../notebooks/datasets_merge_clean.ipynb)):
 
-- output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet
+- claim_cleaned_long_pmids_nonNA_abstract.parquet
+- gold_with_query_expand.parquet
+- articles_all_cleaned_abstract.jsonl

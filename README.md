@@ -13,7 +13,8 @@ It keeps scripts, notebooks, and outputs.
 - Claims (from Dictybase curator notes) are linked to dictybase publication IDs.
 - Publication IDs are mapped to PMIDs and joined with EPMC titles/abstracts.
 - Clean merged dataset: `claim_cleaned_long_pmids_nonNA_abstract.parquet`.
-- Goldset labeling: `llm_labels_*.jsonl`.
+- Query-expanded goldset: `gold_with_query_expand.parquet`.
+- EPMC document store (public JSONL): `articles_all_cleaned_abstract.jsonl`.
 
 ## Docs
 

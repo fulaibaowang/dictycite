@@ -42,6 +42,14 @@ Cleaning summary (high level):
 - Cluster near-duplicate claims using TF-IDF similarity and group them.
 - Produce a grouped gold dataset for review.
 
+## 4.5) Query Expansion (for goldset)
+
+We build a query-expanded goldset that appends structured gene aliases/products to the original claim.
+This produces `query_expand` alongside the original `query` for retrieval and labeling.
+
+- Notebook: [notebooks/BM25_query.ipynb](../notebooks/BM25_query.ipynb)
+- Output: `gold_with_query_expand.parquet` (public artifact)
+
 ## 5) Goldset Labeling (LLM review)
 
 Titles and abstracts are not always enough to validate a claim. Some claims need full text or manual review.
@@ -50,10 +58,17 @@ To reduce false positives, we run a labeling step to build a higher-quality gold
 - Production script: [scripts/public/dicty_claim_labeler.py](../scripts/public/dicty_claim_labeler.py)
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
 
+## 6) BioASQ-style Export (JSON + JSONL)
+
+We export queries and documents into a BioASQ-style JSON plus a JSONL document store.
+
+- Notebook: [notebooks/export_bioasq_style.ipynb](../notebooks/export_bioasq_style.ipynb)
+
 ## Required Public Artifacts
 
 - Clean merged dataset after join + cleaning (parquet).
-- LLM labeling results for the goldset (jsonl).
+- Query-expanded goldset (parquet).
+- EPMC document store (JSONL).
 
 ## Next Steps
 
