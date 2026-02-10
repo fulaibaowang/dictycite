@@ -10,12 +10,9 @@ It keeps scripts, notebooks, and outputs.
 
 ## Dataset Summary (short)
 
-- Claims (from Dictybase curator notes) are linked to dictybase publication IDs.
-- Publication IDs are mapped to PMIDs and joined with EPMC titles/abstracts.
-- Intermediate cleaned datasets are used to build a grouped goldset and LLM labels.
 - Public release:
-	- `output/cleaned/dicty_gold_llm_public.json` (queries + labeled docs)
-	- `output/cleaned/articles_all_cleaned_abstract.json` (EPMC titles/abstracts)
+	- `output/cleaned/dicty_gold_llm_public.json` (1,656 queries, 2,028 pairs, 1,289 PMIDs)
+	- `output/cleaned/articles_all_cleaned_abstract.json` (20,447 EPMC records)
 
 ## Docs
 

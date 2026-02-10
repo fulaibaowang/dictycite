@@ -48,7 +48,6 @@ We build a query-expanded goldset that appends structured gene aliases/products 
 This produces `query_expand` alongside the original `query` for retrieval and labeling.
 
 - Notebook: [notebooks/BM25_query.ipynb](../notebooks/BM25_query.ipynb)
-- Output: `gold_with_query_expand.parquet` (intermediate)
 
 ## 5) Goldset Labeling (LLM review)
 
@@ -57,6 +56,16 @@ To reduce false positives, we run a labeling step to build a higher-quality gold
 
 - Production script: [scripts/public/dicty_claim_labeler.py](../scripts/public/dicty_claim_labeler.py)
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
+
+Labeling details (summary):
+- Input: `output/cleaned/gold_with_query_expand_flat.tsv` (claim + PMID + title/abstract)
+- Run the labeler 3 times to measure consistency:
+	- `output/llm_labels_goldset_run1.jsonl`
+	- `output/llm_labels_goldset_run2.jsonl`
+	- `output/llm_labels_goldset_run3.jsonl`
+- Compare runs and compute agreement summaries:
+	- `output/llama_agreement_summary.tsv`
+	- `output/llama_full_agreement_cases.tsv` (pairs with full agreement across runs)
 
 ## 6) Final Public Export (JSON)
 

@@ -26,9 +26,28 @@ Dicty literature from EPMC/PubMed:
 | Claims with titles/abstracts | 2,020 |
 | Publications cited by these claims | 1,340 |
 
-## Dataset outputs
+## LLM agreement (3 runs)
 
-Public release:
+Overlap across all three runs: 2,119 claim-PMID pairs.
 
-- output/cleaned/dicty_gold_llm_public.json
-- output/cleaned/articles_all_cleaned_abstract.json
+Doc-match full agreement (pairs / queries):
+
+| Label | Pairs | Queries |
+| --- | --- | --- |
+| yes | 1,930 | 1,599 |
+| no | 154 | 145 |
+| unclear | 8 | 8 |
+
+Evidence-level full agreement (pairs / queries):
+
+| Label | Pairs | Queries |
+| --- | --- | --- |
+| abstract_supports_core | 762 | 654 |
+| abstract_supports_detail | 631 | 619 |
+| needs_fulltext | 262 | 251 |
+| not_applicable | 158 | 150 |
+
+## Public release size
+
+- `dicty_gold_llm_public.json`: 1,656 queries, 2,028 labeled docs, 1,289 unique PMIDs
+- `articles_all_cleaned_abstract.json`: 20,447 records

@@ -1,6 +1,7 @@
 # Usage
 
 This page collects full command recipes and workflow notes.
+Current work focuses on data preparation; retrieval and modeling workflows may be added later.
 
 ## Curator notes (dictybase)
 
