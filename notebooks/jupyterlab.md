@@ -61,7 +61,7 @@ cd ~/projects/myproj
 python3.14 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel
-pip install pandas jupyterlab ipykernel
+pip install pandas jupyterlab ipykernel matplotlib
 python -m ipykernel install --user --name myproj-py314 --display-name "myproj (Python 3.14 venv)"
 jupyter lab
 ```
