@@ -48,7 +48,7 @@ We build a query-expanded goldset that appends structured gene aliases/products 
 This produces `query_expand` alongside the original `query` for retrieval and labeling.
 
 - Notebook: [notebooks/BM25_query.ipynb](../notebooks/BM25_query.ipynb)
-- Output: `gold_with_query_expand.parquet` (public artifact)
+- Output: `gold_with_query_expand.parquet` (intermediate)
 
 ## 5) Goldset Labeling (LLM review)
 
@@ -58,17 +58,28 @@ To reduce false positives, we run a labeling step to build a higher-quality gold
 - Production script: [scripts/public/dicty_claim_labeler.py](../scripts/public/dicty_claim_labeler.py)
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
 
-## 6) BioASQ-style Export (JSON + JSONL)
+## 6) Final Public Export (JSON)
 
-We export queries and documents into a BioASQ-style JSON plus a JSONL document store.
+We join the goldset with LLM labels and publish the labeled goldset JSON.
+We also export the cleaned EPMC abstracts to a JSON array for public release.
 
-- Notebook: [notebooks/export_bioasq_style.ipynb](../notebooks/export_bioasq_style.ipynb)
+- Notebook: [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb)
+- Outputs:
+	- `output/cleaned/dicty_gold_llm_public.json`
+	- `output/cleaned/articles_all_cleaned_abstract.json`
+
+Schema (high level):
+
+- `questions[].group_claim_id`, `query`, `query_expand`, `pmids`, `documents`
+- `questions[].docs[]` includes `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
+
+EPMC JSON:
+- An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata).
 
 ## Required Public Artifacts
 
-- Clean merged dataset after join + cleaning (parquet).
-- Query-expanded goldset (parquet).
-- EPMC document store (JSONL).
+- `output/cleaned/dicty_gold_llm_public.json`
+- `output/cleaned/articles_all_cleaned_abstract.json`
 
 ## Next Steps
 

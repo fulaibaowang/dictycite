@@ -28,8 +28,7 @@ Dicty literature from EPMC/PubMed:
 
 ## Dataset outputs
 
-Linked sources and cleaned dataset (from [notebooks/datasets_merge_clean.ipynb](../notebooks/datasets_merge_clean.ipynb)):
+Public release:
 
-- claim_cleaned_long_pmids_nonNA_abstract.parquet
-- gold_with_query_expand.parquet
-- articles_all_cleaned_abstract.jsonl
+- output/cleaned/dicty_gold_llm_public.json
+- output/cleaned/articles_all_cleaned_abstract.json

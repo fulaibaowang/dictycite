@@ -35,3 +35,10 @@ python scripts/public/dicty_claim_labeler.py \
 Notebook reference:
 
 - [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
+
+## Final public export
+
+Use [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb) to write:
+
+- output/cleaned/dicty_gold_llm_public.json
+- output/cleaned/articles_all_cleaned_abstract.json

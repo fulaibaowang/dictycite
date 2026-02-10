@@ -3,6 +3,13 @@
 curator_notes.parquet
 .DS_Store
 output/
+!output/
+output/*
+!output/cleaned/
+output/cleaned/*
+!output/cleaned/dicty_gold_llm_public.json
+!output/cleaned/articles_all_cleaned_abstract.json
+scripts/public/article_fetching/output/
 NCBI_API_KEY
 dictybase_files/dicty21/dicty21.Data/
 tmp/
