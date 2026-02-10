@@ -5,6 +5,9 @@ curator_notes.parquet
 output/
 !output/
 output/*
+!output/llm_labels_goldset_run1.jsonl
+!output/llm_labels_goldset_run2.jsonl
+!output/llm_labels_goldset_run3.jsonl
 !output/cleaned/
 output/cleaned/*
 !output/cleaned/dicty_gold_llm_public.json
@@ -18,3 +21,4 @@ llama_API_KEY
 .vscode/
 .env
 docs/DATA_PREP_PRIVATE.md
+indexes/

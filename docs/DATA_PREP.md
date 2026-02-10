@@ -63,9 +63,7 @@ Labeling details (summary):
 	- `output/llm_labels_goldset_run1.jsonl`
 	- `output/llm_labels_goldset_run2.jsonl`
 	- `output/llm_labels_goldset_run3.jsonl`
-- Compare runs and compute agreement summaries:
-	- `output/llama_agreement_summary.tsv`
-	- `output/llama_full_agreement_cases.tsv` (pairs with full agreement across runs)
+- Compare runs and compute agreement 
 
 ## 6) Final Public Export (JSON)
 
@@ -85,11 +83,19 @@ Schema (high level):
 EPMC JSON:
 - An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata).
 
-## Required Public Artifacts
+## Outputs
 
 - `output/cleaned/dicty_gold_llm_public.json`
 - `output/cleaned/articles_all_cleaned_abstract.json`
+- `output/llm_labels_goldset_run1.jsonl`
+- `output/llm_labels_goldset_run2.jsonl`
+- `output/llm_labels_goldset_run3.jsonl`
 
-## Next Steps
+## Summary (short)
 
-Retrieval and reranking are planned, but not started. The current focus is a clean, traceable dataset.
+We start with Dictybase curator notes and extract claims that cite a dictybase `publication_id`.
+Those IDs are mapped to PubMed PMIDs, then joined with EPMC/PubMed title and abstract text.
+After cleaning and de-duplication, we label claim-PMID pairs to build a higher-quality goldset
+and export the final public JSONs for claims (with labels) and abstracts.
+
+
