@@ -17,15 +17,7 @@ For full workflows and Docker/HPC recipes, see [docs/USAGE.md](docs/USAGE.md).
 Brief stats and dataset notes live in [docs/RESULTS.md](docs/RESULTS.md).
 
 
-## Quickstart
+## Detailed commands
 
-Generate curator notes (sample):
-```
-python scripts/public/dicty_curator_notes.py --limit 10
-```
-
-Generate publication ID to PMID map (sample):
-```
-python scripts/public/dicty_publication.py --limit 10
-```
+See [docs/USAGE.md](docs/USAGE.md) for detailed setup and evaluation commands.
 

@@ -39,9 +39,7 @@ docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 \
 
 ## EPMC full-text fetch
 
-The full fetch workflow is in scripts/public/article_fetching. See:
-
-- scripts/public/article_fetching/README.md
+See [scripts/public/article_fetching/README.md](../scripts/public/article_fetching/README.md).
 
 ## LLM labeling (goldset)
 
@@ -56,4 +54,4 @@ python scripts/public/dicty_claim_labeler.py \
 
 Notebook reference:
 
-- notebooks/goldset_llama.ipynb
+- [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)

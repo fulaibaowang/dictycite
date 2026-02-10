@@ -28,19 +28,6 @@ Dicty literature from EPMC/PubMed:
 
 ## Dataset outputs
 
-Linked sources and cleaned dataset (from notebooks/dastasets.ipynb):
+Linked sources and cleaned dataset (from [notebooks/datasets_merge_clean.ipynb](../notebooks/datasets_merge_clean.ipynb)):
 
 - output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet
-
-## Notes on gold datasets
-
-Using notebooks/dastasets.ipynb, I further curated the dataset:
-
-- Cleaned punctuation noise such as ()[];..
-- Grouped claims with pairwise TF-IDF > 0.6
-- Targeted about 1,700 claims
-
-For reranker evaluation, two paths are considered:
-
-- Curate gold claim pairs using LLM labels (scripts/public/dicty_claim_labeler.py, notebooks/goldset_llama.ipynb)
-- Use BioASQ dataset for a clean benchmark
