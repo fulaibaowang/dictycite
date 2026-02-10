@@ -13,7 +13,6 @@ It keeps scripts, notebooks, and outputs.
 - Public release:
 	- `output/cleaned/dicty_gold_llm_public.json` (1,656 queries, 2,028 pairs, 1,289 PMIDs)
 	- `output/cleaned/articles_all_cleaned_abstract.json` (20,447 EPMC records)
-	- `output/llm_labels_goldset_run1.jsonl`, `output/llm_labels_goldset_run2.jsonl`, `output/llm_labels_goldset_run3.jsonl`
 
 ## Docs
 

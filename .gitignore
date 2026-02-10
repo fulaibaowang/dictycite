@@ -20,5 +20,4 @@ llama_API_KEY
 .jupyter/
 .vscode/
 .env
-docs/DATA_PREP_PRIVATE.md
 indexes/
