@@ -24,3 +24,5 @@ It keeps scripts, notebooks, and outputs.
 
 - query expanding is not perfect (token like AT)
 - colbert
+- a better way to remain gene place holder in curator notes
+- for now we use sentence. how about paragraphs (might be too noisy)
