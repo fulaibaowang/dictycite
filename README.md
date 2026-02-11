@@ -20,3 +20,6 @@ It keeps scripts, notebooks, and outputs.
 - Detailed commands: [docs/USAGE.md](docs/USAGE.md)
 - Results and dataset notes: [docs/RESULTS.md](docs/RESULTS.md)
 
+## TODO
+
+- query expanding is not perfect (token like AT)
