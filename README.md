@@ -23,3 +23,4 @@ It keeps scripts, notebooks, and outputs.
 ## TODO
 
 - query expanding is not perfect (token like AT)
+- colbert
