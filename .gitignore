@@ -11,7 +11,7 @@ output/*
 !output/cleaned/
 output/cleaned/*
 !output/cleaned/dicty_gold_llm_public.json
-!output/cleaned/articles_all_cleaned_abstract.json
+!output/cleaned/articles_all_cleaned_abstract.jsonl
 scripts/public/article_fetching/output/
 NCBI_API_KEY
 dictybase_files/dicty21/dicty21.Data/
