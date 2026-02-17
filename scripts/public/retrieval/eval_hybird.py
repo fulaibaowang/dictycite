@@ -189,24 +189,6 @@ def evaluate_recall_points(
     return out
 
 
-def make_ks(k_max: int, k0: int = 200, n: int = 4) -> Tuple[int, ...]:
-    if k_max <= 0:
-        return tuple()
-    if k_max <= k0:
-        return (int(k_max),)
-    ratio = (k_max / k0) ** (1.0 / max(1, n - 1))
-    ks = [k0]
-    for i in range(1, n - 1):
-        ks.append(int(round(k0 * (ratio**i))))
-    ks.append(k_max)
-    ks = sorted(set(int(k) for k in ks if k > 0))
-    if ks[0] != k0:
-        ks = [k0] + ks
-    if ks[-1] != k_max:
-        ks.append(k_max)
-    return tuple(sorted(set(ks)))
-
-
 def fuse_rrf(
     bm25_df: pd.DataFrame,
     dense_df: pd.DataFrame,
@@ -269,7 +251,6 @@ def plot_recall_curves(
     output_dir: Path,
     curve_splits: List[str],
     test_splits: List[str],
-    ks_cap: Tuple[int, ...],
     ks_eval: Tuple[int, ...],
     cap_eff: int,
     k_max_eval_eff: int,
@@ -290,7 +271,8 @@ def plot_recall_curves(
             raise ValueError("method must be BM25 or Dense")
         return evaluate_recall_points(gold_maps[split], run, ks=ks_eval)
 
-    ks = list(ks_cap) + [k_max_eval_eff]
+    # Use only RECALL_KS-derived K values (filtered by k_max_eval_eff)
+    ks = list(ks_eval)
 
     for split in curve_splits:
         row = results_df[
@@ -621,9 +603,9 @@ def main() -> None:
     k_max_eval_eff = int(min(k_max_eval, kb + kd))
     cap_eff = int(min(int(args.cap), k_max_eval_eff))
 
-    ks_cap = make_ks(cap_eff, k0=200, n=4)
+    # Evaluation Ks: use only RECALL_KS up to k_max_eval_eff (no extra interpolated Ks)
     fixed_ks = tuple(k for k in RECALL_KS if k <= k_max_eval_eff)
-    ks_eval = tuple(sorted(set(ks_cap + (k_max_eval_eff,) + fixed_ks)))
+    ks_eval = fixed_ks
 
     if not ks_eval:
         raise ValueError("No evaluation K values. Check --cap and --k_max_eval.")
@@ -631,7 +613,6 @@ def main() -> None:
     print(
         f"KB={kb} KD={kd} CAP={args.cap} K_MAX_EVAL={k_max_eval} => cap_eff={cap_eff} k_max_eval_eff={k_max_eval_eff}"
     )
-    print("ks_cap:", ks_cap)
     print("ks_eval:", ks_eval)
 
     if args.no_eval:
@@ -747,7 +728,6 @@ def main() -> None:
             output_dir=figs_dir,
             curve_splits=curve_splits_list,
             test_splits=test_splits,
-            ks_cap=ks_cap,
             ks_eval=ks_eval,
             cap_eff=cap_eff,
             k_max_eval_eff=k_max_eval_eff,
@@ -774,7 +754,7 @@ def main() -> None:
             )
 
     config = vars(args)
-    config.update({"ks_cap": list(ks_cap), "ks_eval": list(ks_eval)})
+    config.update({"ks_eval": list(ks_eval)})
     (out_dir / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     print("[done]", out_dir)
