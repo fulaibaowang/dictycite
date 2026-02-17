@@ -2,6 +2,10 @@
 """
 Create stratified train/test subsets from dicty_gold_llm_public.json.
 
+Input/output use BioASQ-like schema (id, body, original_query, documents) so
+scripts/public/retrieval_eval/common.py can load the subsets. All other
+metadata (group_claim_id, query, query_expand, docs, pmids, ...) is preserved.
+
 Default behavior:
 - Treat each item in "questions" as one query keyed by group_claim_id.
 - Define minority as queries with >= 2 citations (len(docs) >= 2).

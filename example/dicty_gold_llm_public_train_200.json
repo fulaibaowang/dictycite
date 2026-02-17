@@ -24,6 +24,12 @@
       ],
       "pmids": [
         "22375061"
+      ],
+      "id": "476",
+      "body": "found that IplA localized to cytoplasmic vesicular membranes and to a lesser extent to the plasma membrane.\nIpla: Ca2+ channel, inositol 1,4,5-trisphosphate receptor-like protein A",
+      "original_query": "found that IplA localized to cytoplasmic vesicular membranes and to a lesser extent to the plasma membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22375061"
       ]
     },
     {
@@ -50,6 +56,12 @@
       ],
       "pmids": [
         "10369671"
+      ],
+      "id": "987",
+      "body": "phgA null cells are sensitive to hypo-osmotic stress and have enlarged contractile vacuoles which fail to discharge water because the vacuoles do not fuse with the plasma membrane.\nPhga: rabGAP, Rab-GTPase-TBC domain family protein, Drainin",
+      "original_query": "phgA null cells are sensitive to hypo-osmotic stress and have enlarged contractile vacuoles which fail to discharge water because the vacuoles do not fuse with the plasma membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10369671"
       ]
     },
     {
@@ -76,6 +88,12 @@
       ],
       "pmids": [
         "26927887"
+      ],
+      "id": "941",
+      "body": "noxA / noxB / noxC triple null mutants release very few DNA nets and fail to clear bacteria from the slugs.\nNoxb: gp91phox, flavocytochrome b large subunit, superoxide-generating NADPH oxidase flavocytochrome B ||| Noxa: gp91phox, flavocytochrome b large subunit, superoxide-generating NADPH oxidase flavocytochrome A ||| Noxc: gp91phox, flavocytochrome b large subunit, superoxide-generating NADPH oxidase flavocytochrome C",
+      "original_query": "noxA / noxB / noxC triple null mutants release very few DNA nets and fail to clear bacteria from the slugs.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26927887"
       ]
     },
     {
@@ -102,6 +120,12 @@
       ],
       "pmids": [
         "11973270"
+      ],
+      "id": "750",
+      "body": "In the absence of a functional ampA gene, cells prematurely specify as prespore cells, and prestalk cell differentiation and migration are delayed anatomical structure morphogenesis.\nAmpa: D11, pegA, prestalk D11 protein precursor, adhesion modulation protein A",
+      "original_query": "In the absence of a functional ampA gene, cells prematurely specify as prespore cells, and prestalk cell differentiation and migration are delayed anatomical structure morphogenesis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11973270"
       ]
     },
     {
@@ -179,6 +203,15 @@
         "15534002",
         "15352238",
         "10192918"
+      ],
+      "id": "1012",
+      "body": "PKB can bind to PIP2 and PIP3 through its N-terminal PH-domain and become localized to the membrane at the front of migrating cells.\nPkb: pkbA, Akt, pkfC, DK1, AKT/PKB protein kinase PkbA ||| At: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "PKB can bind to PIP2 and PIP3 through its N-terminal PH-domain and become localized to the membrane at the front of migrating cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11553719",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15534002",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15352238",
+        "http://www.ncbi.nlm.nih.gov/pubmed/10192918"
       ]
     },
     {
@@ -222,6 +255,13 @@
       "pmids": [
         "15131307",
         "9843585"
+      ],
+      "id": "132",
+      "body": "As a result of this circuit and the activation of adenylyl cyclase when cAMP binds to CAR1, cAMP oscillates with a period of about 6 minutes during early aggregation.\n6: argC, ARG5, bifunctional mitochondrial protein ArgC",
+      "original_query": "As a result of this circuit and the activation of adenylyl cyclase when cAMP binds to CAR1, cAMP oscillates with a period of about 6 minutes during early aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15131307",
+        "http://www.ncbi.nlm.nih.gov/pubmed/9843585"
       ]
     },
     {
@@ -248,6 +288,12 @@
       ],
       "pmids": [
         "12456012"
+      ],
+      "id": "754",
+      "body": "In the central region, their nucleotide sequences are more than 95% identical.",
+      "original_query": "In the central region, their nucleotide sequences are more than 95% identical.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12456012"
       ]
     },
     {
@@ -274,6 +320,12 @@
       ],
       "pmids": [
         "11598188"
+      ],
+      "id": "1551",
+      "body": "These results suggest that like its human counterpart, DdAIF is involve in mitochondrial organization and participates in the cell death pathway.\nDdaif: aif, aifA, apoptosis inducing factor",
+      "original_query": "These results suggest that like its human counterpart, DdAIF is involve in mitochondrial organization and participates in the cell death pathway.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11598188"
       ]
     },
     {
@@ -300,6 +352,12 @@
       ],
       "pmids": [
         "12421828"
+      ],
+      "id": "611",
+      "body": "However, in ponA null cells, p80 adhesion complexes are elongated and have an aberrant length and positioning compared to that in wt cells.\nP80: endosomal membrane protein, putative copper transporter p80 ||| Pona: gp17, actin binding protein, ponticulin A",
+      "original_query": "However, in ponA null cells, p80 adhesion complexes are elongated and have an aberrant length and positioning compared to that in wt cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12421828"
       ]
     },
     {
@@ -326,6 +384,12 @@
       ],
       "pmids": [
         "18216168"
+      ],
+      "id": "780",
+      "body": "iptA encodes the condensing enzyme while iptB iptB and iptC iptC-1, iptC-2 encode homologs of transferases that modify tRNA.\nIptc-1: putative isopentenyltransferase C ||| Iptc-2: putative isopentenyltransferase C ||| Ipta: isopentenyltransferase, isopentenylpyrophosphate (IPP) transferase, adenylate dimethylallyltransferase ||| Iptb: putative isopentenyltransferase, putative isopentenylpyrophosphate (IPP) transferase",
+      "original_query": "iptA encodes the condensing enzyme while iptB iptB and iptC iptC-1, iptC-2 encode homologs of transferases that modify tRNA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18216168"
       ]
     },
     {
@@ -352,6 +416,12 @@
       ],
       "pmids": [
         "22081140"
+      ],
+      "id": "1642",
+      "body": "To investigate the minimal requirements for chemotaxis, obtained quantitative data on Ras activation and chemotaxis in cAMP and folic acid gradients using a variety of Dictyostelium mutant cell lines from the four signaling pathways that contribute to chemotaxis: PI3K, TorC2, PLA2, and sGC.\nSgc: sgcA, guanylyl cyclase ||| Pla2: plaA, phospholipase A2 ||| Ras: rasD, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "To investigate the minimal requirements for chemotaxis, obtained quantitative data on Ras activation and chemotaxis in cAMP and folic acid gradients using a variety of Dictyostelium mutant cell lines from the four signaling pathways that contribute to chemotaxis: PI3K, TorC2, PLA2, and sGC.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22081140"
       ]
     },
     {
@@ -395,6 +465,13 @@
       "pmids": [
         "22081140",
         "16079174"
+      ],
+      "id": "834",
+      "body": "Lst8, along with RipA ripA, PiaA piaA, and TOR tor, make up the TORC2 complex that plays a critical role in chemotaxis and relay of the cAMP signal.\nPiaa: DG1117, amiA, pia, rictor, cytosolic regulator of adenylyl cyclase PiaA ||| Tor: FRAP family protein kinase Tor, serine/threonine protein kinase Tor, TORC1 protein kinase Tor, TORC2 protein kinase Tor, TOR complex protein kinase Tor ||| Ripa: sin1, rip3, Ras-interacting protein RipA, TORC2 protein RipA, TOR complex 2 protein RipA ||| Lst8: WD40 repeat-containing protein, TORC2 protein Lst8, TOR complex 2 protein Lst8",
+      "original_query": "Lst8, along with RipA ripA, PiaA piaA, and TOR tor, make up the TORC2 complex that plays a critical role in chemotaxis and relay of the cAMP signal.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22081140",
+        "http://www.ncbi.nlm.nih.gov/pubmed/16079174"
       ]
     },
     {
@@ -421,6 +498,12 @@
       ],
       "pmids": [
         "21256841"
+      ],
+      "id": "215",
+      "body": "Cells in which sr has been knocked out still produce a small amount of pteridine L-erythro-biopterin and D-threo-biopterin, possibly through a different pathway involving aldehyde reductase.\nSr: spr, sepiapterin reductase",
+      "original_query": "Cells in which sr has been knocked out still produce a small amount of pteridine L-erythro-biopterin and D-threo-biopterin, possibly through a different pathway involving aldehyde reductase.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21256841"
       ]
     },
     {
@@ -464,6 +547,13 @@
       "pmids": [
         "22323285",
         "18636095"
+      ],
+      "id": "1543",
+      "body": "These results suggest that Drainin is essential for correct localization of the exocyst complex and Rab8a for CV discharge..\nRab8a: sas1, sasA, Rab GTPase 8A",
+      "original_query": "These results suggest that Drainin is essential for correct localization of the exocyst complex and Rab8a for CV discharge..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22323285",
+        "http://www.ncbi.nlm.nih.gov/pubmed/18636095"
       ]
     },
     {
@@ -490,6 +580,12 @@
       ],
       "pmids": [
         "11777934"
+      ],
+      "id": "371",
+      "body": "Double mutants lacking both GCA and sGC have no measurable cGMP at any stage of development and yet show few defects in growth or development.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Gca: GC, guanylyl cyclase ||| Sgc: sgcA, guanylyl cyclase",
+      "original_query": "Double mutants lacking both GCA and sGC have no measurable cGMP at any stage of development and yet show few defects in growth or development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11777934"
       ]
     },
     {
@@ -516,6 +612,12 @@
       ],
       "pmids": [
         "1348970"
+      ],
+      "id": "47",
+      "body": "acaA encodes a large protein ACA that is responsible for most of the adenylyl cyclase activity during aggregation.\nAcaa: adenylyl cyclase, adenylate cyclase A",
+      "original_query": "acaA encodes a large protein ACA that is responsible for most of the adenylyl cyclase activity during aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1348970"
       ]
     },
     {
@@ -542,6 +644,12 @@
       ],
       "pmids": [
         "25887420"
+      ],
+      "id": "871",
+      "body": "mRNA starts to accumulate from dcsA after aggregation is complete T=11 hrs and reaches a peak during culmination at T=20 hrs.\nDcsa: UDP-glucose:1, 4-beta-D-glucan 4-beta-D-glucosyltransferase, cellulose synthetase, cellulose synthase ||| At: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "mRNA starts to accumulate from dcsA after aggregation is complete T=11 hrs and reaches a peak during culmination at T=20 hrs.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25887420"
       ]
     },
     {
@@ -568,6 +676,12 @@
       ],
       "pmids": [
         "26940518"
+      ],
+      "id": "1080",
+      "body": "racE plays an important role in signaling networks that regulate cytokinesis, chemotaxis, and organization of the cortical cytoskeleton to maintain proper cortical integrity.\nRace: Rho GTPase RacE",
+      "original_query": "racE plays an important role in signaling networks that regulate cytokinesis, chemotaxis, and organization of the cortical cytoskeleton to maintain proper cortical integrity.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26940518"
       ]
     },
     {
@@ -611,6 +725,13 @@
       "pmids": [
         "15546981",
         "22379107"
+      ],
+      "id": "803",
+      "body": "It was suggested that Kif12 might transport vesicles containing myosin II along mitotic extranuclear microtubules towards the center of the cell to be inserted into the cleavage furrow membrane.\nKif12: kinesin-6, kinesin family member 12",
+      "original_query": "It was suggested that Kif12 might transport vesicles containing myosin II along mitotic extranuclear microtubules towards the center of the cell to be inserted into the cleavage furrow membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15546981",
+        "http://www.ncbi.nlm.nih.gov/pubmed/22379107"
       ]
     },
     {
@@ -671,6 +792,14 @@
         "15534002",
         "16885420",
         "29626371"
+      ],
+      "id": "1118",
+      "body": "RasG also regulates the plasma membrane recruitment and activation of downstream effectors including Akt/PKB..\nAkt: pkbA, pkfC, DK1, AktPKB, AKT/PKB protein kinase PkbA ||| Rasg: ddRASG, Ras GTPase RasG",
+      "original_query": "RasG also regulates the plasma membrane recruitment and activation of downstream effectors including Akt/PKB..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15534002",
+        "http://www.ncbi.nlm.nih.gov/pubmed/16885420",
+        "http://www.ncbi.nlm.nih.gov/pubmed/29626371"
       ]
     },
     {
@@ -697,6 +826,12 @@
       ],
       "pmids": [
         "9582328"
+      ],
+      "id": "1174",
+      "body": "Similarity is even higher when the N-terminal catalyic domains are compared 75% / 84%, respectively.",
+      "original_query": "Similarity is even higher when the N-terminal catalyic domains are compared 75% / 84%, respectively.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9582328"
       ]
     },
     {
@@ -723,6 +858,12 @@
       ],
       "pmids": [
         "7691416"
+      ],
+      "id": "1505",
+      "body": "These results are consistent with those in earlier studies, here cells that contained myosin that is nonphosphorylatable on MHCK A target sites 3XALA cells, or which is constantly pseudophosphorylated through introduction of aspartate residues, 3XASP cells were investigated.\nMhck: dgkA, MHC-PKC, diacylglycerol kinase",
+      "original_query": "These results are consistent with those in earlier studies, here cells that contained myosin that is nonphosphorylatable on MHCK A target sites 3XALA cells, or which is constantly pseudophosphorylated through introduction of aspartate residues, 3XASP cells were investigated.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/7691416"
       ]
     },
     {
@@ -749,6 +890,12 @@
       ],
       "pmids": [
         "9177484"
+      ],
+      "id": "1467",
+      "body": "The top2mt gene encodes a DNA topoisomerase II DNA topoisomerase ATP-hydrolyzing activity cloned based on its similarity to those of animals and other eukaryotes.\nTop2mt: topA, DNA topoisomerase II",
+      "original_query": "The top2mt gene encodes a DNA topoisomerase II DNA topoisomerase ATP-hydrolyzing activity cloned based on its similarity to those of animals and other eukaryotes.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9177484"
       ]
     },
     {
@@ -775,6 +922,12 @@
       ],
       "pmids": [
         "26317626"
+      ],
+      "id": "530",
+      "body": "gefB null cells extend blebs more frequently than wt cells.\nGefb: RasGEFB, RasGEF, Ras guanine nucleotide exchange factor B",
+      "original_query": "gefB null cells extend blebs more frequently than wt cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26317626"
       ]
     },
     {
@@ -818,6 +971,13 @@
       "pmids": [
         "2519618",
         "2762320"
+      ],
+      "id": "905",
+      "body": "myoB encodes myosin IB which has an N-terminal 45 kDa motor domain with an actin-activated ATPase and a carboxy terminal domain that is rich in glycine, proline and alanine and can bind to filamentous actin.\nMyob: DMIB, abmB, myoIB, myosin-1B, myosin IB heavy chain",
+      "original_query": "myoB encodes myosin IB which has an N-terminal 45 kDa motor domain with an actin-activated ATPase and a carboxy terminal domain that is rich in glycine, proline and alanine and can bind to filamentous actin.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/2519618",
+        "http://www.ncbi.nlm.nih.gov/pubmed/2762320"
       ]
     },
     {
@@ -844,6 +1004,12 @@
       ],
       "pmids": [
         "18636095"
+      ],
+      "id": "1054",
+      "body": "Rab11C localizes to the contractile vacuole suggesting that it is a regulator of the contractile vacuole, however, overexpression of Rab11C only partially suppresses the large vacuole phenotype in disgorgin null cells unpublished data.\nRab11c: Rab GTPase 11C ||| Disgorgin: dsgg, rabGAP, GTPase activating protein (GAP) Dsgg, Rab GTPase-activating protein Dsgg",
+      "original_query": "Rab11C localizes to the contractile vacuole suggesting that it is a regulator of the contractile vacuole, however, overexpression of Rab11C only partially suppresses the large vacuole phenotype in disgorgin null cells unpublished data.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18636095"
       ]
     },
     {
@@ -870,6 +1036,12 @@
       ],
       "pmids": [
         "18430243"
+      ],
+      "id": "221",
+      "body": "Cells lacking Kif10 grow normally and there are no obvious morphological defects in mitotic microtubule arrays but the microtubule-organizing center MTOC appears slightly aberrant.\nKif10: kinesin-8, kinesin family member 10",
+      "original_query": "Cells lacking Kif10 grow normally and there are no obvious morphological defects in mitotic microtubule arrays but the microtubule-organizing center MTOC appears slightly aberrant.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18430243"
       ]
     },
     {
@@ -947,6 +1119,15 @@
         "18635356",
         "20660630",
         "27172998"
+      ],
+      "id": "54",
+      "body": "Activated RasC rasC binds to the catalytic domain of tor and stimulates TORC2 to phosphorylate downstream protein kinases, PKB pkbA and PKBR1 pkgB, as well as to activate adenylyl cyclase acaA.\nPkb: Akt, pkfC, DK1, AktPKB, AKT/PKB protein kinase PkbA ||| Rasc: Ras GTPase RasC ||| Acaa: adenylyl cyclase, ACA, adenylate cyclase A ||| Tor: FRAP family protein kinase Tor, serine/threonine protein kinase Tor, TORC1 protein kinase Tor, TORC2 protein kinase Tor, TOR complex protein kinase Tor ||| Pkbr1: pkfA, PK2, DK2, PKBR-1, SGK family protein kinase PkgB",
+      "original_query": "Activated RasC rasC binds to the catalytic domain of tor and stimulates TORC2 to phosphorylate downstream protein kinases, PKB pkbA and PKBR1 pkgB, as well as to activate adenylyl cyclase acaA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19763972",
+        "http://www.ncbi.nlm.nih.gov/pubmed/18635356",
+        "http://www.ncbi.nlm.nih.gov/pubmed/20660630",
+        "http://www.ncbi.nlm.nih.gov/pubmed/27172998"
       ]
     },
     {
@@ -973,6 +1154,12 @@
       ],
       "pmids": [
         "30194235"
+      ],
+      "id": "719",
+      "body": "In cells lacking Dd5P4, depletion of PI3, 4P2 leads to increased Ras activity, cell spreading and aberrant migratory behavior.\nDd5p4: PI5P4, RacGAP, RhoGAP domain-containing protein, inositol 5-phosphatase 4 ||| Ras: rasD, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "In cells lacking Dd5P4, depletion of PI3, 4P2 leads to increased Ras activity, cell spreading and aberrant migratory behavior.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/30194235"
       ]
     },
     {
@@ -999,6 +1186,12 @@
       ],
       "pmids": [
         "12626495"
+      ],
+      "id": "1701",
+      "body": "Wild-type cells in a chimaera do not rescue the developmental defects, showing that the atg5 mutation is autonomous.\nAtg5: APG5, autophagy protein 5",
+      "original_query": "Wild-type cells in a chimaera do not rescue the developmental defects, showing that the atg5 mutation is autonomous.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12626495"
       ]
     },
     {
@@ -1025,6 +1218,12 @@
       ],
       "pmids": [
         "26074248"
+      ],
+      "id": "59",
+      "body": "Additional bioinformatic analysis identified two additional subunits of the Dictyostelium TOM complex, tom20 and tom70.\nTom70: translocase of outer mitochondrial membrane 70 ||| Tom20: translocase of outer mitochondrial membrane 20",
+      "original_query": "Additional bioinformatic analysis identified two additional subunits of the Dictyostelium TOM complex, tom20 and tom70.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26074248"
       ]
     },
     {
@@ -1068,6 +1267,13 @@
       "pmids": [
         "16759735",
         "29135990"
+      ],
+      "id": "1006",
+      "body": "PKA pkaC, pkaR also mediates the response of several xenobiotic compounds, including valproic acid, a treatment for bipolar disorder, and curcumin.\nPkar: rdeC, cAK, cAMP-dependent protein kinase A, regulatory subunit ||| Pkac: pkacat, DdPK3, DdPK2, PKA-C, cAMP-dependent protein kinase A, catalytic subunit",
+      "original_query": "PKA pkaC, pkaR also mediates the response of several xenobiotic compounds, including valproic acid, a treatment for bipolar disorder, and curcumin.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16759735",
+        "http://www.ncbi.nlm.nih.gov/pubmed/29135990"
       ]
     },
     {
@@ -1128,6 +1334,14 @@
         "2519618",
         "22367211",
         "2797149"
+      ],
+      "id": "906",
+      "body": "MyoB is non-filamentous and concentrates in F-actin structures of anterior pseudopods of polarized cells where it may move actin filaments relative to the membrane.\nMyob: DMIB, abmB, myoIB, myosin-1B, myosin IB heavy chain",
+      "original_query": "MyoB is non-filamentous and concentrates in F-actin structures of anterior pseudopods of polarized cells where it may move actin filaments relative to the membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/2519618",
+        "http://www.ncbi.nlm.nih.gov/pubmed/22367211",
+        "http://www.ncbi.nlm.nih.gov/pubmed/2797149"
       ]
     },
     {
@@ -1154,6 +1368,12 @@
       ],
       "pmids": [
         "21193547"
+      ],
+      "id": "313",
+      "body": "DetA is involved in cell type specification during development, and possibly is responsible for the degradation of a repressor of prestalk genes, although further evidence would be necessary for this conclusion.\nDeta: DET1, putative chromatin-binding protein",
+      "original_query": "DetA is involved in cell type specification during development, and possibly is responsible for the degradation of a repressor of prestalk genes, although further evidence would be necessary for this conclusion.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21193547"
       ]
     },
     {
@@ -1180,6 +1400,12 @@
       ],
       "pmids": [
         "21148389"
+      ],
+      "id": "847",
+      "body": "MatD plays a possible role in gamete fusion.",
+      "original_query": "MatD plays a possible role in gamete fusion.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21148389"
       ]
     },
     {
@@ -1206,6 +1432,12 @@
       ],
       "pmids": [
         "28819044"
+      ],
+      "id": "813",
+      "body": "Knockdown of DJ-1 also causes a small but significant activation of mitochondrial respiratory function, while overexpression inhibits mitochondrial activity, revealing that reduced levels of deeJ do not phenocopy mitochondrial dysfunction.\nDj-1: PARK7, DJ-1/ThiJ/PfpI family protein, peptidase C56 family protein, protein DJ-1",
+      "original_query": "Knockdown of DJ-1 also causes a small but significant activation of mitochondrial respiratory function, while overexpression inhibits mitochondrial activity, revealing that reduced levels of deeJ do not phenocopy mitochondrial dysfunction.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/28819044"
       ]
     },
     {
@@ -1232,6 +1464,12 @@
       ],
       "pmids": [
         "21527280"
+      ],
+      "id": "156",
+      "body": "aureus from either erkB erkB null or tirA null cells, suggesting that the response to LPS is mediated through both TirA and ErkB.\nErkb: dagC, ERK2, extracellular signal-regulated kinase 2 ||| Tira: Toll-Interleukin (TIR) receptor domain-containing protein",
+      "original_query": "aureus from either erkB erkB null or tirA null cells, suggesting that the response to LPS is mediated through both TirA and ErkB.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21527280"
       ]
     },
     {
@@ -1258,6 +1496,12 @@
       ],
       "pmids": [
         "7844154"
+      ],
+      "id": "420",
+      "body": "erkB encodes extracellular signal-regulated kinase 2 ERK2, a MAP kinase that is essential for aggregation and cAMP relay.\nErkb: dagC, extracellular signal-regulated kinase 2",
+      "original_query": "erkB encodes extracellular signal-regulated kinase 2 ERK2, a MAP kinase that is essential for aggregation and cAMP relay.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/7844154"
       ]
     },
     {
@@ -1284,6 +1528,12 @@
       ],
       "pmids": [
         "18216168"
+      ],
+      "id": "381",
+      "body": "During culmination cells synthesize and release the cytokinin, discadenine, that stimulates the accumulation of cAMP in a manner dependent on acrA and dhkB dhkB but independent of rdeA rdeA that encodes the small phosphorelay protein of two component systems.\nDhkb: histidine kinase B ||| Rdea: Hpt domain-containing protein, histidine-containing phosphotransfer domain-containing protein, H2 module protein",
+      "original_query": "During culmination cells synthesize and release the cytokinin, discadenine, that stimulates the accumulation of cAMP in a manner dependent on acrA and dhkB dhkB but independent of rdeA rdeA that encodes the small phosphorelay protein of two component systems.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18216168"
       ]
     },
     {
@@ -1310,6 +1560,12 @@
       ],
       "pmids": [
         "12388544"
+      ],
+      "id": "1680",
+      "body": "VasP localizes to the leading edge in migrating cells and to the tips of filopodia.\nVasp: vasodilator-stimulated phosphoprotein, actin filament elongation protein VasP",
+      "original_query": "VasP localizes to the leading edge in migrating cells and to the tips of filopodia.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12388544"
       ]
     },
     {
@@ -1336,6 +1592,12 @@
       ],
       "pmids": [
         "17659086"
+      ],
+      "id": "777",
+      "body": "Interruption of the mkpA gene by high-throughput insertional mutagenesis revealed that the mutant cells were defective in cAMP wave formation and aggregation.\nWave: scrA, SCAR, SCAR1 ||| Mkpa: DG1121, putative protein tyrosine phosphatase, dual specificity, gelsolin domain protein, MAP kinase phosphatase MkpA",
+      "original_query": "Interruption of the mkpA gene by high-throughput insertional mutagenesis revealed that the mutant cells were defective in cAMP wave formation and aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/17659086"
       ]
     },
     {
@@ -1362,6 +1624,12 @@
       ],
       "pmids": [
         "26906738"
+      ],
+      "id": "1220",
+      "body": "Taken together, these results indicate that fAR1 controls both chemotaxis toward folic acid and phagocytosis of bacterial particles and that it is required for folic acid-induced signaling events..\nFar1: grlL, G-protein-coupled receptor (GPCR) family 3 protein 11, folic acid receptor 1",
+      "original_query": "Taken together, these results indicate that fAR1 controls both chemotaxis toward folic acid and phagocytosis of bacterial particles and that it is required for folic acid-induced signaling events..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26906738"
       ]
     },
     {
@@ -1388,6 +1656,12 @@
       ],
       "pmids": [
         "12933827"
+      ],
+      "id": "934",
+      "body": "neoformans replicates as well in rtoA- mutants as in wild type cells.",
+      "original_query": "neoformans replicates as well in rtoA- mutants as in wild type cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12933827"
       ]
     },
     {
@@ -1414,6 +1688,12 @@
       ],
       "pmids": [
         "20940261"
+      ],
+      "id": "274",
+      "body": "cosA- cells exhibit chemotactic and developmental defects, which have been further shown to be linked to a role for costars in modulating actin cystoskeletal dynamics and cell motility.",
+      "original_query": "cosA- cells exhibit chemotactic and developmental defects, which have been further shown to be linked to a role for costars in modulating actin cystoskeletal dynamics and cell motility.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/20940261"
       ]
     },
     {
@@ -1440,6 +1720,12 @@
       ],
       "pmids": [
         "15143344"
+      ],
+      "id": "1120",
+      "body": "rasG is activated by cAMP, and this activation does not occur in a number of cAMP signaling mutants..\nRasg: ddRASG, Ras GTPase RasG",
+      "original_query": "rasG is activated by cAMP, and this activation does not occur in a number of cAMP signaling mutants..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15143344"
       ]
     },
     {
@@ -1466,6 +1752,12 @@
       ],
       "pmids": [
         "21300429"
+      ],
+      "id": "478",
+      "body": "found that mkpB is expressed in all the cells of developmental structures, but its mRNA is enriched in cells with a distribution typical of anterior-like cells.\nMkpb: mkpB-1, dual-specificity protein phosphatase MkpB",
+      "original_query": "found that mkpB is expressed in all the cells of developmental structures, but its mRNA is enriched in cells with a distribution typical of anterior-like cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21300429"
       ]
     },
     {
@@ -1509,6 +1801,13 @@
       "pmids": [
         "10556070",
         "1348970"
+      ],
+      "id": "1484",
+      "body": "There are two other adenylyl cyclase genes, acrA and acgA, but they are not essential for chemotaxis, they function later in development.\nAcga: ACG, adenylate cyclase G",
+      "original_query": "There are two other adenylyl cyclase genes, acrA and acgA, but they are not essential for chemotaxis, they function later in development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10556070",
+        "http://www.ncbi.nlm.nih.gov/pubmed/1348970"
       ]
     },
     {
@@ -1535,6 +1834,12 @@
       ],
       "pmids": [
         "25887420"
+      ],
+      "id": "1242",
+      "body": "tgrB1 and tgrC1 are coordinately transcribed between 2 and 8 hours of development.\nTgrc1: lagC1, GP150, lagC, Tiger protein C1 ||| Tgrb1: lagB1, Tiger protein B1",
+      "original_query": "tgrB1 and tgrC1 are coordinately transcribed between 2 and 8 hours of development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25887420"
       ]
     },
     {
@@ -1578,6 +1883,13 @@
       "pmids": [
         "17584488",
         "26940518"
+      ],
+      "id": "1519",
+      "body": "These results indicate that GxcDD is involved in Rac signaling pathways regulating streaming and development.\nGxcdd: RacGEF, putative Rac guanine nucleotide exchange factor DD",
+      "original_query": "These results indicate that GxcDD is involved in Rac signaling pathways regulating streaming and development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/17584488",
+        "http://www.ncbi.nlm.nih.gov/pubmed/26940518"
       ]
     },
     {
@@ -1621,6 +1933,13 @@
       "pmids": [
         "26940518",
         "24248334"
+      ],
+      "id": "1550",
+      "body": "These results suggest that GxcT has GEF activity toward racE, and possibly toward rac1C, racC and racF1, and that GxcT and RacE are involved in a signaling pathway regulating the stability and orientation of spatial sensing during chemotaxis.\nRacf1: Rho GTPase RacF1 ||| Gxct: RacGEF, Rac guanine nucleotide exchange factor T ||| Race: Rho GTPase RacE ||| Rac1c: Rho GTPase Rac1C ||| Racc: Rho GTPase RacC",
+      "original_query": "These results suggest that GxcT has GEF activity toward racE, and possibly toward rac1C, racC and racF1, and that GxcT and RacE are involved in a signaling pathway regulating the stability and orientation of spatial sensing during chemotaxis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26940518",
+        "http://www.ncbi.nlm.nih.gov/pubmed/24248334"
       ]
     },
     {
@@ -1647,6 +1966,12 @@
       ],
       "pmids": [
         "31357517"
+      ],
+      "id": "143",
+      "body": "Taken together, these results suggest that at the cleavage furrow, the DlpA-DlpB heterooligomer associates with and stabilizes actin filaments by suppressing the extent of filament fragmentation in the contractile rings.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "Taken together, these results suggest that at the cleavage furrow, the DlpA-DlpB heterooligomer associates with and stabilizes actin filaments by suppressing the extent of filament fragmentation in the contractile rings.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/31357517"
       ]
     },
     {
@@ -1690,6 +2015,13 @@
       "pmids": [
         "14686953",
         "17951519"
+      ],
+      "id": "1264",
+      "body": "The amtA null mutant forms small aggregates and small fruiting bodies.\nAmta: ammonium transporter 1, ammonium transporter A",
+      "original_query": "The amtA null mutant forms small aggregates and small fruiting bodies.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/14686953",
+        "http://www.ncbi.nlm.nih.gov/pubmed/17951519"
       ]
     },
     {
@@ -1716,6 +2048,12 @@
       ],
       "pmids": [
         "11493573"
+      ],
+      "id": "1606",
+      "body": "This suggests a cell-autonomousrole for CRTF during late development that is separatefrom its capacity to control carA expression.\nCrtf: transcription factor",
+      "original_query": "This suggests a cell-autonomousrole for CRTF during late development that is separatefrom its capacity to control carA expression.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11493573"
       ]
     },
     {
@@ -1844,6 +2182,18 @@
         "24347642",
         "15908944",
         "15509655"
+      ],
+      "id": "1071",
+      "body": "These include: the protein kinase PakA pakA, PakC pakC, Lissencephaly-related protein LIS1 lis1, diaphanous-related formin H forH, the myosin heavy chain kinase PakB pakB pakB, coronin A corA and WASP wasA.\nCora: coronin ||| Pakc: p21-activated protein kinase, putative protein serine/threonine kinase, pleckstrin homology (PH) domain-containing protein, STE20 family protein kinase, PH domain-containing protein, protein kinase, STE group, PAKA subfamily protein kinase ||| Paka: dpak1, DPAKa, serine/threonine-protein kinase PakA ||| Pakb: mihck, Ddpak, myosin heavy chain kinase PakB ||| Forh: dDia2, drf2, diaphanous related formin H, formin H",
+      "original_query": "These include: the protein kinase PakA pakA, PakC pakC, Lissencephaly-related protein LIS1 lis1, diaphanous-related formin H forH, the myosin heavy chain kinase PakB pakB pakB, coronin A corA and WASP wasA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/31786060",
+        "http://www.ncbi.nlm.nih.gov/pubmed/12952073",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15800059",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15470506",
+        "http://www.ncbi.nlm.nih.gov/pubmed/24347642",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15908944",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15509655"
       ]
     },
     {
@@ -1870,6 +2220,12 @@
       ],
       "pmids": [
         "19285397"
+      ],
+      "id": "1244",
+      "body": "tgrB1 is a member of a family of genes with a high degree of natural polymorphism.\nTgrb1: lagB1, Tiger protein B1",
+      "original_query": "tgrB1 is a member of a family of genes with a high degree of natural polymorphism.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19285397"
       ]
     },
     {
@@ -1896,6 +2252,12 @@
       ],
       "pmids": [
         "23369714"
+      ],
+      "id": "454",
+      "body": "FAM21 mediates recycling of the WASH complex from post-lysosomes back to acidic lysosomes and recycling is driven by the interaction of FAM21 with capping protein.\nFam21: WASH complex subunit FAM21 ||| Wash: wshA, WAS protein family homolog",
+      "original_query": "FAM21 mediates recycling of the WASH complex from post-lysosomes back to acidic lysosomes and recycling is driven by the interaction of FAM21 with capping protein.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23369714"
       ]
     },
     {
@@ -1922,6 +2284,12 @@
       ],
       "pmids": [
         "15332174"
+      ],
+      "id": "1316",
+      "body": "The effects ofbisphosphonate drugs on Dictyostelium resemble the effects on osteoclasts, making Dictyostelium anideal system in which to study bisphosphonates, particularly because osteoclasts are difficult to culture.",
+      "original_query": "The effects ofbisphosphonate drugs on Dictyostelium resemble the effects on osteoclasts, making Dictyostelium anideal system in which to study bisphosphonates, particularly because osteoclasts are difficult to culture.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15332174"
       ]
     },
     {
@@ -1948,6 +2316,12 @@
       ],
       "pmids": [
         "6301681"
+      ],
+      "id": "2",
+      "body": "A cDNA clone derived from psvA mRNA, referred to as EB4, was one of the first prespore specific probes.\nPsva: SP35, prespore vesicle protein",
+      "original_query": "A cDNA clone derived from psvA mRNA, referred to as EB4, was one of the first prespore specific probes.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/6301681"
       ]
     },
     {
@@ -1991,6 +2365,13 @@
       "pmids": [
         "6087882",
         "2985583"
+      ],
+      "id": "621",
+      "body": "However, the lysine at position 115 is not modified by trimethylation as it is in mammals but is conjugated to ubiquitin.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "However, the lysine at position 115 is not modified by trimethylation as it is in mammals but is conjugated to ubiquitin.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/6087882",
+        "http://www.ncbi.nlm.nih.gov/pubmed/2985583"
       ]
     },
     {
@@ -2017,6 +2398,12 @@
       ],
       "pmids": [
         "24390142"
+      ],
+      "id": "1439",
+      "body": "The Retinoblastoma protein gene rblA has been implicated in AprA function as recombinant AprA inhibits the proliferation of wild type cells, but not that of rblA- cells, and RblA is required for chemorepulsion.\nApra: Ncf60, 60T, autocrine proliferation repressor AprA ||| Rbla: Rb, retinoblastoma-like protein",
+      "original_query": "The Retinoblastoma protein gene rblA has been implicated in AprA function as recombinant AprA inhibits the proliferation of wild type cells, but not that of rblA- cells, and RblA is required for chemorepulsion.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24390142"
       ]
     },
     {
@@ -2043,6 +2430,12 @@
       ],
       "pmids": [
         "11447112"
+      ],
+      "id": "140",
+      "body": "Assembly of this complex is necessary for the recruitment of cortexillin to the midzone of a dividing cell and for the formation of a cleavage furrow during cytokinesis.",
+      "original_query": "Assembly of this complex is necessary for the recruitment of cortexillin to the midzone of a dividing cell and for the formation of a cleavage furrow during cytokinesis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11447112"
       ]
     },
     {
@@ -2069,6 +2462,12 @@
       ],
       "pmids": [
         "7813801"
+      ],
+      "id": "1357",
+      "body": "The major spore coat proteins are necessary for the integrity of the spore coat.",
+      "original_query": "The major spore coat proteins are necessary for the integrity of the spore coat.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/7813801"
       ]
     },
     {
@@ -2095,6 +2494,12 @@
       ],
       "pmids": [
         "18636095"
+      ],
+      "id": "9",
+      "body": "A double mutant in disgorgin and lvsA suppresses the large contractile vacuole phenotype of disgorgin-, while overexpression of GFP-lvsA enhances it, suggesting lvsA is involved in the organization of the contractile vacuole.\nLvsa: BEACH domain-containing protein ||| Disgorgin: dsgg, rabGAP, GTPase activating protein (GAP) Dsgg, Rab GTPase-activating protein Dsgg",
+      "original_query": "A double mutant in disgorgin and lvsA suppresses the large contractile vacuole phenotype of disgorgin-, while overexpression of GFP-lvsA enhances it, suggesting lvsA is involved in the organization of the contractile vacuole.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18636095"
       ]
     },
     {
@@ -2121,6 +2526,12 @@
       ],
       "pmids": [
         "24248334"
+      ],
+      "id": "720",
+      "body": "In cells lacking RacE or the RacGEF GxcT gxcT, the accuracy of directional sensing is reduced, and pseudopods are abnormally extended from the lateral sides of migrating cells resulting in impaired chemotaxis.\nGxct: Rac guanine nucleotide exchange factor T ||| Race: Rho GTPase RacE",
+      "original_query": "In cells lacking RacE or the RacGEF GxcT gxcT, the accuracy of directional sensing is reduced, and pseudopods are abnormally extended from the lateral sides of migrating cells resulting in impaired chemotaxis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24248334"
       ]
     },
     {
@@ -2147,6 +2558,12 @@
       ],
       "pmids": [
         "19176583"
+      ],
+      "id": "210",
+      "body": "Cells carrying null mutations in gpaD or grlA failed to generate SDF-2.\nGrla: G-protein-coupled receptor (GPCR) family 3 protein 1 ||| Gpad: Ga4, Galpha4, gpa4, guanine nucleotide-binding protein alpha-4 subunit, G-protein subunit alpha 4",
+      "original_query": "Cells carrying null mutations in gpaD or grlA failed to generate SDF-2.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19176583"
       ]
     },
     {
@@ -2173,6 +2590,12 @@
       ],
       "pmids": [
         "16762449"
+      ],
+      "id": "432",
+      "body": "Expression of Annexin C2 in annexin C1 nxnA nxnA null cells fails to rescue nxnA null developmental defects, indicating that annexin C1 and annexin C2 do not have redundant functions in Dictyostelium.\nNxna: ANN7, DdANN7, synexin, quit3, annexin VII",
+      "original_query": "Expression of Annexin C2 in annexin C1 nxnA nxnA null cells fails to rescue nxnA null developmental defects, indicating that annexin C1 and annexin C2 do not have redundant functions in Dictyostelium.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16762449"
       ]
     },
     {
@@ -2199,6 +2622,12 @@
       ],
       "pmids": [
         "22847424"
+      ],
+      "id": "1672",
+      "body": "Using a forward genetic screen, identified the Ste20 kinase KrsB, a homolog of tumor suppressors Hippo and MST1/2, as a negative regulator of cell spreading and substrate attachment.\nKrsb: Krs2, STE20 family protein kinase KrsB",
+      "original_query": "Using a forward genetic screen, identified the Ste20 kinase KrsB, a homolog of tumor suppressors Hippo and MST1/2, as a negative regulator of cell spreading and substrate attachment.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22847424"
       ]
     },
     {
@@ -2225,6 +2654,12 @@
       ],
       "pmids": [
         "18701541"
+      ],
+      "id": "286",
+      "body": "CudA directly regulates cotC prespore gene expression by binding to a site in the cotC promoter.\nCotc: SP60, spore coat protein SP60 ||| Cuda: transcriptional regulator CudA",
+      "original_query": "CudA directly regulates cotC prespore gene expression by binding to a site in the cotC promoter.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18701541"
       ]
     },
     {
@@ -2268,6 +2703,13 @@
       "pmids": [
         "11090633",
         "11818526"
+      ],
+      "id": "1185",
+      "body": "smlA null cells have decreased adhesion, increased motility, increased amounts of polymerized actin and the ABP-120 actin-crosslinking protein, as well as increased phosphorylation and redistribution of myosin.\nAbp-120: abpC, gelA, ddFLN, FLN, actin binding protein C ||| Smla: small aggregate formation protein",
+      "original_query": "smlA null cells have decreased adhesion, increased motility, increased amounts of polymerized actin and the ABP-120 actin-crosslinking protein, as well as increased phosphorylation and redistribution of myosin.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11090633",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11818526"
       ]
     },
     {
@@ -2294,6 +2736,12 @@
       ],
       "pmids": [
         "11963653"
+      ],
+      "id": "756",
+      "body": "In the final culminant, ampA is expressed only in the upper cup, lower cup, and basal disc.\nAmpa: D11, pegA, prestalk D11 protein precursor, adhesion modulation protein A",
+      "original_query": "In the final culminant, ampA is expressed only in the upper cup, lower cup, and basal disc.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11963653"
       ]
     },
     {
@@ -2337,6 +2785,13 @@
       "pmids": [
         "16079174",
         "20457612"
+      ],
+      "id": "488",
+      "body": "FttB interacts with numerous proteins, including the ankyrin repeat-containing protein kinase A arkA the TOR complex 2 protein PiaA piaA and the SH2 domain protein LrrB lrrB.\nFttb: 14-3-3, Dd14-3-3, 14-3-3-like protein ||| Piaa: DG1117, amiA, pia, rictor, cytosolic regulator of adenylyl cyclase PiaA ||| Tor: FRAP family protein kinase Tor, serine/threonine protein kinase Tor, TORC1 protein kinase Tor, TORC2 protein kinase Tor, TOR complex protein kinase Tor ||| Lrrb: leucine-rich repeat-containing protein LrrB ||| Arka: ARCK-1, ankyrin repeat-containing protein, PKC domain-containing protein, PE/DAG binding, GRAM domain-containing protein, protein kinase, TKL group, tyrosine kinase-like protein, ARK family protein kinase",
+      "original_query": "FttB interacts with numerous proteins, including the ankyrin repeat-containing protein kinase A arkA the TOR complex 2 protein PiaA piaA and the SH2 domain protein LrrB lrrB.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16079174",
+        "http://www.ncbi.nlm.nih.gov/pubmed/20457612"
       ]
     },
     {
@@ -2380,6 +2835,13 @@
       "pmids": [
         "18635356",
         "19763972"
+      ],
+      "id": "538",
+      "body": "GefN is phosphorylated by PKB pkgB in response to chemoattractant stimulation by cAMP.\nPkb: pkbA, Akt, pkfC, DK1, AKT/PKB protein kinase PkbA ||| Gefn: RasGEFN, RasGEF, Ras guanine nucleotide exchange factor N ||| Pkgb: pkfA, pkbR1, PK2, DK2, SGK family protein kinase PkgB",
+      "original_query": "GefN is phosphorylated by PKB pkgB in response to chemoattractant stimulation by cAMP.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18635356",
+        "http://www.ncbi.nlm.nih.gov/pubmed/19763972"
       ]
     },
     {
@@ -2406,6 +2868,12 @@
       ],
       "pmids": [
         "21134080"
+      ],
+      "id": "696",
+      "body": "In addition, several proteins have been identified to bind to NdrA: empC, mobA, and mobB.\nNdra: NDR family protein kinase A ||| Moba: Mps1 binder-like protein MobA ||| Empc: emp24/gp25L/p24 family protein C ||| Mobb: Mps1 binder-like protein MobB",
+      "original_query": "In addition, several proteins have been identified to bind to NdrA: empC, mobA, and mobB.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21134080"
       ]
     },
     {
@@ -2432,6 +2900,12 @@
       ],
       "pmids": [
         "29632077"
+      ],
+      "id": "205",
+      "body": "CdcD expression is dependent on both the kinase and the RNase activities of IreA ireA.\nIrea: putative endoribonuclease, IRE family protein kinase, putative serine/threonine protein kinase IreA ||| Cdcd: cdc48, p97, cell division cycle protein 48",
+      "original_query": "CdcD expression is dependent on both the kinase and the RNase activities of IreA ireA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/29632077"
       ]
     },
     {
@@ -2458,6 +2932,12 @@
       ],
       "pmids": [
         "23791739"
+      ],
+      "id": "1107",
+      "body": "RasC is aberrantly localized in wasB null cells, and these mutants also have higher levels of activated RacC, suggesting that WASP-B plays a role in the regulation of actin polymerization by modulating the activity and localization of RacC.\nWasb: putative actin binding protein, WASP-related protein B ||| Rasc: Ras GTPase RasC ||| Racc: Rho GTPase RacC",
+      "original_query": "RasC is aberrantly localized in wasB null cells, and these mutants also have higher levels of activated RacC, suggesting that WASP-B plays a role in the regulation of actin polymerization by modulating the activity and localization of RacC.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23791739"
       ]
     },
     {
@@ -2484,6 +2964,12 @@
       ],
       "pmids": [
         "24574058"
+      ],
+      "id": "832",
+      "body": "Loss of the enzyme also results in a block to addition of fucose to neutral N-glycans and a major reduction in addition of bisecting N-acetylglucosamine residues.",
+      "original_query": "Loss of the enzyme also results in a block to addition of fucose to neutral N-glycans and a major reduction in addition of bisecting N-acetylglucosamine residues.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24574058"
       ]
     },
     {
@@ -2510,6 +2996,12 @@
       ],
       "pmids": [
         "12506009"
+      ],
+      "id": "988",
+      "body": "Phosphorylation and dimerization possibly masks the export sequence and favors the nuclear accumulation of STATs.",
+      "original_query": "Phosphorylation and dimerization possibly masks the export sequence and favors the nuclear accumulation of STATs.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12506009"
       ]
     },
     {
@@ -2536,6 +3028,12 @@
       ],
       "pmids": [
         "20525180"
+      ],
+      "id": "661",
+      "body": "In addition, CpnA seems to be involved in the function and differentiation of prestalk cells and plays a role in a calcium-regulated signaling pathway critical to triggering the initiation of culmination.\nCpna: copine A",
+      "original_query": "In addition, CpnA seems to be involved in the function and differentiation of prestalk cells and plays a role in a calcium-regulated signaling pathway critical to triggering the initiation of culmination.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/20525180"
       ]
     },
     {
@@ -2562,6 +3060,12 @@
       ],
       "pmids": [
         "19409937"
+      ],
+      "id": "764",
+      "body": "In wild type cells, WASP is involved in vesicle trafficking from the Golgi to the surface membrane.\nWasp: wasA, Wiscott-Aldrich syndrome protein",
+      "original_query": "In wild type cells, WASP is involved in vesicle trafficking from the Golgi to the surface membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19409937"
       ]
     },
     {
@@ -2588,6 +3092,12 @@
       ],
       "pmids": [
         "16920105"
+      ],
+      "id": "1393",
+      "body": "The patches at the cell surface have then been shown to stem from the fusion of the late endosome with the plasma membrane.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "The patches at the cell surface have then been shown to stem from the fusion of the late endosome with the plasma membrane.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16920105"
       ]
     },
     {
@@ -2614,6 +3124,12 @@
       ],
       "pmids": [
         "11713866"
+      ],
+      "id": "237",
+      "body": "cenA encodes an EF-hand centrin that is an integral component of isolated centrosomes as well as concentrated at centromeres in the nucleus.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Cena: Ddcrp, centrin A",
+      "original_query": "cenA encodes an EF-hand centrin that is an integral component of isolated centrosomes as well as concentrated at centromeres in the nucleus.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11713866"
       ]
     },
     {
@@ -2640,6 +3156,12 @@
       ],
       "pmids": [
         "19833731"
+      ],
+      "id": "1238",
+      "body": "Taken together, this study suggests that it is still unclear which molecules are responsible for the extracellular purinergic response in Dictyostelium and it raises the possibility that the P2x receptors may play a role in the release of intracellular Ca 2+ stores in response to an ATP stimulus from within the contractile vacuole.",
+      "original_query": "Taken together, this study suggests that it is still unclear which molecules are responsible for the extracellular purinergic response in Dictyostelium and it raises the possibility that the P2x receptors may play a role in the release of intracellular Ca 2+ stores in response to an ATP stimulus from within the contractile vacuole.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19833731"
       ]
     },
     {
@@ -2666,6 +3188,12 @@
       ],
       "pmids": [
         "28330902"
+      ],
+      "id": "492",
+      "body": "further demonstrated major nucleosome positional changes associated with developmental gene regulation in wild type cells.",
+      "original_query": "further demonstrated major nucleosome positional changes associated with developmental gene regulation in wild type cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/28330902"
       ]
     },
     {
@@ -2692,6 +3220,12 @@
       ],
       "pmids": [
         "32818671"
+      ],
+      "id": "543",
+      "body": "gefQ mutant cells with an S431A point mutation are no longer able to bind 14-3-3, display a delay in development, and substantially lower rasB activation, suggesting that 14-3-3 binding to GefQ regulates development of Dictyostelium through RasB.\n14-3-3: fttB, Dd14-3-3, 14-3-3-like protein ||| Gefq: RasGEFQ, RasGEF, Ras guanine nucleotide exchange factor Q ||| Rasb: Ras GTPase RasB",
+      "original_query": "gefQ mutant cells with an S431A point mutation are no longer able to bind 14-3-3, display a delay in development, and substantially lower rasB activation, suggesting that 14-3-3 binding to GefQ regulates development of Dictyostelium through RasB.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/32818671"
       ]
     },
     {
@@ -2718,6 +3252,12 @@
       ],
       "pmids": [
         "18636095"
+      ],
+      "id": "1063",
+      "body": "Rab8A binds to disgorgin dsgg which exhibits strong GAP activity towards Rab8A.\nRab8a: sas1, sasA, Rab GTPase 8A ||| Disgorgin: rabGAP, GTPase activating protein (GAP) Dsgg, Rab GTPase-activating protein Dsgg",
+      "original_query": "Rab8A binds to disgorgin dsgg which exhibits strong GAP activity towards Rab8A.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18636095"
       ]
     },
     {
@@ -2744,6 +3284,12 @@
       ],
       "pmids": [
         "22736763"
+      ],
+      "id": "1463",
+      "body": "The study by reported that the P2x receptor ATP binding site faces into the vacuole lumen and ATP translocation triggers P2x receptor-dependent release of calcium.",
+      "original_query": "The study by reported that the P2x receptor ATP binding site faces into the vacuole lumen and ATP translocation triggers P2x receptor-dependent release of calcium.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22736763"
       ]
     },
     {
@@ -2770,6 +3316,12 @@
       ],
       "pmids": [
         "10591622"
+      ],
+      "id": "1210",
+      "body": "Study of cell motility using the chcA muatnt suggests that clathrin suppresses pseudopod formation and stabilizes the uropod in the posterior half of a crawling cell.\nChca: clathrin heavy chain",
+      "original_query": "Study of cell motility using the chcA muatnt suggests that clathrin suppresses pseudopod formation and stabilizes the uropod in the posterior half of a crawling cell.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10591622"
       ]
     },
     {
@@ -2813,6 +3365,13 @@
       "pmids": [
         "16367873",
         "15950752"
+      ],
+      "id": "898",
+      "body": "Mutations that inactivate the nox genes in the genetic background of strain JH10 result in a developmental block at the tipped mound stage, but have no effect on growth in association with bacteria..\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "Mutations that inactivate the nox genes in the genetic background of strain JH10 result in a developmental block at the tipped mound stage, but have no effect on growth in association with bacteria..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16367873",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15950752"
       ]
     },
     {
@@ -2839,6 +3398,12 @@
       ],
       "pmids": [
         "7983143"
+      ],
+      "id": "827",
+      "body": "Liu and Newell reported that the MLCK-A in cGMP-deficient mutant strains failed to phosphorylate the RMLC in response to cAMP, implicating cGMP in the regulation of MLCK-A activity.\nRmlc: mlcR, putative calmodulin-binding protein, Regulatory myosin light chain (RLC) ||| Mlck-a: mlkA, MLCK, MLCKA, myosin light chain kinase A",
+      "original_query": "Liu and Newell reported that the MLCK-A in cGMP-deficient mutant strains failed to phosphorylate the RMLC in response to cAMP, implicating cGMP in the regulation of MLCK-A activity.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/7983143"
       ]
     },
     {
@@ -2865,6 +3430,12 @@
       ],
       "pmids": [
         "18504297"
+      ],
+      "id": "540",
+      "body": "GefQ associates with F-actin, and is localized throughout the cytosol, enriched in the cell cortex and is also present in the nucleus.\nGefq: RasGEFQ, RasGEF, Ras guanine nucleotide exchange factor Q",
+      "original_query": "GefQ associates with F-actin, and is localized throughout the cytosol, enriched in the cell cortex and is also present in the nucleus.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18504297"
       ]
     },
     {
@@ -2891,6 +3462,12 @@
       ],
       "pmids": [
         "29440238"
+      ],
+      "id": "1140",
+      "body": "Results presented in argue that macropinocytosis is downregulated in early development because of PKA activation.",
+      "original_query": "Results presented in argue that macropinocytosis is downregulated in early development because of PKA activation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/29440238"
       ]
     },
     {
@@ -2917,6 +3494,12 @@
       ],
       "pmids": [
         "10747962"
+      ],
+      "id": "265",
+      "body": "Consistent with a role in membrane fusion, rtoA - cells have a defect in the fusion of endocytic vesicles and decreased exocytosis rates.\nRtoa: RatioA, unknown",
+      "original_query": "Consistent with a role in membrane fusion, rtoA - cells have a defect in the fusion of endocytic vesicles and decreased exocytosis rates.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10747962"
       ]
     },
     {
@@ -2977,6 +3560,14 @@
         "11389841",
         "18452713",
         "18635356"
+      ],
+      "id": "1014",
+      "body": "PKB phosphorylates serines and threonines in many different proteins including PakA, pakA, PikI, pikI, talinB, talB, GefN, gefN, GacG gacG and triggers polymerization of dendritic actin at the leading edge.\nPiki: PI5K, phosphatidylinositol phosphate kinase PikI ||| Pkb: pkbA, Akt, pkfC, DK1, AKT/PKB protein kinase PkbA ||| Paka: dpak1, DPAKa, serine/threonine-protein kinase PakA ||| At: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Gefn: RasGEFN, RasGEF, Ras guanine nucleotide exchange factor N",
+      "original_query": "PKB phosphorylates serines and threonines in many different proteins including PakA, pakA, PikI, pikI, talinB, talB, GefN, gefN, GacG gacG and triggers polymerization of dendritic actin at the leading edge.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11389841",
+        "http://www.ncbi.nlm.nih.gov/pubmed/18452713",
+        "http://www.ncbi.nlm.nih.gov/pubmed/18635356"
       ]
     },
     {
@@ -3003,6 +3594,12 @@
       ],
       "pmids": [
         "12756178"
+      ],
+      "id": "1215",
+      "body": "TagA appears to play a general role in regulation of cell differentiation since tagA mutants express a spore coat protein gene, cotB, within vacuolated cells that form part of the stalk and they express a prestalk/stalk-specific gene, ecmB, within cells that become spores.\nEcmb: pDd56, 253, SC253, extracellular matrix protein ST310 ||| Cotb: SP70, 2H3, 2B1, spore coat protein SP70 ||| Part: ankyrin repeat-containing protein, poly(ADP-ribosyl)transferase, NAD+ ADP-ribosyltransferase, BRCT domain-containing protein ||| Taga: ABC transporter B family protein, serine protease",
+      "original_query": "TagA appears to play a general role in regulation of cell differentiation since tagA mutants express a spore coat protein gene, cotB, within vacuolated cells that form part of the stalk and they express a prestalk/stalk-specific gene, ecmB, within cells that become spores.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12756178"
       ]
     },
     {
@@ -3029,6 +3626,12 @@
       ],
       "pmids": [
         "10854856"
+      ],
+      "id": "808",
+      "body": "kif2 null cells grow and develop normally, suggesting that some of the vital functions of Kif2 can be provided by other microtubule motors.\nKif2: K2, GPK2, ksnB, kinesin-14, kinesin family member 2",
+      "original_query": "kif2 null cells grow and develop normally, suggesting that some of the vital functions of Kif2 can be provided by other microtubule motors.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10854856"
       ]
     },
     {
@@ -3055,6 +3658,12 @@
       ],
       "pmids": [
         "8389692"
+      ],
+      "id": "1339",
+      "body": "The GTP produced by the action of NDP kinase is capable of activating G-proteins as monitored by altered G-protein-receptor interaction and the activation of the effector enzyme phospholipase C.",
+      "original_query": "The GTP produced by the action of NDP kinase is capable of activating G-proteins as monitored by altered G-protein-receptor interaction and the activation of the effector enzyme phospholipase C.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8389692"
       ]
     },
     {
@@ -3081,6 +3690,12 @@
       ],
       "pmids": [
         "11683919"
+      ],
+      "id": "82",
+      "body": "Aggregation-specific expression suggests cofC plays a role in destabilizing the actin cytoskeleton actin cytoskeleton during development.",
+      "original_query": "Aggregation-specific expression suggests cofC plays a role in destabilizing the actin cytoskeleton actin cytoskeleton during development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11683919"
       ]
     },
     {
@@ -3124,6 +3739,13 @@
       "pmids": [
         "10837033",
         "16086850"
+      ],
+      "id": "533",
+      "body": "gefE null mutant slugs are defective in both thermotaxis and phototaxis, migrating similar distances as wild type, but far less accurately towards the light source, similar to the phenotype of rasD null mutants.\nGefe: RasGEFE, RasGEF, Ras guanine nucleotide exchange factor E ||| Rasd: ras, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "gefE null mutant slugs are defective in both thermotaxis and phototaxis, migrating similar distances as wild type, but far less accurately towards the light source, similar to the phenotype of rasD null mutants.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10837033",
+        "http://www.ncbi.nlm.nih.gov/pubmed/16086850"
       ]
     },
     {
@@ -3150,6 +3772,12 @@
       ],
       "pmids": [
         "19748467"
+      ],
+      "id": "739",
+      "body": "In protein kinase dupA dupA null mutants, tirA expression is strongly induced, suggesting that DupA plays a role in the response to bacterial infection.\nDupa: MAP kinase phosphatase ||| Tira: Toll-Interleukin (TIR) receptor domain-containing protein",
+      "original_query": "In protein kinase dupA dupA null mutants, tirA expression is strongly induced, suggesting that DupA plays a role in the response to bacterial infection.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19748467"
       ]
     },
     {
@@ -3176,6 +3804,12 @@
       ],
       "pmids": [
         "12796308"
+      ],
+      "id": "362",
+      "body": "dlpA is expressed in pre-stalk cells.\nDlpa: dynamin-like protein A",
+      "original_query": "dlpA is expressed in pre-stalk cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12796308"
       ]
     },
     {
@@ -3202,6 +3836,12 @@
       ],
       "pmids": [
         "17004322"
+      ],
+      "id": "1309",
+      "body": "The distribution of VacA is altered in racH racH null mutants.\nRach: Rho GTPase RacH ||| Vaca: prohibitin domain-containing protein, vacuolin A",
+      "original_query": "The distribution of VacA is altered in racH racH null mutants.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/17004322"
       ]
     },
     {
@@ -3228,6 +3868,12 @@
       ],
       "pmids": [
         "20500764"
+      ],
+      "id": "691",
+      "body": "In addition, psiA overexpression inhibited DIF-1-induced stalk formation in monolayer cultures, indicating that PsiA is also involved in prestalk cell differentiation.\nPsia: PA14 domain-containing protein, psi factor, prespore-cell-inducing factor",
+      "original_query": "In addition, psiA overexpression inhibited DIF-1-induced stalk formation in monolayer cultures, indicating that PsiA is also involved in prestalk cell differentiation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/20500764"
       ]
     },
     {
@@ -3254,6 +3900,12 @@
       ],
       "pmids": [
         "11032815"
+      ],
+      "id": "577",
+      "body": "GskA itself was shown to phosphorylate STATa dstA and enhance its nuclear export.\nGska: GSK-3, GSK3, glycogen synthase kinase 3 ||| Stata: Dd-STATa, signal transducer and activator of transcription (STAT) family protein DstA",
+      "original_query": "GskA itself was shown to phosphorylate STATa dstA and enhance its nuclear export.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11032815"
       ]
     },
     {
@@ -3280,6 +3932,12 @@
       ],
       "pmids": [
         "30473004"
+      ],
+      "id": "1115",
+      "body": "rasD mutants exhibit similar phenotypes: rasD null cells exhibit a spore bias in chimeric mixtures with wild type cells, while constitutively active rasD cells exhibit a strong stalk bias.\nRasd: ras, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "rasD mutants exhibit similar phenotypes: rasD null cells exhibit a spore bias in chimeric mixtures with wild type cells, while constitutively active rasD cells exhibit a strong stalk bias.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/30473004"
       ]
     },
     {
@@ -3306,6 +3964,12 @@
       ],
       "pmids": [
         "16581519"
+      ],
+      "id": "1004",
+      "body": "pirA / napA double null phenotypes reveal that that NapA is required for pirA null phenotypes.\nNapa: Nap125, Nap1, SCAR regulatory complex subunit NapA ||| Pira: PIR121, SCAR regulatory complex subunit PirA",
+      "original_query": "pirA / napA double null phenotypes reveal that that NapA is required for pirA null phenotypes.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16581519"
       ]
     },
     {
@@ -3332,6 +3996,12 @@
       ],
       "pmids": [
         "15342480"
+      ],
+      "id": "849",
+      "body": "Microarray analysis identified the large gene C2 family 2C that requires gskA for optimal expression, suggesting that gskA may also play an activator role.\nGska: GSK-3, GSK3, glycogen synthase kinase 3 ||| 2c: coiled-coil family protein, hssA/2C/7E family protein",
+      "original_query": "Microarray analysis identified the large gene C2 family 2C that requires gskA for optimal expression, suggesting that gskA may also play an activator role.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15342480"
       ]
     },
     {
@@ -3375,6 +4045,13 @@
       "pmids": [
         "11927596",
         "11481037"
+      ],
+      "id": "443",
+      "body": "Expression of pefB mRNA is developmentally regulated, the message peaks at 4-8 hours, followed by a rapid decline.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Pefb: DdPEF-2, alg2B, pef2, alg2, penta EF hand calcium binding protein",
+      "original_query": "Expression of pefB mRNA is developmentally regulated, the message peaks at 4-8 hours, followed by a rapid decline.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11927596",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11481037"
       ]
     },
     {
@@ -3401,6 +4078,12 @@
       ],
       "pmids": [
         "23886948"
+      ],
+      "id": "620",
+      "body": "However, the confinement of Ras activation to the membrane region at the source of cAMP stimulus is abolished in both gefD and gefE gefE null mutants, suggesting that gefD and gefE contribute to restrict activation of Ras to the front of chemotaxing cells.\nGefe: RasGEFE, RasGEF, Ras guanine nucleotide exchange factor E ||| At: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Gefd: RasGEFD, RacGAP, RasGEF, RhoGAP domain-containing protein, Ras guanine nucleotide exchange factor D ||| Ras: rasD, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "However, the confinement of Ras activation to the membrane region at the source of cAMP stimulus is abolished in both gefD and gefE gefE null mutants, suggesting that gefD and gefE contribute to restrict activation of Ras to the front of chemotaxing cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23886948"
       ]
     },
     {
@@ -3427,6 +4110,12 @@
       ],
       "pmids": [
         "30393033"
+      ],
+      "id": "1003",
+      "body": "PirA interacts with Rac GTPase rac1A, rac1B, rac1C and polarity regulator Leep1 leep1 Yang, et al 2021, PMID:33978708.\nRac1b: Rho GTPase Rac1B ||| Rac1a: Rho GTPase Rac1A ||| Rac1c: Rho GTPase Rac1C ||| Pira: PIR121, SCAR regulatory complex subunit PirA ||| Leep1: polarity regulator Leep1",
+      "original_query": "PirA interacts with Rac GTPase rac1A, rac1B, rac1C and polarity regulator Leep1 leep1 Yang, et al 2021, PMID:33978708.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/30393033"
       ]
     },
     {
@@ -3453,6 +4142,12 @@
       ],
       "pmids": [
         "1692841"
+      ],
+      "id": "1197",
+      "body": "Spores of modB - null strains are more permeable to ricin which binds internal carbohydrates, indicating that the structure of their spore coats is abnormal.\nModb: gnt2, gntB, cis4c, GlcNAc transferase, glycosyltransferase Gnt2",
+      "original_query": "Spores of modB - null strains are more permeable to ricin which binds internal carbohydrates, indicating that the structure of their spore coats is abnormal.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1692841"
       ]
     },
     {
@@ -3479,6 +4174,12 @@
       ],
       "pmids": [
         "14641909"
+      ],
+      "id": "1370",
+      "body": "The motor domain in the kinesin encoded by kif11 is at the N-terminus and belongs to the CENP-E family of domains of kinetochore-associated proteins that align chromosomes during mitosis.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Kif11: kinesin-7, kinesin family member 11",
+      "original_query": "The motor domain in the kinesin encoded by kif11 is at the N-terminus and belongs to the CENP-E family of domains of kinetochore-associated proteins that align chromosomes during mitosis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/14641909"
       ]
     },
     {
@@ -3505,6 +4206,12 @@
       ],
       "pmids": [
         "11157987"
+      ],
+      "id": "970",
+      "body": "Overexpression of torA leads to surface-dependent growth: cells are unable to grow is suspension.\nTora: tortoise",
+      "original_query": "Overexpression of torA leads to surface-dependent growth: cells are unable to grow is suspension.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11157987"
       ]
     },
     {
@@ -3548,6 +4255,13 @@
       "pmids": [
         "10652263",
         "8290260"
+      ],
+      "id": "1126",
+      "body": "rasS is expressed during vegetative growth with maximum levels detected during aggregation.\nRass: Ras GTPase RasS",
+      "original_query": "rasS is expressed during vegetative growth with maximum levels detected during aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10652263",
+        "http://www.ncbi.nlm.nih.gov/pubmed/8290260"
       ]
     },
     {
@@ -3574,6 +4288,12 @@
       ],
       "pmids": [
         "8125261"
+      ],
+      "id": "1471",
+      "body": "The transcription factor GBF transcription factor activity, regulation of transcription from RNA polymerase II promoter was purified by virtue of its binding to a regulatory element called G-box DNA binding.\nGbf: gbfA, G-box binding factor",
+      "original_query": "The transcription factor GBF transcription factor activity, regulation of transcription from RNA polymerase II promoter was purified by virtue of its binding to a regulatory element called G-box DNA binding.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8125261"
       ]
     },
     {
@@ -3600,6 +4320,12 @@
       ],
       "pmids": [
         "11264536"
+      ],
+      "id": "1472",
+      "body": "The trimeric G protein dissociates into the active alpha subunit and the active beta/gamma dimer as long as cAMP is bound to the receptor.",
+      "original_query": "The trimeric G protein dissociates into the active alpha subunit and the active beta/gamma dimer as long as cAMP is bound to the receptor.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11264536"
       ]
     },
     {
@@ -3626,6 +4352,12 @@
       ],
       "pmids": [
         "15470429"
+      ],
+      "id": "1491",
+      "body": "Therefore, loss of dimA is deleterious for sporulation.\nDima: bzpA, putative basic-leucine zipper (bZIP) transcription factor",
+      "original_query": "Therefore, loss of dimA is deleterious for sporulation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15470429"
       ]
     },
     {
@@ -3652,6 +4384,12 @@
       ],
       "pmids": [
         "15897458"
+      ],
+      "id": "792",
+      "body": "It is also the precursor of an intercellular peptide signal that is referred to as DBI Diazepam Binding Inhibitor in humans and SDF-2 spore differentiation factor in Dictyostelium.",
+      "original_query": "It is also the precursor of an intercellular peptide signal that is referred to as DBI Diazepam Binding Inhibitor in humans and SDF-2 spore differentiation factor in Dictyostelium.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15897458"
       ]
     },
     {
@@ -3678,6 +4416,12 @@
       ],
       "pmids": [
         "3923431"
+      ],
+      "id": "15",
+      "body": "A functional histone H1 in Dictyostelium was originally identified by.\nH1: DDIHIH1, hstA, histone H1, calmodulin-binding protein, transcriptional repressor",
+      "original_query": "A functional histone H1 in Dictyostelium was originally identified by.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/3923431"
       ]
     },
     {
@@ -3704,6 +4448,12 @@
       ],
       "pmids": [
         "25609090"
+      ],
+      "id": "379",
+      "body": "During analysis of a Dictyostelium mutant defective in chemotactic responses, identified a novel actin-binding protein serving to modulate cell migration.",
+      "original_query": "During analysis of a Dictyostelium mutant defective in chemotactic responses, identified a novel actin-binding protein serving to modulate cell migration.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25609090"
       ]
     },
     {
@@ -3730,6 +4480,12 @@
       ],
       "pmids": [
         "8448193"
+      ],
+      "id": "316",
+      "body": "determined that in crude membrane extracts ScsA could be phosphorylated by ATP and GTP, but the purified enzyme showed high specificity for GTP.\nScsa: SCS-alpha, p36, SUCLG1, succinyl-CoA synthetase (GDP-forming) alpha subunit, succinate-CoA ligase (GDP-forming) alpha subunit",
+      "original_query": "determined that in crude membrane extracts ScsA could be phosphorylated by ATP and GTP, but the purified enzyme showed high specificity for GTP.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8448193"
       ]
     },
     {
@@ -3756,6 +4512,12 @@
       ],
       "pmids": [
         "23877245"
+      ],
+      "id": "366",
+      "body": "DnmA is an active tRNA methyltransferase that modifies C38 in tRNAAspGUC in vitro and in vivo.\nDnma: putative DNA methyltransferase 2, putative DNA (cytosine-5-)-methyltransferase, tRNA (cytosine(38)-methyltransferase",
+      "original_query": "DnmA is an active tRNA methyltransferase that modifies C38 in tRNAAspGUC in vitro and in vivo.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23877245"
       ]
     },
     {
@@ -3782,6 +4544,12 @@
       ],
       "pmids": [
         "11100898"
+      ],
+      "id": "742",
+      "body": "In stkA null mutants, the genes cspA, cspB, rnpA, and sigB fail to be expressed transcription factor activity, regulation of transcription, DNA-dependent.\nStka: gtaA, stalky, GATA-binding transcription factor, GATA zinc finger domain-containing protein 1 ||| Cspa: 37D, culmination specific protein 37D ||| Rnpa: 82D, RNP, RNA-binding region RNP-1 domain-containing protein, RNA recognition motif-containing protein RRM, putative RNA binding protein ||| Cspb: 45D, culmination specific protein 45D ||| Sigb: GP63, orfGP63, 7D, peptidase M8, leishmanolysin family protein",
+      "original_query": "In stkA null mutants, the genes cspA, cspB, rnpA, and sigB fail to be expressed transcription factor activity, regulation of transcription, DNA-dependent.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11100898"
       ]
     },
     {
@@ -3825,6 +4593,13 @@
       "pmids": [
         "20951045",
         "10953006"
+      ],
+      "id": "1078",
+      "body": "RacE is required for the localization of several proteins to the cell cortex: dynacortin dct, coronin A corA, and 14-3-3 fttB, and formin A forA.\nCora: coronin ||| 14-3-3: Dd14-3-3, 14-3-3-like protein ||| Fora: mDia1-like formin A, profilin binding protein ForA ||| Race: Rho GTPase RacE ||| Dct: dynacortin",
+      "original_query": "RacE is required for the localization of several proteins to the cell cortex: dynacortin dct, coronin A corA, and 14-3-3 fttB, and formin A forA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/20951045",
+        "http://www.ncbi.nlm.nih.gov/pubmed/10953006"
       ]
     },
     {
@@ -3851,6 +4626,12 @@
       ],
       "pmids": [
         "10669414"
+      ],
+      "id": "107",
+      "body": "Amplification of the external chemoattractant signal appears to occur downstream of the G protein response since G-beta/G-gamma is distributed on the surface membrane in direct proportion to the concentration of external cAMP in a gradient.",
+      "original_query": "Amplification of the external chemoattractant signal appears to occur downstream of the G protein response since G-beta/G-gamma is distributed on the surface membrane in direct proportion to the concentration of external cAMP in a gradient.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10669414"
       ]
     },
     {
@@ -3877,6 +4658,12 @@
       ],
       "pmids": [
         "10198067"
+      ],
+      "id": "1084",
+      "body": "RacF2 shares 94 percent sequence identity with another Dictyostelium Rho GTPase, RacF1 racF1.\nRacf1: Rho GTPase RacF1 ||| Racf2: Rho GTPase RacF2",
+      "original_query": "RacF2 shares 94 percent sequence identity with another Dictyostelium Rho GTPase, RacF1 racF1.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10198067"
       ]
     },
     {
@@ -3920,6 +4707,13 @@
       "pmids": [
         "24550398",
         "25341530"
+      ],
+      "id": "484",
+      "body": "Free Skp1 forms a complex with a CullinA homolog culE, and the F-box protein.\nCule: cullin E",
+      "original_query": "Free Skp1 forms a complex with a CullinA homolog culE, and the F-box protein.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24550398",
+        "http://www.ncbi.nlm.nih.gov/pubmed/25341530"
       ]
     },
     {
@@ -3980,6 +4774,14 @@
         "9729488",
         "15075287",
         "2010032"
+      ],
+      "id": "427",
+      "body": "Expression is dependent on the MADS-box transcription factor SrfA srfA and the GATA-binding transcription factor StkA stkA.\nStka: gtaA, stalky, GATA-binding transcription factor, GATA zinc finger domain-containing protein 1 ||| Srfa: SRF, DdSRF, MADS-box transcription factor, SRF-related protein",
+      "original_query": "Expression is dependent on the MADS-box transcription factor SrfA srfA and the GATA-binding transcription factor StkA stkA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9729488",
+        "http://www.ncbi.nlm.nih.gov/pubmed/15075287",
+        "http://www.ncbi.nlm.nih.gov/pubmed/2010032"
       ]
     },
     {
@@ -4023,6 +4825,13 @@
       "pmids": [
         "18426773",
         "16371424"
+      ],
+      "id": "242",
+      "body": "CF and group size have also been mathematically modeled, which together with experimental evidence has been reviewed in.",
+      "original_query": "CF and group size have also been mathematically modeled, which together with experimental evidence has been reviewed in.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/18426773",
+        "http://www.ncbi.nlm.nih.gov/pubmed/16371424"
       ]
     },
     {
@@ -4066,6 +4875,13 @@
       "pmids": [
         "11782526",
         "11004503"
+      ],
+      "id": "200",
+      "body": "catA encodes the catalase that converts methanol to the toxic compounds formaldehyde and formic acid such that cells cannot grow in the presence of 2% methanol.\nCata: cat, acrA, catalase A",
+      "original_query": "catA encodes the catalase that converts methanol to the toxic compounds formaldehyde and formic acid such that cells cannot grow in the presence of 2% methanol.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11782526",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11004503"
       ]
     },
     {
@@ -4092,6 +4908,12 @@
       ],
       "pmids": [
         "1448100"
+      ],
+      "id": "154",
+      "body": "Attempts to delete the casK gene failed, indicating that it is an essential gene.\nCask: casein kinase II subunit alpha",
+      "original_query": "Attempts to delete the casK gene failed, indicating that it is an essential gene.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1448100"
       ]
     },
     {
@@ -4118,6 +4940,12 @@
       ],
       "pmids": [
         "21807880"
+      ],
+      "id": "1027",
+      "body": "Poly ADP-ribose polymers promote NHEJ by binding Ku70 at DSBs and attaching Ku80.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Ku70: ATP-dependent DNA helicase ku70, ATP-dependent DNA helicase 2 subunit ku70 ||| Ku80: ATP-dependent DNA helicase 2 subunit ku80",
+      "original_query": "Poly ADP-ribose polymers promote NHEJ by binding Ku70 at DSBs and attaching Ku80.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/21807880"
       ]
     },
     {
@@ -4144,6 +4972,12 @@
       ],
       "pmids": [
         "23264736"
+      ],
+      "id": "1508",
+      "body": "These results indicate that ACAP-A plays a role in cytokinesis, cell motility and actin cytoskeleton remodeling.\nAcap-a: acapA, arfGAP, Arf GTPase activating protein A",
+      "original_query": "These results indicate that ACAP-A plays a role in cytokinesis, cell motility and actin cytoskeleton remodeling.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23264736"
       ]
     },
     {
@@ -4170,6 +5004,12 @@
       ],
       "pmids": [
         "22379107"
+      ],
+      "id": "673",
+      "body": "In addition, gapA null cells have a defect in response to mechanical stress that is not observed in gapA / rgaA double null mutants, indicating that GapA maintains myosin II mhcA and cortexillin I mechanosensing by suppressing IQGAP1.\nGapa: iqgB, RasGAP, DdIQGAP2, IQGAP-related protein, Ras GTPase-activating domain protein GapA ||| Mhca: MHC, myosin II heavy chain ||| Rgaa: DG1029, iqgA, rasGAP, rasGAP1, Ras GTPase-activating-like protein rgaA",
+      "original_query": "In addition, gapA null cells have a defect in response to mechanical stress that is not observed in gapA / rgaA double null mutants, indicating that GapA maintains myosin II mhcA and cortexillin I mechanosensing by suppressing IQGAP1.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22379107"
       ]
     },
     {
@@ -4196,6 +5036,12 @@
       ],
       "pmids": [
         "8294041"
+      ],
+      "id": "1056",
+      "body": "rab1A is expressed at detectable levels in growing cells and expression remains constant at approximately the same level during development.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Rab1a: Rab GTPase 1A",
+      "original_query": "rab1A is expressed at detectable levels in growing cells and expression remains constant at approximately the same level during development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8294041"
       ]
     },
     {
@@ -4222,6 +5068,12 @@
       ],
       "pmids": [
         "8294042"
+      ],
+      "id": "447",
+      "body": "Expression of the three rac1 genes is low during growth but increases 3-fold during aggregation before again declining to growth-stage levels during the slug stage.",
+      "original_query": "Expression of the three rac1 genes is low during growth but increases 3-fold during aggregation before again declining to growth-stage levels during the slug stage.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8294042"
       ]
     },
     {
@@ -4248,6 +5100,12 @@
       ],
       "pmids": [
         "11956323"
+      ],
+      "id": "935",
+      "body": "NIMA-related kinases havebeen cloned in several vertebrates, however, nek2 represents the first identified non-vertebrate Nek2 kinase.\nNek2: Ddnek2, NEK family protein kinase Nek2",
+      "original_query": "NIMA-related kinases havebeen cloned in several vertebrates, however, nek2 represents the first identified non-vertebrate Nek2 kinase.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11956323"
       ]
     },
     {
@@ -4274,6 +5132,12 @@
       ],
       "pmids": [
         "19808889"
+      ],
+      "id": "601",
+      "body": "However, cAMP is not compartmentalized in the cytoplasm of actively chemotaxing cells.",
+      "original_query": "However, cAMP is not compartmentalized in the cytoplasm of actively chemotaxing cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19808889"
       ]
     },
     {
@@ -4317,6 +5181,13 @@
       "pmids": [
         "11927596",
         "11481037"
+      ],
+      "id": "1394",
+      "body": "The pefA and pefB proteins eachcontain five calcium-binding calcium ion binding EF hand motifs.\nPefa: alg2A, DdPEF-1, pef1, alg2, penta EF hand calcium binding protein ||| Pefb: DdPEF-2, alg2B, pef2, alg2, penta EF hand calcium binding protein",
+      "original_query": "The pefA and pefB proteins eachcontain five calcium-binding calcium ion binding EF hand motifs.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11927596",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11481037"
       ]
     },
     {
@@ -4343,6 +5214,12 @@
       ],
       "pmids": [
         "22398446"
+      ],
+      "id": "1341",
+      "body": "The heavy chain has a stem at the N-terminal that binds cargo, followed by the motor domain, 4 ATP binding sites and a long stalk ending in a microtubule binding site.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "The heavy chain has a stem at the N-terminal that binds cargo, followed by the motor domain, 4 ATP binding sites and a long stalk ending in a microtubule binding site.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22398446"
       ]
     },
     {
@@ -4369,6 +5246,12 @@
       ],
       "pmids": [
         "9177486"
+      ],
+      "id": "584",
+      "body": "H3b and H3c encode proteins 136 amino acids in length, theconserved length for H3, whereas H3a has a 3 amino acid insert compared to other sequences.\nH3a: DdH3, histone H3 ||| H3b: histone H3 ||| H3c: histone H3",
+      "original_query": "H3b and H3c encode proteins 136 amino acids in length, theconserved length for H3, whereas H3a has a 3 amino acid insert compared to other sequences.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9177486"
       ]
     },
     {
@@ -4395,6 +5278,12 @@
       ],
       "pmids": [
         "29847546"
+      ],
+      "id": "1127",
+      "body": "rasS null strains created in a non-axenic Ddb strain background have modestly increased cell motility and decreased macropinocytosis.\nRass: Ras GTPase RasS",
+      "original_query": "rasS null strains created in a non-axenic Ddb strain background have modestly increased cell motility and decreased macropinocytosis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/29847546"
       ]
     },
     {
@@ -4438,6 +5327,13 @@
       "pmids": [
         "10545250",
         "11100904"
+      ],
+      "id": "891",
+      "body": "Mutations impairing the GTPase activity of gpaE inhibit aggregation and chemotactic responses to folic acid and cAMP, and overexpression of gpaE inhibits folate chemotaxis during the first few hours of starvation.\nGpae: Ga5, Galpha5, gpa5, G-protein subunit alpha 5",
+      "original_query": "Mutations impairing the GTPase activity of gpaE inhibit aggregation and chemotactic responses to folic acid and cAMP, and overexpression of gpaE inhibits folate chemotaxis during the first few hours of starvation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10545250",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11100904"
       ]
     },
     {
@@ -4464,6 +5360,12 @@
       ],
       "pmids": [
         "12134070"
+      ],
+      "id": "1313",
+      "body": "The EB1 null mutant has defects in cytokinesis due to poor mitotic spindle assembly during mitotic prometaphase.\nEb1: microtubule-associated protein EB1",
+      "original_query": "The EB1 null mutant has defects in cytokinesis due to poor mitotic spindle assembly during mitotic prometaphase.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12134070"
       ]
     },
     {
@@ -4507,6 +5409,13 @@
       "pmids": [
         "11201251",
         "11222756"
+      ],
+      "id": "1088",
+      "body": "racH expression reaches a maxium level during the aggregation stage followed by continued, but decreased expression during later stages of development..\nRach: Rho GTPase RacH",
+      "original_query": "racH expression reaches a maxium level during the aggregation stage followed by continued, but decreased expression during later stages of development..",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11201251",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11222756"
       ]
     },
     {
@@ -4533,6 +5442,12 @@
       ],
       "pmids": [
         "10571182"
+      ],
+      "id": "1359",
+      "body": "The mammalian rabbit GSK3\u03b2 was found to be tyrosine phosphorylated by ZAK1.\nGsk3: gskA, GSK-3, glycogen synthase kinase 3 ||| Zak1: zakA, protein tyrosine kinase ZAK1",
+      "original_query": "The mammalian rabbit GSK3\u03b2 was found to be tyrosine phosphorylated by ZAK1.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10571182"
       ]
     },
     {
@@ -4559,6 +5474,12 @@
       ],
       "pmids": [
         "15367206"
+      ],
+      "id": "1042",
+      "body": "psiA knockout mutant strains develop normally, however, conditioned medium from these mutants shows reduced prespore-cell-inducing activity and reduced prespore cell division-inducing activity, suggesting that PsiA plays a role in the positive regulation of spore cell differentiation.\nPsia: PA14 domain-containing protein, psi factor, prespore-cell-inducing factor",
+      "original_query": "psiA knockout mutant strains develop normally, however, conditioned medium from these mutants shows reduced prespore-cell-inducing activity and reduced prespore cell division-inducing activity, suggesting that PsiA plays a role in the positive regulation of spore cell differentiation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15367206"
       ]
     },
     {
@@ -4585,6 +5506,12 @@
       ],
       "pmids": [
         "14617352"
+      ],
+      "id": "255",
+      "body": "clcA knockouts have defects in clathrin cage assembly, in culmination during sorocarp development, cytokinesis, and cellular water homeostasis.",
+      "original_query": "clcA knockouts have defects in clathrin cage assembly, in culmination during sorocarp development, cytokinesis, and cellular water homeostasis.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/14617352"
       ]
     },
     {
@@ -4611,6 +5538,12 @@
       ],
       "pmids": [
         "11748133"
+      ],
+      "id": "1563",
+      "body": "These results support a model in which prespore cells cross-induce the differentiation of pstO cells by making DIF-1, and that this is one of the regulatory loops that sets the proportion of prespore-to-prestalk cells in the aggregate.",
+      "original_query": "These results support a model in which prespore cells cross-induce the differentiation of pstO cells by making DIF-1, and that this is one of the regulatory loops that sets the proportion of prespore-to-prestalk cells in the aggregate.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11748133"
       ]
     },
     {
@@ -4637,6 +5570,12 @@
       ],
       "pmids": [
         "20070309"
+      ],
+      "id": "103",
+      "body": "Although uptake of the intercellular pathogen Legionella pneumophila is reduced 8 fold, those bacteria that get into the atg9 - mutant cells are more successful in establishing a replicative niche and replicating.\nAtg9: APG9, autophagy protein 9",
+      "original_query": "Although uptake of the intercellular pathogen Legionella pneumophila is reduced 8 fold, those bacteria that get into the atg9 - mutant cells are more successful in establishing a replicative niche and replicating.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/20070309"
       ]
     },
     {
@@ -4680,6 +5619,13 @@
       "pmids": [
         "12176329",
         "19635129"
+      ],
+      "id": "571",
+      "body": "gpaI encodes the Galpha9 subunit that functions in signal transduction pathways that inhbit both growth and development.\nGpai: Ga9, gpa9, G-protein subunit alpha 9",
+      "original_query": "gpaI encodes the Galpha9 subunit that functions in signal transduction pathways that inhbit both growth and development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12176329",
+        "http://www.ncbi.nlm.nih.gov/pubmed/19635129"
       ]
     },
     {
@@ -4706,6 +5652,12 @@
       ],
       "pmids": [
         "11352578"
+      ],
+      "id": "1410",
+      "body": "The primary sequence of this calcium/calmodulin dependent protein phosphatase is very similar to the sequences of calcineurin B in mammals that all have two calcium binding EF hands.\nCalcineurin: canA, CNA, PP2B, calcineurin A",
+      "original_query": "The primary sequence of this calcium/calmodulin dependent protein phosphatase is very similar to the sequences of calcineurin B in mammals that all have two calcium binding EF hands.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11352578"
       ]
     },
     {
@@ -4732,6 +5684,12 @@
       ],
       "pmids": [
         "12954783"
+      ],
+      "id": "352",
+      "body": "Disruption of qkgA causes a marked increase in growth rate, indicating a role in the negative regulation of cell proliferation, and aggregation occurs relatively slowly resulting in abnormally large multicellular structures.",
+      "original_query": "Disruption of qkgA causes a marked increase in growth rate, indicating a role in the negative regulation of cell proliferation, and aggregation occurs relatively slowly resulting in abnormally large multicellular structures.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12954783"
       ]
     },
     {
@@ -4758,6 +5716,12 @@
       ],
       "pmids": [
         "8643519"
+      ],
+      "id": "1153",
+      "body": "rtoA was initially isolated by shotgun antisense cDNA as a gene required for sorocarp development.\nRtoa: RatioA, unknown",
+      "original_query": "rtoA was initially isolated by shotgun antisense cDNA as a gene required for sorocarp development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8643519"
       ]
     },
     {
@@ -4801,6 +5765,13 @@
       "pmids": [
         "1824843",
         "7862106"
+      ],
+      "id": "118",
+      "body": "Annexin VII binds to phosphatidylserine in a calcium ion-dependent manner.",
+      "original_query": "Annexin VII binds to phosphatidylserine in a calcium ion-dependent manner.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1824843",
+        "http://www.ncbi.nlm.nih.gov/pubmed/7862106"
       ]
     },
     {
@@ -4827,6 +5798,12 @@
       ],
       "pmids": [
         "25887420"
+      ],
+      "id": "438",
+      "body": "Expression of csbA and csbB is stimulated about 3 fold by cAMP during early development, increases to about 24-fold during aggregation and slowly falls after the slug stage to 3-fold at full culmination compared to vegetative cells.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Csbb: contact site B protein B ||| Csba: contact site B protein A",
+      "original_query": "Expression of csbA and csbB is stimulated about 3 fold by cAMP during early development, increases to about 24-fold during aggregation and slowly falls after the slug stage to 3-fold at full culmination compared to vegetative cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25887420"
       ]
     },
     {
@@ -4887,6 +5864,14 @@
         "10413681",
         "10411959",
         "10704840"
+      ],
+      "id": "1347",
+      "body": "The lack of alpha-actinin was shown to only slightly affect cell substrate adhesion, growth and pinocytosis, and development.",
+      "original_query": "The lack of alpha-actinin was shown to only slightly affect cell substrate adhesion, growth and pinocytosis, and development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10413681",
+        "http://www.ncbi.nlm.nih.gov/pubmed/10411959",
+        "http://www.ncbi.nlm.nih.gov/pubmed/10704840"
       ]
     },
     {
@@ -4913,6 +5898,12 @@
       ],
       "pmids": [
         "22711818"
+      ],
+      "id": "1447",
+      "body": "The secreted protein CfaD, the G protein Galpha8, and the kinase QkgA are necessary for the chemorepellant activity of AprA as well as its proliferation-inhibiting activity.\nCfad: autocrine proliferation repressor CfaD ||| Apra: Ncf60, 60T, autocrine proliferation repressor AprA ||| Galpha8: gpaH, Ga8, gpa8, G-protein subunit alpha 8",
+      "original_query": "The secreted protein CfaD, the G protein Galpha8, and the kinase QkgA are necessary for the chemorepellant activity of AprA as well as its proliferation-inhibiting activity.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22711818"
       ]
     },
     {
@@ -4939,6 +5930,12 @@
       ],
       "pmids": [
         "16343335"
+      ],
+      "id": "18",
+      "body": "A GFP-CpnA fusion construct showed CpnA to localize to the cytosol, and transiently, in a calcium-dependent manner, to the plasma membrane, the contractile vacuolar membrane, the phagocytic vesicle membrane, and to membranes of the endolysosomal pathway.\nCpna: copine A",
+      "original_query": "A GFP-CpnA fusion construct showed CpnA to localize to the cytosol, and transiently, in a calcium-dependent manner, to the plasma membrane, the contractile vacuolar membrane, the phagocytic vesicle membrane, and to membranes of the endolysosomal pathway.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16343335"
       ]
     },
     {
@@ -4965,6 +5962,12 @@
       ],
       "pmids": [
         "12244115"
+      ],
+      "id": "1573",
+      "body": "This activity was later attributed to the gnt1 gene.\nGnt1: GnT51, gntA, glycosyltransferase, GlcNAc transferase, UDP-GlcNAc:hydroxyproline polypeptide alpha-N-acetylglucosaminetransferase",
+      "original_query": "This activity was later attributed to the gnt1 gene.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12244115"
       ]
     },
     {
@@ -4991,6 +5994,12 @@
       ],
       "pmids": [
         "27237792"
+      ],
+      "id": "1390",
+      "body": "The nucleotide exchange on Rap1 induces a major rearrangement of the cytoskeleton and results in the recruitment of additional GflB to the leading edge. The kinetics of GflB translocation to the leading edge of chemotaxing cells are fine-tuned by GSK3 phosphorylation gskA.\nGsk3: GSK-3, glycogen synthase kinase 3 ||| Gflb: RacGAP, RasGEF, RapGEF, Rap guanine nucleotide exchange factor ||| Rap1: rapA, Ras GTPase RapA, Ras superfamily GTPase, Rap GTPase RapA",
+      "original_query": "The nucleotide exchange on Rap1 induces a major rearrangement of the cytoskeleton and results in the recruitment of additional GflB to the leading edge. The kinetics of GflB translocation to the leading edge of chemotaxing cells are fine-tuned by GSK3 phosphorylation gskA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/27237792"
       ]
     },
     {
@@ -5017,6 +6026,12 @@
       ],
       "pmids": [
         "23548898"
+      ],
+      "id": "1230",
+      "body": "Taken together, these results suggest that GrlB plays a role in early development and that it is the major GABA receptor at the growth and early development stages.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Grlb: G-protein-coupled receptor (GPCR) family 3 protein 2, gamma aminobutyric acid receptor GrlB, GABA receptor GrlB",
+      "original_query": "Taken together, these results suggest that GrlB plays a role in early development and that it is the major GABA receptor at the growth and early development stages.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23548898"
       ]
     },
     {
@@ -5043,6 +6058,12 @@
       ],
       "pmids": [
         "9394012"
+      ],
+      "id": "1677",
+      "body": "vacA mRNA is expressed in growing cells, transiently increases in early starvation and remains detectable throughout development.\nVaca: prohibitin domain-containing protein, vacuolin A",
+      "original_query": "vacA mRNA is expressed in growing cells, transiently increases in early starvation and remains detectable throughout development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9394012"
       ]
     },
     {
@@ -5069,6 +6090,12 @@
       ],
       "pmids": [
         "8344435"
+      ],
+      "id": "1250",
+      "body": "The absence of actin filament severing activity and inability to bundle actin filaments suggests that protovillin is an evolutionary precursor of villin.",
+      "original_query": "The absence of actin filament severing activity and inability to bundle actin filaments suggests that protovillin is an evolutionary precursor of villin.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8344435"
       ]
     },
     {
@@ -5112,6 +6139,13 @@
       "pmids": [
         "8937986",
         "1732064"
+      ],
+      "id": "1494",
+      "body": "These changes were reversed by expressing either abpA or abpC, showing the defects to be due to the absence of the two F-actin cross-linking proteins.\nAbpa: actnA, alpha actinin 1, actin binding protein A ||| Abpc: gelA, ddFLN, FLN, ABP120, actin binding protein C",
+      "original_query": "These changes were reversed by expressing either abpA or abpC, showing the defects to be due to the absence of the two F-actin cross-linking proteins.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/8937986",
+        "http://www.ncbi.nlm.nih.gov/pubmed/1732064"
       ]
     },
     {
@@ -5138,6 +6172,12 @@
       ],
       "pmids": [
         "15123660"
+      ],
+      "id": "1633",
+      "body": "Thus this protein adds a fucose and galactose modification to Skp1.",
+      "original_query": "Thus this protein adds a fucose and galactose modification to Skp1.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15123660"
       ]
     },
     {
@@ -5198,6 +6238,14 @@
         "2644652",
         "1703508",
         "6091907"
+      ],
+      "id": "1114",
+      "body": "rasD mRNA accumulates to a low level during growth, is reduced during during early development and then re-accumulates during aggregation.\nRasd: ras, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "rasD mRNA accumulates to a low level during growth, is reduced during during early development and then re-accumulates during aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/2644652",
+        "http://www.ncbi.nlm.nih.gov/pubmed/1703508",
+        "http://www.ncbi.nlm.nih.gov/pubmed/6091907"
       ]
     },
     {
@@ -5224,6 +6272,12 @@
       ],
       "pmids": [
         "25341530"
+      ],
+      "id": "1628",
+      "body": "Thus low oxygen levels are rate limiting for the hydroxylation of nascent Skp1 in cells, and demonstrates that full Skp1 hydroxylation/glycosylation is to alter the repertoire of the F-box proteins with which it associates.",
+      "original_query": "Thus low oxygen levels are rate limiting for the hydroxylation of nascent Skp1 in cells, and demonstrates that full Skp1 hydroxylation/glycosylation is to alter the repertoire of the F-box proteins with which it associates.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25341530"
       ]
     },
     {
@@ -5250,6 +6304,12 @@
       ],
       "pmids": [
         "15621416"
+      ],
+      "id": "772",
+      "body": "Inhibition of calcineurin activity with the polyphenolic aldehyde, gossypol, reduces the rate of growth and the number of aggregates formed after 24 hrs of development.\nCalcineurin: canA, CNA, PP2B, calcineurin A",
+      "original_query": "Inhibition of calcineurin activity with the polyphenolic aldehyde, gossypol, reduces the rate of growth and the number of aggregates formed after 24 hrs of development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15621416"
       ]
     },
     {
@@ -5276,6 +6336,12 @@
       ],
       "pmids": [
         "24653039"
+      ],
+      "id": "267",
+      "body": "Consistent with the shuttling behavior, cAMP cycles generate bursts of GtaC-dependent transcription, indicating that GtaC is responsible for relaying oscillatory cAMP signaling.\nGtac: GATA-binding transcription factor GtaC",
+      "original_query": "Consistent with the shuttling behavior, cAMP cycles generate bursts of GtaC-dependent transcription, indicating that GtaC is responsible for relaying oscillatory cAMP signaling.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24653039"
       ]
     },
     {
@@ -5319,6 +6385,13 @@
       "pmids": [
         "23161062",
         "19286984"
+      ],
+      "id": "811",
+      "body": "kif9 encodes the M-type kinesin that maintains a physical connection between the centrosome and the nuclear envelope.\nKif9: kin2, kinesin family member 9",
+      "original_query": "kif9 encodes the M-type kinesin that maintains a physical connection between the centrosome and the nuclear envelope.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/23161062",
+        "http://www.ncbi.nlm.nih.gov/pubmed/19286984"
       ]
     },
     {
@@ -5345,6 +6418,12 @@
       ],
       "pmids": [
         "11130075"
+      ],
+      "id": "1567",
+      "body": "They also express the prespore marker gene pspA at reduced levels.\nPspa: D19, psA, SP29, ponG, cell surface glycoprotein PsA precursor ||| At: acat, Ddthiolase, acetoacetyl-CoA thiolase",
+      "original_query": "They also express the prespore marker gene pspA at reduced levels.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11130075"
       ]
     },
     {
@@ -5371,6 +6450,12 @@
       ],
       "pmids": [
         "19176583"
+      ],
+      "id": "1445",
+      "body": "The SDF-2 cascade is initiated by a steroid binding to the G protein-coupled-receptor GrlA grlA that signals GABA release and AcbA secretion and processing.\nAcba: acyl-CoA binding protein AcbA ||| Grla: G-protein-coupled receptor (GPCR) family 3 protein 1",
+      "original_query": "The SDF-2 cascade is initiated by a steroid binding to the G protein-coupled-receptor GrlA grlA that signals GABA release and AcbA secretion and processing.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/19176583"
       ]
     },
     {
@@ -5397,6 +6482,12 @@
       ],
       "pmids": [
         "22575510"
+      ],
+      "id": "1165",
+      "body": "show that LPS treatment leads to induction of autophagosomal maturation in cells responding to the bacterium S.",
+      "original_query": "show that LPS treatment leads to induction of autophagosomal maturation in cells responding to the bacterium S.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/22575510"
       ]
     },
     {
@@ -5423,6 +6514,12 @@
       ],
       "pmids": [
         "10373524"
+      ],
+      "id": "1130",
+      "body": "RdeA also facilitates dephosphorylation of RegA when DhkA dhkA is converted to a phosphatase after it has bound SDF-2.\nDhka: histidine kinase A ||| Rdea: Hpt domain-containing protein, histidine-containing phosphotransfer domain-containing protein, H2 module protein ||| Rega: pde2, DG1030, DdPDE2, cAMP phosphodiesterase RegA",
+      "original_query": "RdeA also facilitates dephosphorylation of RegA when DhkA dhkA is converted to a phosphatase after it has bound SDF-2.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10373524"
       ]
     },
     {
@@ -5449,6 +6546,12 @@
       ],
       "pmids": [
         "25887420"
+      ],
+      "id": "84",
+      "body": "alfA starts to be expressed after 5 hrs of development and reaches a peak at 11 hrs of development.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Alfa: A11H2, ALF, alpha-L-fucosidase",
+      "original_query": "alfA starts to be expressed after 5 hrs of development and reaches a peak at 11 hrs of development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/25887420"
       ]
     },
     {
@@ -5475,6 +6578,12 @@
       ],
       "pmids": [
         "1869562"
+      ],
+      "id": "207",
+      "body": "celA encodes a secreted cellulase endo-1, 4-beta-D- glucanase that is expressed in prespore cells as they start to encapsulate during culmination and later during germination when the enzyme is used to cut through the cellulose layer of the spore coat to allow amoebae to emerge.\nCela: cellulase A, endo-(1, 4)-beta-D-glucanase, cellulase 270-6",
+      "original_query": "celA encodes a secreted cellulase endo-1, 4-beta-D- glucanase that is expressed in prespore cells as they start to encapsulate during culmination and later during germination when the enzyme is used to cut through the cellulose layer of the spore coat to allow amoebae to emerge.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1869562"
       ]
     },
     {
@@ -5501,6 +6610,12 @@
       ],
       "pmids": [
         "15769639"
+      ],
+      "id": "1665",
+      "body": "Unlike the vertebrate guanylyl cyclases but similar to the adenylyl cyclase ACA, the Dictyostelium guanylyl cyclases are activated by receptor coupled heterotrimeric G-proteins.\nAca: acaA, adenylyl cyclase, adenylate cyclase A",
+      "original_query": "Unlike the vertebrate guanylyl cyclases but similar to the adenylyl cyclase ACA, the Dictyostelium guanylyl cyclases are activated by receptor coupled heterotrimeric G-proteins.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15769639"
       ]
     },
     {
@@ -5544,6 +6659,13 @@
       "pmids": [
         "16885420",
         "11500376"
+      ],
+      "id": "1109",
+      "body": "rasC null cells also exhibit decreased chemotaxis to cAMP during development and reduced phosphorylation of protein kinase B AKT/PKB pkbA.\nAkt: pkfC, DK1, AktPKB, AKT/PKB protein kinase PkbA ||| Rasc: Ras GTPase RasC",
+      "original_query": "rasC null cells also exhibit decreased chemotaxis to cAMP during development and reduced phosphorylation of protein kinase B AKT/PKB pkbA.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16885420",
+        "http://www.ncbi.nlm.nih.gov/pubmed/11500376"
       ]
     },
     {
@@ -5570,6 +6692,12 @@
       ],
       "pmids": [
         "15236669"
+      ],
+      "id": "646",
+      "body": "In a search for mutants resistant to a phospholipase D PLD inhibitor, identified gdt2.\nGdt2: MLK family protein kinase Gdt2 ||| Pld: pldG, GPI-PLD, glycosylphosphatidylinositol phospholipase D",
+      "original_query": "In a search for mutants resistant to a phospholipase D PLD inhibitor, identified gdt2.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/15236669"
       ]
     },
     {
@@ -5596,6 +6724,12 @@
       ],
       "pmids": [
         "29118357"
+      ],
+      "id": "998",
+      "body": ", pikF, plaA, sgcA are all localized to the cell front, and that their distribution is dependent on the mRNA-binding protein Puf118 that binds and localizes their mRNAs to the front of migrating cells.\nPikf: PI3K4, phosphatidylinositol 3-kinase, PI3kinase ||| Sgca: sGC, guanylyl cyclase ||| Plaa: pla2, phospholipase A2 ||| Puf118: Pumilio homology domain family member 4, Pumilio-related mRNA-binding protein PUF118",
+      "original_query": ", pikF, plaA, sgcA are all localized to the cell front, and that their distribution is dependent on the mRNA-binding protein Puf118 that binds and localizes their mRNAs to the front of migrating cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/29118357"
       ]
     },
     {
@@ -5622,6 +6756,12 @@
       ],
       "pmids": [
         "11865029"
+      ],
+      "id": "838",
+      "body": "lvsB null mutants have defects in lysosome organization and biogenesis, and exhibit enhanced regulated secretion of lysosomal enzymes, a phenotype reminiscent of the Chediak-Higashi syndrome.\nLvsb: BEACH domain-containing protein, lysosomal trafficking regulator LvsB",
+      "original_query": "lvsB null mutants have defects in lysosome organization and biogenesis, and exhibit enhanced regulated secretion of lysosomal enzymes, a phenotype reminiscent of the Chediak-Higashi syndrome.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11865029"
       ]
     },
     {
@@ -5648,6 +6788,12 @@
       ],
       "pmids": [
         "10473630"
+      ],
+      "id": "1657",
+      "body": "Treating lst8 null or piaA null mutant cells with artificial pulses of cAMP does not rescue development indicating that these components of TORC2 are essential for Ras stimulation or activity of the complex.\nPiaa: DG1117, amiA, pia, rictor, cytosolic regulator of adenylyl cyclase PiaA ||| Lst8: WD40 repeat-containing protein, TORC2 protein Lst8, TOR complex 2 protein Lst8 ||| Ras: rasD, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "Treating lst8 null or piaA null mutant cells with artificial pulses of cAMP does not rescue development indicating that these components of TORC2 are essential for Ras stimulation or activity of the complex.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10473630"
       ]
     },
     {
@@ -5674,6 +6820,12 @@
       ],
       "pmids": [
         "10025509"
+      ],
+      "id": "1059",
+      "body": "rab32A is expressed at very low levels during growth, but expression increases significantly after 8 hours of development, suggesting a role for rab32 during development.\nAt: acat, Ddthiolase, acetoacetyl-CoA thiolase ||| Rab32a: rabE, Rab GTPase 32A",
+      "original_query": "rab32A is expressed at very low levels during growth, but expression increases significantly after 8 hours of development, suggesting a role for rab32 during development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10025509"
       ]
     },
     {
@@ -5700,6 +6852,12 @@
       ],
       "pmids": [
         "12456012"
+      ],
+      "id": "1268",
+      "body": "The B family includes three main subtypes: full transporters involved in multiple drug resistance MDR, half-transporters targeted to mitochondria, and half-transporters involved in peptide transport.",
+      "original_query": "The B family includes three main subtypes: full transporters involved in multiple drug resistance MDR, half-transporters targeted to mitochondria, and half-transporters involved in peptide transport.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/12456012"
       ]
     },
     {
@@ -5726,6 +6884,12 @@
       ],
       "pmids": [
         "26359303"
+      ],
+      "id": "1245",
+      "body": "TgrB1/TgrC1 mediated development but not allorecognition is regulated by N-glycosylation through Alg9 alg9, a putative mannosyl transferase.\nAlg9: glycosyltransferase, dolichyl-phosphate-mannose alpha-1,2-mannosyltransferase ||| Tgrc1: lagC1, GP150, lagC, Tiger protein C1 ||| Tgrb1: lagB1, Tiger protein B1",
+      "original_query": "TgrB1/TgrC1 mediated development but not allorecognition is regulated by N-glycosylation through Alg9 alg9, a putative mannosyl transferase.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/26359303"
       ]
     },
     {
@@ -5769,6 +6933,13 @@
       "pmids": [
         "1703508",
         "7641977"
+      ],
+      "id": "385",
+      "body": "During development rasD is first expressed during aggregation and by the time of slug development RasD expression is enriched in prestalk cells.\nRasd: ras, Dd-ras, Ddras, rasA, Ras GTPase RasD",
+      "original_query": "During development rasD is first expressed during aggregation and by the time of slug development RasD expression is enriched in prestalk cells.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/1703508",
+        "http://www.ncbi.nlm.nih.gov/pubmed/7641977"
       ]
     },
     {
@@ -5795,6 +6966,12 @@
       ],
       "pmids": [
         "30462573"
+      ],
+      "id": "549",
+      "body": "Genes involved in ArpA-mediated chemorepulsion include grlH, gpaH, gpbA, rasC, rasG, dagA, pkaC, pten, piaA, lst8, iplA, plaA, pkcA, erkA, racC, scrA, pakD and cnrN.\nPakd: serine/threonine protein kinase PakD ||| Gpba: Gbeta, Gb, G protein beta subunit, G-protein subunit beta ||| Piaa: DG1117, amiA, pia, rictor, cytosolic regulator of adenylyl cyclase PiaA ||| Plaa: pla2, phospholipase A2 ||| Rasc: Ras GTPase RasC",
+      "original_query": "Genes involved in ArpA-mediated chemorepulsion include grlH, gpaH, gpbA, rasC, rasG, dagA, pkaC, pten, piaA, lst8, iplA, plaA, pkcA, erkA, racC, scrA, pakD and cnrN.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/30462573"
       ]
     },
     {
@@ -5821,6 +6998,12 @@
       ],
       "pmids": [
         "9660787"
+      ],
+      "id": "1345",
+      "body": "The initial step in Skp1 glycosylation involves the hydroxylation of Pro143 by a proline hydroxylase.",
+      "original_query": "The initial step in Skp1 glycosylation involves the hydroxylation of Pro143 by a proline hydroxylase.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9660787"
       ]
     },
     {
@@ -5847,6 +7030,12 @@
       ],
       "pmids": [
         "10444594"
+      ],
+      "id": "759",
+      "body": "In transformants with a disrupted ctnA gene, aggregation streams do not break up, resulting in large fruiting bodies.\nCtna: countin, Countin counting factor complex component, CF complex subunit Countin",
+      "original_query": "In transformants with a disrupted ctnA gene, aggregation streams do not break up, resulting in large fruiting bodies.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10444594"
       ]
     },
     {
@@ -5890,6 +7079,13 @@
       "pmids": [
         "16593709",
         "16453689"
+      ],
+      "id": "284",
+      "body": "csaA encodes the glycoprotein gp80 that is responsible for Contact Sites A.\nCsaa: csA, contact site A protein",
+      "original_query": "csaA encodes the glycoprotein gp80 that is responsible for Contact Sites A.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16593709",
+        "http://www.ncbi.nlm.nih.gov/pubmed/16453689"
       ]
     },
     {
@@ -5916,6 +7112,12 @@
       ],
       "pmids": [
         "10375515"
+      ],
+      "id": "1049",
+      "body": "PufA binds to a 200 base segment in 3' untranslated regions of pkaC pkaC mRNA and inhibits translation. The pufA gene was isolated in a suppressor screen of yakA null mutants that are unable to initiate development.\nPufa: RNA-binding protein PufA ||| Yaka: dagB, DYRK family protein kinase YakA ||| Pkac: PKA, pkacat, DdPK3, DdPK2, cAMP-dependent protein kinase A, catalytic subunit",
+      "original_query": "PufA binds to a 200 base segment in 3' untranslated regions of pkaC pkaC mRNA and inhibits translation. The pufA gene was isolated in a suppressor screen of yakA null mutants that are unable to initiate development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10375515"
       ]
     },
     {
@@ -5942,6 +7144,12 @@
       ],
       "pmids": [
         "11884033"
+      ],
+      "id": "1263",
+      "body": "The AmpA protein also modulates cell-cell cell-cell adhesion and cell-substrate adhesion during development multicellular organismal development, when much of the protein is found extracellularly extracellular region.\nAmpa: D11, pegA, prestalk D11 protein precursor, adhesion modulation protein A",
+      "original_query": "The AmpA protein also modulates cell-cell cell-cell adhesion and cell-substrate adhesion during development multicellular organismal development, when much of the protein is found extracellularly extracellular region.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/11884033"
       ]
     },
     {
@@ -5985,6 +7193,13 @@
       "pmids": [
         "16644729",
         "17040207"
+      ],
+      "id": "975",
+      "body": "Pde4 has a lower affinity for cAMP than PdsA but accounts for most of the extracellular activity after aggregation.\nPdsa: PDE, pde1, pdeA, DdPDE1, cAMP/cGMP phosphodiesterase A ||| Pde4: DdPDE4, cAMP-specific phosphodiesterase 4",
+      "original_query": "Pde4 has a lower affinity for cAMP than PdsA but accounts for most of the extracellular activity after aggregation.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/16644729",
+        "http://www.ncbi.nlm.nih.gov/pubmed/17040207"
       ]
     },
     {
@@ -6011,6 +7226,12 @@
       ],
       "pmids": [
         "24485835"
+      ],
+      "id": "989",
+      "body": "Phosphorylation of PikI activates its phosphoinositol 5-kinase activity leading to the production of PI4, 5P2 which is essential for chemotaxis and activation of PKB.\nPiki: PI5K, phosphatidylinositol phosphate kinase PikI ||| Pkb: pkbA, Akt, pkfC, DK1, AKT/PKB protein kinase PkbA",
+      "original_query": "Phosphorylation of PikI activates its phosphoinositol 5-kinase activity leading to the production of PI4, 5P2 which is essential for chemotaxis and activation of PKB.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24485835"
       ]
     },
     {
@@ -6054,6 +7275,13 @@
       "pmids": [
         "10564654",
         "17416892"
+      ],
+      "id": "1663",
+      "body": "Unlike most of the spore coat proteins, SP65 cotE is not synthesized during the slug stage and stored in prespore vesicles PSVs, but is synthesized during culmination just-in-time to be incorporated into spore coats.\nSp65: spore coat protein SP65",
+      "original_query": "Unlike most of the spore coat proteins, SP65 cotE is not synthesized during the slug stage and stored in prespore vesicles PSVs, but is synthesized during culmination just-in-time to be incorporated into spore coats.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10564654",
+        "http://www.ncbi.nlm.nih.gov/pubmed/17416892"
       ]
     },
     {
@@ -6097,6 +7325,13 @@
       "pmids": [
         "9191038",
         "9582277"
+      ],
+      "id": "1688",
+      "body": "When DhkA binds its peptide ligand, SDF-2, it acts as a phosphatase to remove phosphate from RdeA which can then dephosphorylate RegA and reduce its activity.\nDhka: histidine kinase A ||| Rdea: Hpt domain-containing protein, histidine-containing phosphotransfer domain-containing protein, H2 module protein ||| Rega: pde2, DG1030, DdPDE2, cAMP phosphodiesterase RegA",
+      "original_query": "When DhkA binds its peptide ligand, SDF-2, it acts as a phosphatase to remove phosphate from RdeA which can then dephosphorylate RegA and reduce its activity.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/9191038",
+        "http://www.ncbi.nlm.nih.gov/pubmed/9582277"
       ]
     },
     {
@@ -6123,6 +7358,12 @@
       ],
       "pmids": [
         "10704840"
+      ],
+      "id": "1195",
+      "body": "Spore viability spore germination was also shown to be severely reduced.",
+      "original_query": "Spore viability spore germination was also shown to be severely reduced.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10704840"
       ]
     },
     {
@@ -6149,6 +7390,12 @@
       ],
       "pmids": [
         "10402673"
+      ],
+      "id": "1637",
+      "body": "tipC was isolated from a REMI mutant that was picked because its development was arrested when multiple tips formed on aggregates.\nTipc: DG1038, vps13, vps13C, tipC protein",
+      "original_query": "tipC was isolated from a REMI mutant that was picked because its development was arrested when multiple tips formed on aggregates.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/10402673"
       ]
     },
     {
@@ -6175,6 +7422,12 @@
       ],
       "pmids": [
         "31044164"
+      ],
+      "id": "598",
+      "body": "However, ACA-generated cAMP wave ocsillations persist in later stages of development, and play a role later in aggregation, and slug formation and migration.\nWave: scrA, SCAR, SCAR1",
+      "original_query": "However, ACA-generated cAMP wave ocsillations persist in later stages of development, and play a role later in aggregation, and slug formation and migration.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/31044164"
       ]
     },
     {
@@ -6201,6 +7454,12 @@
       ],
       "pmids": [
         "24521843"
+      ],
+      "id": "1218",
+      "body": "Taken together, these results indicate that a continuous supply of fatty acids is necessary for normal development.",
+      "original_query": "Taken together, these results indicate that a continuous supply of fatty acids is necessary for normal development.",
+      "documents": [
+        "http://www.ncbi.nlm.nih.gov/pubmed/24521843"
       ]
     }
   ]

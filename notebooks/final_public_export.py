@@ -25,7 +25,8 @@
 # - output/cleaned/articles_all_cleaned_abstract.parquet
 #
 # Outputs:
-# - output/cleaned/dicty_gold_llm_public.json
+# - output/cleaned/dicty_gold_llm_private.json (full payload, all fields)
+# - output/cleaned/dicty_gold_llm_public.json (clean, BioASQ-style keys only)
 # - output/cleaned/articles_all_cleaned_abstract.json
 
 # %%
@@ -42,6 +43,7 @@ GOLD_PATH = Path("../output/cleaned/gold_with_query_expand.parquet")
 LABELS_PATH = Path("../output/llama_full_agreement_cases.tsv")
 DOCS_PATH = Path("../output/cleaned/articles_all_cleaned_abstract.parquet")
 OUT_JSON = Path("../output/cleaned/dicty_gold_llm_public.json")
+OUT_JSON_PRIVATE = Path("../output/cleaned/dicty_gold_llm_private.json")
 DOCS_JSON_OUT = Path("../output/cleaned/articles_all_cleaned_abstract.json")
 
 def load_labels(path: Path) -> pl.DataFrame:
@@ -118,13 +120,35 @@ grouped = labeled.group_by("group_claim_id").agg([
     ]).alias("docs"),
 ])
 
+PUBMED_URL_PREFIX = "http://www.ncbi.nlm.nih.gov/pubmed/"
+
 questions = grouped.sort("group_claim_id").to_dicts()
 for q in questions:
     pmids = [d.get("pmid") for d in q.get("docs", []) if d.get("pmid")]
     q["pmids"] = pmids
+    # BioASQ-like fields for retrieval_eval/common.py (id, body, documents)
+    q["id"] = str(q.get("group_claim_id", ""))
+    q["body"] = (q.get("query_expand") or "").strip()
+    q["original_query"] = (q.get("query") or "").strip()
+    q["documents"] = [PUBMED_URL_PREFIX + str(p) for p in pmids if p]
 
-OUT_JSON.write_text(json.dumps({"questions": questions}, indent=2), encoding="utf-8")
-print(f"Saved: {OUT_JSON}")
+# Full payload (all fields) → private
+OUT_JSON_PRIVATE.write_text(json.dumps({"questions": questions}, indent=2), encoding="utf-8")
+print(f"Saved (private): {OUT_JSON_PRIVATE}")
+
+# Clean public: BioASQ-style key fields first, no redundant keys
+def to_public_question(q):
+    return {
+        "id": q["id"],
+        "body": q["body"],
+        "original_query": q["original_query"],
+        "documents": q["documents"],
+        "docs": q.get("docs", []),
+    }
+
+questions_public = [to_public_question(q) for q in questions]
+OUT_JSON.write_text(json.dumps({"questions": questions_public}, indent=2), encoding="utf-8")
+print(f"Saved (public): {OUT_JSON}")
 
 
 # %% [markdown]
