@@ -21,3 +21,4 @@ llama_API_KEY
 .vscode/
 .env
 indexes/
+dicty_simulated_data/
