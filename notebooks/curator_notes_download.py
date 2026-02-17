@@ -556,7 +556,7 @@ df
 # # full results
 
 # %% [markdown]
-# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:22.12.2025 python /dictycite/scripts/public/dicty_curator_notes.py --limit 0 --sleep-base 0.25 --sleep-jitter 0.10
+# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:22.12.2025 python /dictycite/scripts/public/data_prep/dicty_curator_notes.py --limit 0 --sleep-base 0.25 --sleep-jitter 0.10
 #
 # takes around 2 hrs
 

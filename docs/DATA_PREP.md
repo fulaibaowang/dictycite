@@ -11,14 +11,14 @@ This document describes how the dataset is assembled and cleaned. The goal is a 
 
 Download curator notes and extract claim sentences with citation anchors.
 
-- Production script: [scripts/public/dicty_curator_notes.py](../scripts/public/dicty_curator_notes.py)
+- Production script: [scripts/public/data_prep/dicty_curator_notes.py](../scripts/public/data_prep/dicty_curator_notes.py)
 - Notebook: [notebooks/curator_notes_download.ipynb](../notebooks/curator_notes_download.ipynb)
 
 ## 2) Publication Mapping → PMID
 
 Build the mapping between dictybase publication_id and PMID by looping over all genes and parsing the references tab.
 
-- Production script: [scripts/public/dicty_publication.py](../scripts/public/dicty_publication.py)
+- Production script: [scripts/public/data_prep/dicty_publication.py](../scripts/public/data_prep/dicty_publication.py)
 - Notebook: [notebooks/gene_publication_mapping.ipynb](../notebooks/gene_publication_mapping.ipynb)
 
 ## 3) EPMC/PubMed Fetch (title + abstract)
@@ -54,7 +54,7 @@ This produces `query_expand` alongside the original `query` for retrieval and la
 Titles and abstracts are not always enough to validate a claim. Some claims need full text or manual review.
 To reduce false positives, we run a labeling step to build a higher-quality goldset.
 
-- Production script: [scripts/public/dicty_claim_labeler.py](../scripts/public/dicty_claim_labeler.py)
+- Production script: [scripts/public/data_prep/dicty_claim_labeler.py](../scripts/public/data_prep/dicty_claim_labeler.py)
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
 
 Labeling details (summary):

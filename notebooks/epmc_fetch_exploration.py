@@ -429,7 +429,7 @@ print("Overlap as % of CSV:", len(overlap)/len(csv_set) if csv_set else 0)
 # e.g http://dictybase.org/publication/19729
 
 # %% [markdown]
-# In the end i used gene_publication_mapping.ipynb and scripts/public/dicty_publication.py, works good
+# In the end i used gene_publication_mapping.ipynb and scripts/public/data_prep/dicty_publication.py, works good
 
 # %% [markdown]
 # # check pmids in fetched from EPMC and dictybase

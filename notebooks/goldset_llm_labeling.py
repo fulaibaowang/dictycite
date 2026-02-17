@@ -195,7 +195,7 @@ pd.DataFrame(results)
 
 
 # %% [markdown]
-# # production script: scripts/public/dicty_claim_labeler.py
+# # production script: scripts/public/data_prep/dicty_claim_labeler.py
 
 # %% [markdown]
 # we do this three times and check agreements across three replicates
