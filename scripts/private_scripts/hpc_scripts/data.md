@@ -26,6 +26,6 @@ srun -p dev --time=12:00:00 -c 4 --mem=64G --gres=gpu:1 \
   --container-workdir /work \
   --pty bash
 
-./scripts/public/run_retrieval_rerank_pipeline.sh --config scripts/private_scripts/hpc/config.env
+./scripts/public/run_retrieval_rerank_pipeline.sh --config scripts/private_scripts/hpc_scripts/config.env
 
 
