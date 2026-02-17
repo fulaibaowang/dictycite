@@ -18,3 +18,14 @@ python scripts/public/index/build_dense_hnsw_index_from_jsonl_shards.py \
   --ef_search 100 \
   --dedup_pmids
 
+# pipeline
+srun -p dev --time=8:00:00 -c 4 --mem=32G --gres=gpu:A100:1 \
+  --container-image=/shared/home/yun.wang/biolab/yun/bioasq_04.02.26.sqfs \
+  --container-mount-home \
+  --container-mounts "${PWD}:/work,/shared/workspace/biolab/pubmed:/pubmed" \
+  --container-workdir /work \
+  --pty bash
+
+./scripts/public/run_retrieval_rerank_pipeline.sh --config scripts/private_scripts/hpc/config.env
+
+

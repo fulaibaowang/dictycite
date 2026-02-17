@@ -303,10 +303,14 @@ def plot_recall_curves(
         bm25_metrics = baseline_metrics_for_split(split, "BM25")
         dense_metrics = baseline_metrics_for_split(split, "Dense")
 
+        hybrid_label = f"Hybrid (k_rrf={k_rrf}, {w_bm25:.1f}:{w_dense:.1f})"
         plt.figure()
-        plt.plot(ks, [row.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="Best RRF")
-        plt.plot(ks, [bm25_metrics.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="BM25")
-        plt.plot(ks, [dense_metrics.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="Dense")
+        plt.plot(
+            ks, [row.get(f"MeanR@{k}", np.nan) for k in ks],
+            label=hybrid_label, marker="o", markerfacecolor="none", markeredgewidth=1.5,
+        )
+        plt.plot(ks, [bm25_metrics.get(f"MeanR@{k}", np.nan) for k in ks], marker="s", label="BM25")
+        plt.plot(ks, [dense_metrics.get(f"MeanR@{k}", np.nan) for k in ks], marker="^", label="Dense")
 
         rmax = row.get(f"MeanR@{k_max_eval_eff}", np.nan)
         if np.isfinite(rmax):
@@ -341,10 +345,14 @@ def plot_recall_curves(
                 np.mean([baseline_metrics_for_split(s, "Dense").get(f"MeanR@{k}", np.nan) for s in test_splits])
             )
 
+        hybrid_label = f"Hybrid (k_rrf={k_rrf}, {w_bm25:.1f}:{w_dense:.1f})"
         plt.figure()
-        plt.plot(ks, [mean_best.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="Best RRF")
-        plt.plot(ks, [mean_bm25.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="BM25")
-        plt.plot(ks, [mean_dense.get(f"MeanR@{k}", np.nan) for k in ks], marker="o", label="Dense")
+        plt.plot(
+            ks, [mean_best.get(f"MeanR@{k}", np.nan) for k in ks],
+            label=hybrid_label, marker="o", markerfacecolor="none", markeredgewidth=1.5,
+        )
+        plt.plot(ks, [mean_bm25.get(f"MeanR@{k}", np.nan) for k in ks], marker="s", label="BM25")
+        plt.plot(ks, [mean_dense.get(f"MeanR@{k}", np.nan) for k in ks], marker="^", label="Dense")
 
         rmax = mean_best.get(f"MeanR@{k_max_eval_eff}", np.nan)
         target = p * rmax if np.isfinite(rmax) else np.nan
