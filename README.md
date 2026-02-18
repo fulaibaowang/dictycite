@@ -22,7 +22,7 @@ It keeps scripts, notebooks, and outputs.
 
 ## TODO
 
-- query expanding is not perfect (token like AT)
+- query expanding is not perfect (token like AT), it might hurt reranking
 - colbert
 - a better way to remain gene place holder in curator notes
 - for now we use sentence. how about paragraphs (might be too noisy)
