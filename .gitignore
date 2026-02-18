@@ -22,3 +22,4 @@ llama_API_KEY
 .env
 indexes/
 dicty_simulated_data/
+**/__pycache__/
