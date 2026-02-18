@@ -528,6 +528,7 @@ def main() -> None:
 
     ap.add_argument("--cap", type=int, default=2000)
     ap.add_argument("--k_max_eval", type=int, default=5000)
+    ap.add_argument("--ks", type=str, default=",".join(map(str, RECALL_KS)), help="Comma-separated K values for recall (default: RECALL_KS)")
     ap.add_argument("--p", type=float, default=0.95)
     ap.add_argument("--kb", type=int, default=None)
     ap.add_argument("--kd", type=int, default=None)
@@ -603,8 +604,11 @@ def main() -> None:
     k_max_eval_eff = int(min(k_max_eval, kb + kd))
     cap_eff = int(min(int(args.cap), k_max_eval_eff))
 
-    # Evaluation Ks: use only RECALL_KS up to k_max_eval_eff (no extra interpolated Ks)
-    fixed_ks = tuple(k for k in RECALL_KS if k <= k_max_eval_eff)
+    # Evaluation Ks: use only --ks (RECALL_KS) up to k_max_eval_eff (no extra interpolated Ks)
+    ks_from_config = tuple(int(x) for x in args.ks.split(",") if x.strip())
+    if not ks_from_config:
+        ks_from_config = RECALL_KS
+    fixed_ks = tuple(k for k in ks_from_config if k <= k_max_eval_eff)
     ks_eval = fixed_ks
 
     if not ks_eval:

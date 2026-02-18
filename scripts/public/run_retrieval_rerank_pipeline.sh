@@ -120,6 +120,7 @@ BM25_ARGS=(
   --test_batch_jsons $TEST_BATCH_JSONS
   --out_dir "$BM25_OUT"
   --k_eval "$BM25_TOP_K"
+  --ks "$RECALL_KS"
 )
 [ -n "${BM25_JAVA_MEM:-}" ] && BM25_ARGS+=(--java_mem "$BM25_JAVA_MEM")
 [ -n "${BM25_THREADS:-}" ] && BM25_ARGS+=(--threads "$BM25_THREADS")
@@ -175,6 +176,7 @@ HYBRID_ARGS=(
   --out_dir "$HYBRID_OUT"
   --k_max_eval "$HYBRID_K_MAX_EVAL"
   --cap "$HYBRID_CAP"
+  --ks "$RECALL_KS"
 )
 [ -n "${HYBRID_MODE:-}" ] && HYBRID_ARGS+=(--mode "$HYBRID_MODE")
 [ -n "${HYBRID_K_RRF:-}" ] && HYBRID_ARGS+=(--k_rrf "$HYBRID_K_RRF")

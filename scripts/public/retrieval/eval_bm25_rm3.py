@@ -180,6 +180,7 @@ def main():
     ap.add_argument("--java_mem", default=None, help='Optional JVM heap, e.g. "8g"')
 
     ap.add_argument("--k_eval", type=int, default=5000, help="Retrieve/evaluate top K")
+    ap.add_argument("--ks", type=str, default=",".join(map(str, RECALL_KS)), help="Comma-separated K values for recall (default: RECALL_KS)")
     ap.add_argument("--k_feedback", type=int, default=50, help="BM25 feedback pool for RM3")
     ap.add_argument("--rm3_fb_docs", type=int, default=20)
     ap.add_argument("--rm3_fb_terms", type=int, default=30)
@@ -197,6 +198,10 @@ def main():
     ap.add_argument("--save_per_query", action="store_true", help="Save per-query metrics CSV")
     ap.add_argument("--save_zero_recall", action="store_true", help="Save zero-recall reports (default off)")
     args = ap.parse_args()
+
+    ks_recall = tuple(int(x) for x in args.ks.split(",") if x.strip())
+    if not ks_recall:
+        ks_recall = RECALL_KS
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -327,7 +332,7 @@ def main():
 
     # Train subset
     for method, pipe in methods_to_run:
-        br, perq, run_map, res_df = eval_one(method, "train_subset", train_topics, train_gold, pipe, args.k_eval, ks_recall=RECALL_KS)
+        br, perq, run_map, res_df = eval_one(method, "train_subset", train_topics, train_gold, pipe, args.k_eval, ks_recall=ks_recall)
         all_rows.append(br.to_row())
         maybe_save(method, "train_subset", run_map, res_df, perq, train_gold)
 
@@ -335,7 +340,7 @@ def main():
     for batch_name, questions in test_batches:
         topics, gold = build_topics_and_gold(questions)
         for method, pipe in methods_to_run:
-            br, perq, run_map, res_df = eval_one(method, batch_name, topics, gold, pipe, args.k_eval, ks_recall=RECALL_KS)
+            br, perq, run_map, res_df = eval_one(method, batch_name, topics, gold, pipe, args.k_eval, ks_recall=ks_recall)
             all_rows.append(br.to_row())
             maybe_save(method, batch_name, run_map, res_df, perq, gold)
 
