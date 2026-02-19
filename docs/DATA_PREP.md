@@ -74,7 +74,7 @@ Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and 
 - Notebook: [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb)
 - Outputs:
 	- `output/cleaned/dicty_gold_llm_public.json`
-	- `output/cleaned/articles_all_cleaned_abstract.json`
+	- `output/cleaned/articles_all_cleaned_abstract.jsonl`
 
 Schema (high level):
 
@@ -83,13 +83,13 @@ Schema (high level):
 
 Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `original_query` or `body_expansion_synonyms` for rerank).
 
-EPMC JSON:
-- An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).
+EPMC JSONL:
+- One JSON object per line from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).
 
 ## Outputs
 
 - `output/cleaned/dicty_gold_llm_public.json`
-- `output/cleaned/articles_all_cleaned_abstract.json`
+- `output/cleaned/articles_all_cleaned_abstract.jsonl`
 
 ## Summary (short)
 

@@ -50,4 +50,4 @@ Evidence-level full agreement (pairs / queries):
 ## Public release size
 
 - `dicty_gold_llm_public.json`: 1,656 queries, 2,028 labeled docs, 1,289 unique PMIDs
-- `articles_all_cleaned_abstract.json`: 20,447 records
+- `articles_all_cleaned_abstract.jsonl`: 20,447 records

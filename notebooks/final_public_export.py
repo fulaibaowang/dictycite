@@ -17,7 +17,7 @@
 #
 # This notebook builds two public JSON artifacts:
 # - Labeled goldset (queries + labeled docs).
-# - EPMC documents JSON (title/abstract store).
+# - EPMC documents JSONL (title/abstract store).
 #
 # Inputs:
 # - output/cleaned/gold_with_query_expand.parquet (columns: query, query_expand_synonyms, query_expand_long, docs; or query, query_expand, docs for backward compat)
@@ -29,7 +29,7 @@
 # Outputs:
 # - output/cleaned/dicty_gold_llm_private.json (full payload, all fields)
 # - output/cleaned/dicty_gold_llm_public.json (clean, BioASQ-style keys only)
-# - output/cleaned/articles_all_cleaned_abstract.json
+# - output/cleaned/articles_all_cleaned_abstract.jsonl
 
 # %%
 from pathlib import Path
@@ -46,7 +46,7 @@ LABELS_PATH = Path("../output/llama_full_agreement_cases.tsv")
 DOCS_PATH = Path("../output/cleaned/articles_all_cleaned_abstract.parquet")
 OUT_JSON = Path("../output/cleaned/dicty_gold_llm_public.json")
 OUT_JSON_PRIVATE = Path("../output/cleaned/dicty_gold_llm_private.json")
-DOCS_JSON_OUT = Path("../output/cleaned/articles_all_cleaned_abstract.json")
+DOCS_JSONL_OUT = Path("../output/cleaned/articles_all_cleaned_abstract.jsonl")
 
 def load_labels(path: Path) -> pl.DataFrame:
     if path.suffix == ".jsonl":
@@ -200,9 +200,9 @@ show_label_stats(labeled, "doc_match")
 show_label_stats(labeled, "evidence_level")
 
 # %% [markdown]
-# ## Export EPMC documents JSON
+# ## Export EPMC documents JSONL
 #
-# Writes a single JSON array from the cleaned EPMC abstracts parquet.
+# Writes one JSON object per line from the cleaned EPMC abstracts parquet (key `abstract` = cleaned text).
 
 # %%
 # Export with key "abstract" (value = abstract_clean) so consumers (e.g. index scripts) use one field name.
@@ -211,10 +211,7 @@ docs = (
     .with_columns(pl.col("pmid").cast(pl.Utf8))
     .rename({"abstract_clean": "abstract"})
 )
-DOCS_JSON_OUT.write_text(
-    json.dumps(docs.to_dicts(), indent=2, ensure_ascii=True),
-    encoding="utf-8",
-)
-print(f"Saved: {DOCS_JSON_OUT}")
+docs.write_ndjson(DOCS_JSONL_OUT)
+print(f"Saved: {DOCS_JSONL_OUT}")
 
 # %%
