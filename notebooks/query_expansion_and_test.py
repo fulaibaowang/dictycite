@@ -13,6 +13,22 @@
 #     name: dicty-py314
 # ---
 
+# %% [markdown]
+# # Query expansion and BM25 test
+#
+# This notebook builds **two expansion variants** for the goldset and runs BM25 (and RM3) retrieval tests.
+#
+# **Inputs**
+# - Gold parquet (e.g. `output/cleaned/golden_grouped.parquet`) with columns `query`, `docs`, etc.
+# - dictybase_files/gene_information.txt: tab-separated table with columns GENE ID, Gene Name, Synonyms (comma-separated), Gene products. Used only for query expansion; ambiguous aliases (mapping to multiple genes) are skipped.
+#
+# **Expansion rules**
+# - Detection: A query is expanded when it contains (1) a token matching DDB_G\d+, or (2) a token matching a gene name/synonym (case-insensitive) from the table.
+# - Expansion: For each detected gene we append a bounded list of aliases (gene name + synonyms). We never append gene IDs (DDB_G...) even when the gene was detected via ID.
+# - Two variants: query_expand_synonyms (id, gene name, synonyms only) and query_expand_long (synonyms + gene products).
+#
+# **Output**: Parquet with query, query_expand_synonyms, query_expand_long, query_expand (= long), docs; flat TSV for labeling.
+
 # %%
 import polars as pl
 import pandas as pd
@@ -902,11 +918,15 @@ def expand_query_inline(query: str,
 # -------------------------
 def expand_query_structured(query: str,
                            max_aliases_per_gene: int = 4,
-                           max_genes_total: int = 5):
+                           max_genes_total: int = 5,
+                           include_gene_products: bool = True):
     """
     Expand query by appending structured gene information at the end.
-    Format: "original_query\ndetection(gene_name_or_alias): alias1, alias2, product"
-    
+    Format: "original_query\\ndetection(gene_name_or_alias): alias1, alias2[, product]"
+    - include_gene_products=True: synonyms + gene products (long variant).
+    - include_gene_products=False: id, gene name, synonyms only (synonyms variant).
+    Never appends DDB_G... IDs.
+
     Returns: (expanded_query, detected_gene_ids, structured_info)
     """
     if query is None:
@@ -934,17 +954,16 @@ def expand_query_structured(query: str,
                 if len(expansion_aliases) >= max_aliases_per_gene:
                     break
         
-        # Get product
-        product = gene_to_product.get(gidU)
-        product_str = product if product else ""
-        
-        # Build block: "detection(gene_name): alias1, alias2, product"
+        # Build block: "detection(gene_name): alias1, alias2[, product]"
         expansion_str = ", ".join(expansion_aliases)
-        if product_str:
-            if expansion_str:
-                expansion_str += ", " + product_str
-            else:
-                expansion_str = product_str
+        if include_gene_products:
+            product = gene_to_product.get(gidU)
+            product_str = product if product else ""
+            if product_str:
+                if expansion_str:
+                    expansion_str += ", " + product_str
+                else:
+                    expansion_str = product_str
         
         block = f"{first_mention}: {expansion_str}"
         blocks.append(block)
@@ -962,17 +981,22 @@ test_q = "rab32A is required for ..."
 print("Original query:", test_q)
 print("\nMethod 1 (Inline):")
 print("  Expanded:", expand_query_inline(test_q)[0])
-print("\nMethod 2 (Structured):")
-print("  Expanded:", expand_query_structured(test_q)[0])
+print("\nMethod 2 (Structured, synonyms only):")
+print("  Expanded:", expand_query_structured(test_q, include_gene_products=False)[0])
+print("\nMethod 2 (Structured, synonyms + gene products):")
+print("  Expanded:", expand_query_structured(test_q, include_gene_products=True)[0])
 
 
 # %%
 # -------------------------
-# 5) Add query_expand column to gold (structured expansion)
+# 5) Add query_expand columns: synonyms-only and long (synonyms + gene products)
 # -------------------------
 gold_with_expand = gold.with_columns([
-    pl.col("query").map_elements(lambda x: expand_query_structured(x)[0], return_dtype=pl.Utf8).alias("query_expand"),
+    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=False)[0], return_dtype=pl.Utf8).alias("query_expand_synonyms"),
+    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=True)[0], return_dtype=pl.Utf8).alias("query_expand_long"),
 ])
+# Backward compat: query_expand = long variant
+gold_with_expand = gold_with_expand.with_columns(pl.col("query_expand_long").alias("query_expand"))
 
 # For BM25 retrieval: use inline expansion
 gold_expanded = gold.with_columns([
@@ -982,8 +1006,8 @@ gold_expanded = gold.with_columns([
 ])
 
 with pl.Config(fmt_str_lengths=4000, tbl_rows=25, tbl_cols=20):
-    print("Gold with query_expand:")
-    display(gold_with_expand.select(["group_claim_id","query","query_expand"]).head(2))
+    print("Gold with query_expand_synonyms / query_expand_long:")
+    display(gold_with_expand.select(["group_claim_id", "query", "query_expand_synonyms", "query_expand_long"]).head(2))
     print("\nGold expanded for BM25:")
     display(gold_expanded.select(["group_claim_id","query","bm25_query"]).head(2))
 
@@ -998,7 +1022,7 @@ print("Saved: ../output/cleaned/gold_with_query_expand.parquet")
 # Flatten (unnest docs) and save as TSV
 gold_flat = (
     gold_with_expand
-    .select(["group_claim_id", "query", "query_expand", "docs"])
+    .select(["group_claim_id", "query", "query_expand_synonyms", "query_expand_long", "query_expand", "docs"])
     .explode("docs")
     .with_columns([
         pl.col("docs").struct.field("pmid").alias("pmid"),

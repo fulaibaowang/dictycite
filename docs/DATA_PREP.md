@@ -45,9 +45,10 @@ Cleaning summary (high level):
 ## 4.5) Query Expansion (for goldset)
 
 We build a query-expanded goldset that appends structured gene aliases/products to the original claim.
-This produces `query_expand` alongside the original `query` for retrieval and labeling.
+Two variants are produced: **query_expand_synonyms** (gene name + synonyms only) and **query_expand_long** (synonyms + gene products). Gene IDs (DDB_G…) in the query trigger expansion but are never appended to the expansion text.
 
-- Notebook: [notebooks/BM25_query.ipynb](../notebooks/BM25_query.ipynb)
+- Notebook: [notebooks/query_expansion_and_test.ipynb](../notebooks/query_expansion_and_test.ipynb)
+- Gene lookup: [dictybase_files/gene_information.txt](../dictybase_files/gene_information.txt) — tab-separated columns **GENE ID**, **Gene Name**, **Synonyms** (comma-separated), **Gene products**. Used only for expansion; ambiguous aliases are skipped.
 
 ## 5) Goldset Labeling (LLM review)
 
@@ -58,7 +59,7 @@ To reduce false positives, we run a labeling step to build a higher-quality gold
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
 
 Labeling details (summary):
-- Input: `output/cleaned/gold_with_query_expand_flat.tsv` (claim + PMID + title/abstract)
+- Input: `output/cleaned/gold_with_query_expand_flat.tsv` (claim + PMID + title/abstract). The labeler uses **query_expand** (long variant: synonyms + gene products) as the claim text when present, otherwise **query**.
 - Run the labeler 3 times to measure consistency:
 	- `output/llm_labels_goldset_run1.jsonl`
 	- `output/llm_labels_goldset_run2.jsonl`
@@ -68,7 +69,7 @@ Labeling details (summary):
 ## 6) Final Public Export (JSON)
 
 We join the goldset with LLM labels and publish the labeled goldset JSON.
-We also export the cleaned EPMC abstracts to a JSON array for public release.
+Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and `docs` (or legacy `query_expand` for backward compat).
 
 - Notebook: [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb)
 - Outputs:
@@ -77,8 +78,10 @@ We also export the cleaned EPMC abstracts to a JSON array for public release.
 
 Schema (high level):
 
-- `questions[].group_claim_id`, `query`, `query_expand`, `pmids`, `documents`
+- `questions[].id`, `original_query`, `body_expansion_synonyms`, `body_expansion_long`, `body` (= original_query), `documents`, `docs`
 - `questions[].docs[]` includes `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
+
+Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `original_query` or `body_expansion_synonyms` for rerank).
 
 EPMC JSON:
 - An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata).

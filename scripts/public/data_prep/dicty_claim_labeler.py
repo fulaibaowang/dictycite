@@ -3,7 +3,8 @@
 Label curator-note claim–citation pairs using an Ollama-compatible /api/generate endpoint.
 
 Input: TSV with columns:
-  group_claim_id, query, query_expand, title, abstract_clean, pmid
+  group_claim_id, query, query_expand[, query_expand_synonyms, query_expand_long], title, abstract_clean, pmid
+  Claim text sent to the LLM uses query_expand (long variant) if present, else query.
 
 Output: JSONL with one record per (group_claim_id, pmid):
   {"group_claim_id": "...", "pmid": "...", "doc_match": "...", "evidence_level": "...", "reason": "..."}
