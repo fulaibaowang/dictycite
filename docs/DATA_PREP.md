@@ -78,10 +78,10 @@ Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and 
 
 Schema (high level):
 
-- `questions[].id`, `original_query`, `body_expansion_synonyms`, `body_expansion_long`, `body` (= original_query), `documents`, `docs`
+- `questions[].id`, `body`, `body_expansion_synonyms`, `body_expansion_long`, `documents`, `docs`
 - `questions[].docs[]` includes `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
 
-Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `original_query` or `body_expansion_synonyms` for rerank).
+Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `body` or `body_expansion_synonyms` for rerank).
 
 EPMC JSONL:
 - One JSON object per line from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).

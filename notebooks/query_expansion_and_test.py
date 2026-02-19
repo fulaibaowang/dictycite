@@ -49,7 +49,7 @@ if not pt.started():
 
 # %%
 INDEX_PATH = os.path.abspath("../indexes/dicty_bm25_index")
-INDEX_PATH = os.path.abspath("../indexes/_terrier_index_dicty_22.01.26")
+# INDEX_PATH = os.path.abspath("../indexes/_terrier_index_dicty_22.01.26")
 
 # 1) load existing index from disk
 index_ref = pt.IndexRef.of(INDEX_PATH)

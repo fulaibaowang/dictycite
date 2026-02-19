@@ -24,7 +24,7 @@
 # - output/llama_full_agreement_cases.tsv (or output/llm_labels_*.jsonl)
 # - output/cleaned/articles_all_cleaned_abstract.parquet
 #
-# Output JSON fields per question: id, original_query, body_expansion_synonyms, body_expansion_long, body (= original_query), documents, docs.
+# Output JSON fields per question: id, body, body_expansion_synonyms, body_expansion_long, documents, docs.
 #
 # Outputs:
 # - output/cleaned/dicty_gold_llm_private.json (full payload, all fields)
@@ -135,10 +135,9 @@ questions = grouped.sort("group_claim_id").to_dicts()
 for q in questions:
     pmids = [d.get("pmid") for d in q.get("docs", []) if d.get("pmid")]
     q["pmids"] = pmids
-    # BioASQ-like fields: body = original_query; expansion variants for retrieval --query-field
+    # BioASQ-like fields: body = raw query; expansion variants for retrieval --query-field
     q["id"] = str(q.get("group_claim_id", ""))
-    q["original_query"] = (q.get("query") or "").strip()
-    q["body"] = q["original_query"]
+    q["body"] = (q.get("query") or "").strip()
     q["body_expansion_synonyms"] = (q.get("query_expand_synonyms") or "").strip()
     q["body_expansion_long"] = (q.get("query_expand_long") or "").strip()
     q["documents"] = [PUBMED_URL_PREFIX + str(p) for p in pmids if p]
@@ -147,14 +146,13 @@ for q in questions:
 OUT_JSON_PRIVATE.write_text(json.dumps({"questions": questions}, indent=2), encoding="utf-8")
 print(f"Saved (private): {OUT_JSON_PRIVATE}")
 
-# Clean public: BioASQ-style key fields + expansion variants
+# Clean public: id, body, expansion variants, documents, docs
 def to_public_question(q):
     return {
         "id": q["id"],
-        "original_query": q["original_query"],
+        "body": q["body"],
         "body_expansion_synonyms": q["body_expansion_synonyms"],
         "body_expansion_long": q["body_expansion_long"],
-        "body": q["body"],
         "documents": q["documents"],
         "docs": q.get("docs", []),
     }
