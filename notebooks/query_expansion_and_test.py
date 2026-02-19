@@ -48,7 +48,8 @@ if not pt.started():
 # # let us do one query test
 
 # %%
-INDEX_PATH = os.path.abspath("../indexes/terrier_index_dicty_22.01.26")
+INDEX_PATH = os.path.abspath("../indexes/dicty_bm25_index")
+INDEX_PATH = os.path.abspath("../indexes/_terrier_index_dicty_22.01.26")
 
 # 1) load existing index from disk
 index_ref = pt.IndexRef.of(INDEX_PATH)
@@ -82,7 +83,7 @@ print("pos_pmids (first 20):", pos_pmids[:20])
 
 # %%
 # 4) retrieve top K
-K = 1000
+K = 2000
 qdf = pd.DataFrame([{"qid": qid, "query": query}])
 res = br.transform(qdf).head(K)
 res["docno"] = res["docno"].astype(str)

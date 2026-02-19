@@ -205,10 +205,12 @@ show_label_stats(labeled, "evidence_level")
 # Writes a single JSON array from the cleaned EPMC abstracts parquet.
 
 # %%
-docs = pl.read_parquet(DOCS_PATH).with_columns(
-    pl.col("pmid").cast(pl.Utf8)
- )
-
+# Export with key "abstract" (value = abstract_clean) so consumers (e.g. index scripts) use one field name.
+docs = (
+    pl.read_parquet(DOCS_PATH)
+    .with_columns(pl.col("pmid").cast(pl.Utf8))
+    .rename({"abstract_clean": "abstract"})
+)
 DOCS_JSON_OUT.write_text(
     json.dumps(docs.to_dicts(), indent=2, ensure_ascii=True),
     encoding="utf-8",

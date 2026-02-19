@@ -17,8 +17,9 @@ Output:
 ## 3) EPMC/PubMed Fetch (title + abstract)
 
 Output:
-- `output/cleaned/articles_all_cleaned_abstract.parquet`
-- `output/cleaned/articles_all_cleaned_abstract.jsonl`
+- `output/cleaned/articles_all_cleaned_abstract.parquet` — source of truth (column `abstract_clean`).
+- `output/cleaned/articles_all_cleaned_abstract.json` — written by final_public_export (key **`abstract`** = cleaned text).
+- `output/cleaned/articles_all_cleaned_abstract.jsonl` — not written by the repo. Generate from the parquet (e.g. Polars `write_ndjson`) with `abstract_clean` aliased to **`abstract`** so index scripts (`build_bm25_index_from_jsonl_shards.py`, etc.) that expect key `abstract` work.
 
 ## 4) Merge + Clean (claims ↔ PMIDs ↔ abstracts)
 

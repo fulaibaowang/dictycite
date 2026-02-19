@@ -84,7 +84,7 @@ Schema (high level):
 Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `original_query` or `body_expansion_synonyms` for rerank).
 
 EPMC JSON:
-- An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata).
+- An array of records from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).
 
 ## Outputs
 
