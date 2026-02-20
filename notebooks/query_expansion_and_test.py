@@ -734,23 +734,12 @@ if "summary" in globals():
 # %% [markdown]
 # Build a detection lookup: alias_lower -> gene_id from (Gene Name + Synonyms)
 #
-# - If an alias maps to multiple genes (ambiguous), we drop it from detection to avoid false triggers.
+# **Detection:** Only canonical Gene Name and specific synonyms. Rules: len >= 4; blocklist on (trna, rrna, kinase, putative, etc.); alias in >= 5 genes -> blocked; ambiguous aliases (same alias -> multiple genes) removed.
 #
-# Detect genes in a query:
+# **Expansion:** Always canonical name first, then filtered synonyms (same blocklist + frequency); cap 2-3 aliases per gene; no generic tokens. Never append gene IDs (DDB_G...).
 #
-# - any token matching DDB_G\d+ triggers that gene if present in the table
-# - any token matching a name/synonym (case-insensitive) triggers its gene
-#
-# Expand the query:
-#
-# - For each detected gene, append a bounded list of aliases:
-#   - Gene Name + Synonyms
-# - Never append gene IDs (DDB_G...) even if the gene was detected via ID.
-#
-# Thresholds / caps (to prevent noise)
-#
-# - max_terms_per_gene = 6 : add at most 6 aliases per detected gene
-# - max_added_total = 20 : add at most 20 aliases overall per query
+# Detect genes in a query: DDB_G\d+ tokens or token match against alias_to_gene (case-insensitive).
+# Thresholds: max_terms_per_gene / max_added_total for inline expansion; gene-count tiers (1-2 / 3 / 4+) for structured expansion (see expand_query_structured).
 
 # %%
 # -------------------------
@@ -780,14 +769,83 @@ TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")   # ALG-2, carA-1, gpaF, etc
 DDB_RE   = re.compile(r"\bDDB_G\d+\b", re.IGNORECASE)
 
 # -------------------------
+# Alias filtering: blocklist, length, frequency (no whitelist)
+# -------------------------
+GENERIC_ALIAS_BLOCKLIST = {
+    "trna", "rrna", "rna", "dna", "mrna",
+    "atp", "gtp", "gdp", "nad", "nadh", "nadp", "nadph", "fadh", "coa",
+    "gef", "gap", "kinase", "phosphatase", "receptor", "transporter",
+    "aldh", "pks", "sod", "plb", "rnr", "pp2c",
+    "putative", "mitochondrial", "hypothetical protein",
+}
+AUTO_BLOCK_MIN_GENE_FREQ = 5  # alias in >= this many genes -> block for detect and expand
+
+MAX_ALIASES_PER_GENE = 3  # cap expansion to canonical + up to 2 synonyms per gene
+
+
+def is_good_alias(a: str, mode: str, alias_gene_count: int | None = None) -> bool:
+    """
+    Return False if alias is empty, DDB_G id, blocklisted, len < 4, or too frequent.
+    Same rule for both modes (detect/expand): len >= 4, blocklist, frequency < 5.
+    """
+    if not a:
+        return False
+    s = a.strip()
+    sl = s.lower()
+    if not s:
+        return False
+    if sl.startswith("ddb_g"):
+        return False
+    if sl in GENERIC_ALIAS_BLOCKLIST:
+        return False
+    if len(sl) < 4:
+        return False
+    if alias_gene_count is not None and alias_gene_count >= AUTO_BLOCK_MIN_GENE_FREQ:
+        return False
+    return True
+
+
+# -------------------------
 # 1) Build lookup tables for gene detection and expansion
 # -------------------------
+# Pass 1: alias -> number of distinct genes (for frequency-based block)
+alias_gene_count: dict[str, int] = {}
+rows = gene.select(["gene_id", "gene_name", "synonyms", "gene_products"]).to_dicts()
+
+for r in rows:
+    gid = r.get("gene_id")
+    if gid is None:
+        continue
+    gid = str(gid).strip()
+    if not gid or gid.upper() == "NA":
+        continue
+    gidU = gid.upper()
+    gname = r.get("gene_name")
+    gname = None if gname is None else str(gname).strip()
+    gname_out = gname if (gname and gname.upper() != "NA") else None
+    syns = split_syn(r.get("synonyms"))
+    aliases_raw = []
+    if gname_out:
+        aliases_raw.append(gname_out)
+    aliases_raw.extend(syns)
+    seen_raw = set()
+    for a in aliases_raw:
+        if not a:
+            continue
+        al = a.lower()
+        if al.startswith("ddb_g"):
+            continue
+        if al not in seen_raw:
+            seen_raw.add(al)
+            alias_gene_count[al] = alias_gene_count.get(al, 0) + 1
+
+# Pass 2: gene_to_aliases (canonical + filtered synonyms, cap 2-3), alias_to_gene (detect only good + ambiguity)
 alias_to_gene = {}    # alias_lower -> gene_id (upper), only if unambiguous
 ambig_alias = set()   # alias_lower that map to multiple genes
-gene_to_aliases = {}  # gene_id_upper -> ordered aliases (name+syns)
+gene_to_aliases = {}  # gene_id_upper -> ordered aliases (name + filtered syns, max 3)
 gene_to_product = {}  # gene_id_upper -> gene_product string
-
-rows = gene.select(["gene_id", "gene_name", "synonyms", "gene_products"]).to_dicts()
+filtered_detect: list[tuple[str, str]] = []
+filtered_expand: list[tuple[str, str]] = []
 
 for r in rows:
     gid = r.get("gene_id")
@@ -804,25 +862,41 @@ for r in rows:
 
     syns = split_syn(r.get("synonyms"))
 
-    # Get gene product
     gproduct = r.get("gene_products")
     gproduct = None if gproduct is None else str(gproduct).strip()
     gproduct_out = gproduct if (gproduct and gproduct.upper() != "NA") else None
     gene_to_product[gidU] = gproduct_out
 
-    # expansion aliases (name + synonyms), de-dup preserving order, no gene_id
-    aliases = []
+    # Expansion: always canonical first (if not DDB_G), then filtered synonyms; cap at MAX_ALIASES_PER_GENE
+    aliases_raw = []
     if gname_out:
-        aliases.append(gname_out)
-    aliases.extend(syns)
-
+        aliases_raw.append(gname_out)
+    aliases_raw.extend(syns)
     seen = set()
-    aliases = [a for a in aliases if a and (a.lower() not in seen and not seen.add(a.lower()))]
-    gene_to_aliases[gidU] = aliases
+    aliases_dedup = [a for a in aliases_raw if a and (a.lower() not in seen and not seen.add(a.lower()))]
+    expansion_list = []
+    if gname_out and not gname_out.lower().startswith("ddb_g"):
+        expansion_list.append(gname_out)
+    for a in aliases_dedup:
+        al = a.lower()
+        if al.startswith("ddb_g"):
+            continue
+        if gname_out and al == gname_out.lower():
+            continue  # already added as canonical
+        if is_good_alias(a, "expand", alias_gene_count.get(al)):
+            expansion_list.append(a)
+            if len(expansion_list) >= MAX_ALIASES_PER_GENE:
+                break
+        else:
+            filtered_expand.append((gidU, a))
+    gene_to_aliases[gidU] = expansion_list[:MAX_ALIASES_PER_GENE]
 
-    # detection mapping (unambiguous aliases only)
-    for a in aliases:
+    # Detection: only aliases that pass is_good_alias(..., "detect") and then ambiguity
+    for a in expansion_list:
         a_norm = a.lower()
+        if not is_good_alias(a, "detect", alias_gene_count.get(a_norm)):
+            filtered_detect.append((gidU, a))
+            continue
         if a_norm in ambig_alias:
             continue
         if a_norm in alias_to_gene and alias_to_gene[a_norm] != gidU:
@@ -834,6 +908,8 @@ for r in rows:
 print("genes:", len(gene_to_aliases))
 print("detection aliases (unique):", len(alias_to_gene))
 print("ambiguous aliases skipped:", len(ambig_alias))
+print("Filtered from detection:", len(filtered_detect))
+print("Filtered from expansion:", len(filtered_expand))
 
 # -------------------------
 # 2) Shared gene detection function
@@ -915,17 +991,20 @@ def expand_query_inline(query: str,
 
 
 # -------------------------
-# 4) Method 2: Structured expansion (new)
+# 4) Method 2: Structured expansion (gene-count tiers: 1-2 normal, 3 light, 4+ minimal)
 # -------------------------
 def expand_query_structured(query: str,
                            max_aliases_per_gene: int = 4,
                            max_genes_total: int = 5,
-                           include_gene_products: bool = True):
+                           include_gene_products: bool = True,
+                           strict: bool = True):
     """
     Expand query by appending structured gene information at the end.
-    Format: "original_query\\ndetection(gene_name_or_alias): alias1, alias2[, product]"
-    - include_gene_products=True: synonyms + gene products (long variant).
-    - include_gene_products=False: id, gene name, synonyms only (synonyms variant).
+    Gene-count tiers:
+      - 1-2 genes: full expansion (canonical + synonyms; long adds products).
+      - 3 genes: light — canonical names only; loose variant may add products.
+      - 4+ genes: strict = no expansion (query as-is); loose = at most one block (first gene, canonical [+ product]).
+    strict=True for query_expand_synonyms, strict=False for query_expand_long.
     Never appends DDB_G... IDs.
 
     Returns: (expanded_query, detected_gene_ids, structured_info)
@@ -939,14 +1018,52 @@ def expand_query_structured(query: str,
     
     detected_map = detect_genes(q)
     detected = sorted(detected_map.keys())
-    
-    # Build structured blocks
+    n_detected = len(detected)
+
+    def _canonical(gidU: str) -> str:
+        aliases_list = gene_to_aliases.get(gidU, [])
+        return (aliases_list[0] if aliases_list else detected_map[gidU])
+
+    # 4+ genes: no expansion (strict) or one minimal block (loose)
+    if n_detected >= 4:
+        if strict:
+            return (q, detected, "")
+        gidU = detected[0]
+        first_mention = detected_map[gidU]
+        canonical = _canonical(gidU)
+        if canonical.lower().startswith("ddb_g"):
+            return (q, detected, "")
+        expansion_str = canonical
+        if include_gene_products:
+            product = gene_to_product.get(gidU)
+            if product:
+                expansion_str += ", " + product
+        block = f"{first_mention}: {expansion_str}"
+        return (q + "\n" + block, detected, block)
+
+    # 3 genes: light — canonical only per gene; loose may add product
+    if n_detected == 3:
+        blocks = []
+        for gidU in detected[:max_genes_total]:
+            first_mention = detected_map[gidU]
+            canonical = _canonical(gidU)
+            if canonical.lower().startswith("ddb_g"):
+                continue
+            expansion_str = canonical
+            if not strict and include_gene_products:
+                product = gene_to_product.get(gidU)
+                if product:
+                    expansion_str += ", " + product
+            blocks.append(f"{first_mention}: {expansion_str}")
+        structured_suffix = " ||| ".join(blocks) if blocks else ""
+        bm25_query = q if not structured_suffix else (q + "\n" + structured_suffix)
+        return (bm25_query, detected, structured_suffix)
+
+    # 1-2 genes: normal expansion
     blocks = []
     for gidU in detected[:max_genes_total]:
         first_mention = detected_map[gidU]
         aliases_list = gene_to_aliases.get(gidU, [])
-        
-        # Collect aliases (exclude those already in query)
         expansion_aliases = []
         for a in aliases_list:
             al = a.lower()
@@ -954,8 +1071,6 @@ def expand_query_structured(query: str,
                 expansion_aliases.append(a)
                 if len(expansion_aliases) >= max_aliases_per_gene:
                     break
-        
-        # Build block: "detection(gene_name): alias1, alias2[, product]"
         expansion_str = ", ".join(expansion_aliases)
         if include_gene_products:
             product = gene_to_product.get(gidU)
@@ -965,14 +1080,10 @@ def expand_query_structured(query: str,
                     expansion_str += ", " + product_str
                 else:
                     expansion_str = product_str
-        
         block = f"{first_mention}: {expansion_str}"
         blocks.append(block)
-    
-    # Append all blocks to query separated by " ||| "
     structured_suffix = " ||| ".join(blocks) if blocks else ""
     bm25_query = q if not structured_suffix else (q + "\n" + structured_suffix)
-    
     return bm25_query, detected, structured_suffix
 
 
@@ -993,8 +1104,8 @@ print("  Expanded:", expand_query_structured(test_q, include_gene_products=True)
 # 5) Add query_expand columns: synonyms-only and long (synonyms + gene products)
 # -------------------------
 gold_with_expand = gold.with_columns([
-    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=False)[0], return_dtype=pl.Utf8).alias("query_expand_synonyms"),
-    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=True)[0], return_dtype=pl.Utf8).alias("query_expand_long"),
+    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=False, strict=True)[0], return_dtype=pl.Utf8).alias("query_expand_synonyms"),
+    pl.col("query").map_elements(lambda x: expand_query_structured(x, include_gene_products=True, strict=False)[0], return_dtype=pl.Utf8).alias("query_expand_long"),
 ])
 # Backward compat: query_expand = long variant
 gold_with_expand = gold_with_expand.with_columns(pl.col("query_expand_long").alias("query_expand"))

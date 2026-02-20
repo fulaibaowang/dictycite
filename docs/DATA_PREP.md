@@ -47,6 +47,13 @@ Cleaning summary (high level):
 We build a query-expanded goldset that appends structured gene aliases/products to the original claim.
 Two variants are produced: **query_expand_synonyms** (gene name + synonyms only) and **query_expand_long** (synonyms + gene products). Gene IDs (DDB_G…) in the query trigger expansion but are never appended to the expansion text.
 
+Expansion is tiered by how many genes are detected in the query:
+- **1–2 genes:** full expansion (canonical names + filtered synonyms; long variant also adds gene products).
+- **3 genes:** light expansion — canonical names only (no synonyms), to avoid clutter.
+- **4+ genes:** no synonym expansion; query is left as-is or at most one minimal expansion.
+
+The two variants differ in strictness: **query_expand_synonyms** applies these tiers strictly (fewer added terms). **query_expand_long** is looser (e.g. still adds gene products when expansion is light or minimal), giving variety without excessive noise.
+
 - Notebook: [notebooks/query_expansion_and_test.ipynb](../notebooks/query_expansion_and_test.ipynb)
 - Gene lookup: [dictybase_files/gene_information.txt](../dictybase_files/gene_information.txt) — tab-separated columns **GENE ID**, **Gene Name**, **Synonyms** (comma-separated), **Gene products**. Used only for expansion; ambiguous aliases are skipped.
 
