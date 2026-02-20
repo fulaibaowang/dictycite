@@ -1,6 +1,6 @@
 #indexes
 srun -p dev --time=12:00:00 --gres=gpu:1 -c 4 --mem=64G \
-  --container-image=/shared/home/yun.wang/biolab/yun/bioasq_04.02.26.sqfs \
+  --container-image=/shared/home/yun.wang/biolab/yun/bioasq_20.02.26.sqfs \
   --container-mount-home \
   --container-mounts "${PWD}:/work" \
   --container-workdir /work \
@@ -28,4 +28,5 @@ python scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_sha
 # Writes 9 subdirs under WORKFLOW_OUTPUT_DIR: bm25_body_dense_body, bm25_body_dense_synonyms, ...
 ./scripts/private_scripts/hpc_scripts/run_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
 
-
+# x3 query-field sweep (rerank)
+./run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env

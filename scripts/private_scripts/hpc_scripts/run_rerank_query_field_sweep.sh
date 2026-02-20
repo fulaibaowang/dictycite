@@ -125,6 +125,10 @@ for i in 0 1 2; do
   QF_SHORT="${RERANK_QF_SHORT[$i]}"
   RERANK_OUT="$WORKFLOW_OUTPUT_DIR/rerank_$QF_SHORT"
   echo ""
+  if [ -f "$RERANK_OUT/metrics.csv" ] || [ -n "$(find "$RERANK_OUT" -maxdepth 2 -name '*.tsv' 2>/dev/null | head -1)" ]; then
+    echo "========== Reranker (query-field=$QF_FULL) -> $RERANK_OUT (skip: output exists) =========="
+    continue
+  fi
   echo "========== Reranker (query-field=$QF_FULL) -> $RERANK_OUT =========="
   mkdir -p "$RERANK_OUT"
   RERANK_ARGS=(
