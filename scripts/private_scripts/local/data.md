@@ -11,3 +11,9 @@ python3 scripts/public/data_prep/make_goldset_subset.py \
 #plots that splits different evidence_level 
 python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/cleaned/dicty_gold_llm_public.json
 python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/cleaned/dicty_gold_llm_public.json --rerank-dir rerank_bge
+
+#plots for sweeping different query expansion
+python scripts/public/combine_query_field_sweep_results.py \
+  --workflow_dir output/workflow_hpc_test \
+  --out output/workflow_hpc_test/combined_sweep_metrics.csv \
+  --figures_dir output/workflow_hpc_test/figures

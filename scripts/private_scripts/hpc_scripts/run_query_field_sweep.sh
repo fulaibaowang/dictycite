@@ -80,13 +80,12 @@ for BM25_Q in "${BM25_OPTS[@]}"; do
     # Override: one output dir per combination (sibling to default or under it)
     BASE_OUT="${WORKFLOW_OUTPUT_DIR:-$REPO_ROOT/output/workflow_hpc_test}"
     export WORKFLOW_OUTPUT_DIR="$BASE_OUT/$SUBDIR"
-    export BM25_QUERY_FIELD="$BM25_Q"
-    export DENSE_QUERY_FIELD="$DENSE_Q"
 
     echo ""
     echo "========== [$COMBO/$TOTAL] BM25=$BM25_Q Dense=$DENSE_Q -> $WORKFLOW_OUTPUT_DIR =========="
     mkdir -p "$WORKFLOW_OUTPUT_DIR"
-    "$PIPELINE" --no-rerank
+    # Pass query fields as args so the pipeline always uses the right ones (env can be lost e.g. under job runners)
+    "$PIPELINE" --no-rerank --bm25-query-field "$BM25_Q" --dense-query-field "$DENSE_Q"
   done
 done
 
