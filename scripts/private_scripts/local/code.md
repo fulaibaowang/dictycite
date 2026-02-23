@@ -35,3 +35,5 @@ python scripts/public/shared_scripts/compare_result_dirs.py \
   --test-batch-jsons example/dicty_gold_llm_public_test_50.json \
   --log-x --plots-by-split \
   --output-dir output/workflow_hpc_test/fixed_long_rerank_sweep/compare_plots
+
+python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test/fixed_long_rerank_sweep --gold-json output/cleaned/dicty_gold_llm_public.json  --rerank-dir rerank_long

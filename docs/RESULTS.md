@@ -47,6 +47,12 @@ Evidence-level full agreement (pairs / queries):
 | needs_fulltext | 262 | 251 |
 | not_applicable | 158 | 150 |
 
+## Query expansion and reranking
+
+**Retrieval (recall):** Query expansion helps at the retrieval step. In the query-field sweep (see `notebooks/query_expansion_and_test.ipynb`, last cells), hybrid retrieval with expanded query fields (long, synonyms) achieves higher mean recall over K ∈ {200, 300, 400, 500, 1000} than body-only (no expansion); the best profiles are (long, synonyms), (long, long), (long, body), with (body, body) ranked last. So expansion improves recall when retrieving.
+
+**Reranking (MAP):** After reranking, expansion does **not** improve MAP@10. Comparisons via `scripts/public/shared_scripts/compare_result_dirs.py` across rerank_body, rerank_synonyms, rerank_long (and hybrid) show that body-only rerank is competitive or best on MAP@10; expanded queries (long/synonyms) do not yield a consistent MAP gain post-rerank. The notebook includes a statistical comparison cell (MAP@10 mean ± std by method, rank, paired t-test) using the compare summary CSV.
+
 ## Public release size
 
 - `dicty_gold_llm_public.json`: 1,656 queries, 2,028 labeled docs, 1,289 unique PMIDs

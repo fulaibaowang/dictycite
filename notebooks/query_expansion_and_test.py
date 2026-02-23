@@ -1452,4 +1452,61 @@ if st and len(summary) > 1 and len(df["batch"].unique()) >= 2:
 else:
     print("\n(Paired test skipped: need scipy and ≥2 batches)")
 
+
+# %% [markdown]
+# ## Rerank comparison: MAP@10 by query field (body vs synonyms vs long)
+#
+# After reranking, we compare **MAP@10** across methods (body, synonyms, long, hybrid) using the output of `scripts/public/shared_scripts/compare_result_dirs.py` (compare_summary.csv). Stats: mean ± std across train/test splits, rank, and paired t-test of best vs others. This complements the retrieval recall comparison above: expansion helps recall at retrieval but does not improve MAP after reranking.
+
+# %%
+# Path to compare summary (from compare_result_dirs.py --output-dir .../compare_plots)
+import os
+from pathlib import Path
+
+COMPARE_CSV = Path(os.environ.get("DICTYCITE_ROOT", "../")) / "output/workflow_hpc_test/fixed_long_rerank_sweep/compare_plots/compare_summary.csv"
+if not COMPARE_CSV.is_file():
+    COMPARE_CSV = Path("../output/workflow_hpc_test/fixed_long_rerank_sweep/compare_plots/compare_summary.csv")
+
+if not COMPARE_CSV.is_file():
+    print("Compare summary not found. Run compare_result_dirs.py with --output-dir .../compare_plots first.")
+else:
+    df = pd.read_csv(COMPARE_CSV)
+    if "MAP@10" not in df.columns:
+        print("MAP@10 not in compare summary. Columns:", list(df.columns))
+    else:
+        # One row per (dir_label, role). Aggregate by dir_label.
+        summary = df.groupby("dir_label").agg(
+            mean_map10=("MAP@10", "mean"),
+            std_map10=("MAP@10", "std"),
+            n_splits=("role", "nunique"),
+        ).reset_index()
+        summary = summary.sort_values("mean_map10", ascending=False).reset_index(drop=True)
+        summary["rank"] = range(1, len(summary) + 1)
+
+        print("MAP@10 after reranking, mean ± std across splits (train/test):\n")
+        display(pl.from_pandas(summary))
+
+        # Paired t-test: best vs others (by role/split)
+        try:
+            import scipy.stats as st
+        except ImportError:
+            st = None
+
+        best_method = summary.iloc[0]["dir_label"]
+        if st and len(summary) > 1 and "role" in df.columns and df["role"].nunique() >= 2:
+            piv = df.pivot_table(index="role", columns="dir_label", values="MAP@10")
+            if best_method in piv.columns:
+                best_vals = piv[best_method].dropna()
+                for other in summary.iloc[1:]["dir_label"]:
+                    if other not in piv.columns:
+                        continue
+                    other_vals = piv[other].dropna()
+                    common = best_vals.index.intersection(other_vals.index)
+                    if len(common) < 2:
+                        continue
+                    t, p = st.ttest_rel(best_vals.loc[common], other_vals.loc[common])
+                    print(f"\nPaired t-test (best vs {other}): t={t:.4f}, p={p:.4f}")
+        else:
+            print("\n(Paired test skipped: need scipy and ≥2 splits in compare summary)")
+
 # %%

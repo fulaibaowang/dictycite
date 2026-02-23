@@ -19,10 +19,8 @@ It keeps scripts, notebooks, and outputs.
 - Data prep workflow: [docs/DATA_PREP.md](docs/DATA_PREP.md)
 - Detailed commands: [docs/USAGE.md](docs/USAGE.md)
 - Results and dataset notes: [docs/RESULTS.md](docs/RESULTS.md)
+- Retrieval pipeline and analysis scripts: [scripts/public/README.md](scripts/public/README.md) (pipeline: [scripts/public/shared_scripts/README.md](scripts/public/shared_scripts/README.md))
 
 ## TODO
 
-- query expanding is not perfect (token like AT), it might hurt reranking
 - colbert
-- a better way to remain gene place holder in curator notes
-- for now we use sentence. how about paragraphs (might be too noisy)
