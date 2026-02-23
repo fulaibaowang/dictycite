@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
-Combine metrics from 3×3 query-field sweep runs (BM25 × Dense, no hybrid).
+Combine metrics from 3×3 query-field sweep runs (BM25 × Dense, optional Hybrid).
 
-Reads all output/workflow_hpc_test/bm25_*_dense_*/{bm25,dense}/metrics.csv,
+Reads bm25_*_dense_*/{bm25,dense}/metrics.csv and optionally hybrid/results_all.csv,
 adds combo id and query-field labels, writes a single combined CSV with
 train/test split preserved (batch column), and plots recall curves:
-one figure per batch (train/test) with 3 BM25 curves + 3 Dense curves
-(body, synonyms, long query-field).
+one figure per batch with curves for selected stages (bm25, dense, hybrid).
 
 Usage:
   python scripts/public/combine_query_field_sweep_results.py
   python scripts/public/combine_query_field_sweep_results.py --workflow_dir output/workflow_hpc_test --no_plot
+  python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense   # default
+  python scripts/public/combine_query_field_sweep_results.py --plot hybrid       # only hybrid
+  python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense hybrid
+  python scripts/public/combine_query_field_sweep_results.py --log_x   # log-scale x-axis (K)
+  python scripts/public/combine_query_field_sweep_results.py --log_y   # log-scale y-axis (recall)
 """
 
 from __future__ import annotations
@@ -58,6 +62,22 @@ def load_stage_metrics(stage_path: Path, stage: str) -> pd.DataFrame | None:
     return df
 
 
+def load_hybrid_metrics(hybrid_path: Path) -> pd.DataFrame | None:
+    """Load hybrid results from results_all.csv; return None if missing.
+    Normalizes to same schema as bm25/dense: batch (from split), stage, method, etc.
+    """
+    csv_path = hybrid_path / "results_all.csv"
+    if not csv_path.is_file():
+        return None
+    df = pd.read_csv(csv_path)
+    df = df.rename(columns={"split": "batch"})
+    df["stage"] = "hybrid"
+    df["method"] = "Hybrid"
+    if "n_queries" not in df.columns:
+        df["n_queries"] = pd.NA
+    return df
+
+
 def _recall_k_columns(df: pd.DataFrame) -> list[str]:
     """Return sorted MeanR@* column names by K value."""
     cols = [c for c in df.columns if c.startswith("MeanR@")]
@@ -65,8 +85,15 @@ def _recall_k_columns(df: pd.DataFrame) -> list[str]:
     return cols
 
 
-def _plot_recall_curves(combined: pd.DataFrame, output_dir: Path) -> None:
-    """One plot per batch: 3 BM25 + 3 Dense recall curves (body, synonyms, long)."""
+def _plot_recall_curves(
+    combined: pd.DataFrame,
+    output_dir: Path,
+    *,
+    plot_stages: tuple[str, ...] = ("bm25", "dense"),
+    log_x: bool = False,
+    log_y: bool = False,
+) -> None:
+    """One plot per batch: recall curves for selected stages (bm25, dense, hybrid)."""
     recall_cols = _recall_k_columns(combined)
     if not recall_cols:
         return
@@ -91,27 +118,47 @@ def _plot_recall_curves(combined: pd.DataFrame, output_dir: Path) -> None:
         if subset.empty:
             continue
         # BM25: one curve per bm25_qf (take first row for each value)
-        for qf in qf_order:
-            rows = subset[(subset["stage"] == "bm25") & (subset["bm25_qf"] == qf)]
-            if rows.empty:
-                continue
-            row = rows.iloc[0]
-            vals = [float(row[c]) for c in recall_cols]
-            ax.plot(ks, vals, marker="s", label=f"BM25 ({qf})")
+        if "bm25" in plot_stages:
+            for qf in qf_order:
+                rows = subset[(subset["stage"] == "bm25") & (subset["bm25_qf"] == qf)]
+                if rows.empty:
+                    continue
+                row = rows.iloc[0]
+                vals = [float(row[c]) for c in recall_cols]
+                ax.plot(ks, vals, marker="s", label=f"BM25 ({qf})")
         # Dense: one curve per dense_qf
-        for qf in qf_order:
-            rows = subset[(subset["stage"] == "dense") & (subset["dense_qf"] == qf)]
-            if rows.empty:
-                continue
-            row = rows.iloc[0]
-            vals = [float(row[c]) for c in recall_cols]
-            ax.plot(ks, vals, marker="^", label=f"Dense ({qf})")
+        if "dense" in plot_stages:
+            for qf in qf_order:
+                rows = subset[(subset["stage"] == "dense") & (subset["dense_qf"] == qf)]
+                if rows.empty:
+                    continue
+                row = rows.iloc[0]
+                vals = [float(row[c]) for c in recall_cols]
+                ax.plot(ks, vals, marker="^", label=f"Dense ({qf})")
+        # Hybrid: one curve per combo (bm25_qf, dense_qf)
+        if "hybrid" in plot_stages:
+            for bm25_qf in qf_order:
+                for dense_qf in qf_order:
+                    rows = subset[
+                        (subset["stage"] == "hybrid")
+                        & (subset["bm25_qf"] == bm25_qf)
+                        & (subset["dense_qf"] == dense_qf)
+                    ]
+                    if rows.empty:
+                        continue
+                    row = rows.iloc[0]
+                    vals = [float(row[c]) for c in recall_cols]
+                    ax.plot(ks, vals, marker="o", label=f"Hybrid ({bm25_qf}, {dense_qf})")
 
         ax.set_xlabel("K")
         ax.set_ylabel("Mean Recall@K")
         ax.set_title(f"Recall curves ({batch})")
         ax.legend(fontsize="small")
         ax.set_ylim(0, 1.05)
+        if log_x:
+            ax.set_xscale("log")
+        if log_y:
+            ax.set_yscale("log")
         safe_name = re.sub(r"[^\w\-]", "_", str(batch))
         fig.savefig(output_dir / f"recall_curve_{safe_name}.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
@@ -144,6 +191,24 @@ def main() -> None:
         default=None,
         help="Directory for recall curve PNGs (default: <workflow_dir>/figures)",
     )
+    ap.add_argument(
+        "--log_x",
+        action="store_true",
+        help="Use log scale for x-axis (K)",
+    )
+    ap.add_argument(
+        "--log_y",
+        action="store_true",
+        help="Use log scale for y-axis (Mean Recall@K)",
+    )
+    ap.add_argument(
+        "--plot",
+        nargs="+",
+        choices=["bm25", "dense", "hybrid"],
+        default=["bm25", "dense"],
+        metavar="STAGE",
+        help="Stages to load and plot: bm25, dense, hybrid (default: bm25 dense)",
+    )
     args = ap.parse_args()
 
     workflow_dir = args.workflow_dir.resolve()
@@ -154,10 +219,13 @@ def main() -> None:
         print(f"No bm25_*_dense_* combo dirs found under {workflow_dir}")
         return
 
+    plot_stages = tuple(args.plot)
     rows = []
     for bm25_qf, dense_qf, combo_path in combos:
         combo_name = combo_path.name
         for stage in ("bm25", "dense"):
+            if stage not in plot_stages:
+                continue
             stage_path = combo_path / stage
             df = load_stage_metrics(stage_path, stage)
             if df is None:
@@ -167,6 +235,16 @@ def main() -> None:
             df["bm25_query_field"] = bm25_qf
             df["dense_query_field"] = dense_qf
             rows.append(df)
+        if "hybrid" in plot_stages:
+            hybrid_path = combo_path / "hybrid"
+            df = load_hybrid_metrics(hybrid_path)
+            if df is None:
+                print(f"Skip (missing): {combo_name}/hybrid/results_all.csv")
+            else:
+                df["combo"] = combo_name
+                df["bm25_query_field"] = bm25_qf
+                df["dense_query_field"] = dense_qf
+                rows.append(df)
 
     if not rows:
         print("No metrics loaded.")
@@ -182,12 +260,18 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(out_path, index=False)
     print(f"Wrote {len(combined)} rows to {out_path}")
-    print(f"Combos: {len(combos)}  Stages: bm25, dense  Batches: {combined['batch'].unique().tolist()}")
+    print(f"Combos: {len(combos)}  Stages: {list(plot_stages)}  Batches: {combined['batch'].unique().tolist()}")
 
     if not args.no_plot and _HAS_MATPLOTLIB:
         figures_dir = args.figures_dir or (workflow_dir / "figures")
         figures_dir.mkdir(parents=True, exist_ok=True)
-        _plot_recall_curves(combined, figures_dir)
+        _plot_recall_curves(
+            combined,
+            figures_dir,
+            plot_stages=plot_stages,
+            log_x=args.log_x,
+            log_y=args.log_y,
+        )
         print(f"Recall curves saved to {figures_dir}")
     elif args.no_plot:
         print("Skipping plots (--no_plot)")

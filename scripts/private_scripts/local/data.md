@@ -21,7 +21,10 @@ python scripts/public/combine_query_field_sweep_results.py \
 python scripts/public/combine_query_field_sweep_results.py \
   --workflow_dir output/workflow_hpc_test \
   --out output/workflow_hpc_test/combined_sweep_metrics.csv \
-  --figures_dir output/workflow_hpc_test/figures
+  --figures_dir output/workflow_hpc_test/figures   --log_x 
+
+python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense
+
 
 python scripts/public/shared_scripts/compare_result_dirs.py \
   --dirs output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_body output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_synonyms output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_long output/workflow_hpc_test/fixed_long_rerank_sweep/hybrid \
@@ -30,4 +33,5 @@ python scripts/public/shared_scripts/compare_result_dirs.py \
   --map-ks 10,20,50,100,200 \
   --train-json example/dicty_gold_llm_public_train_200.json \
   --test-batch-jsons example/dicty_gold_llm_public_test_50.json \
+  --log-x \
   --output-dir output/workflow_hpc_test/fixed_long_rerank_sweep/compare_plots
