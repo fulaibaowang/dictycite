@@ -29,7 +29,8 @@ from retrieval_eval.common import (
 # ---------------------------
 # Query augmentation (same logic as your notebook)
 # ---------------------------
-CODE_RE = re.compile(r"\b([A-Za-z]{2,20})?[-–_:/\s]*([0-9]{5,})\b")
+# Match index build script: letters + optional hyphen + 2+ digits (same as build_bm25_index_from_jsonl_shards.py)
+CODE_RE = re.compile(r"\b([A-Za-z]{2,12})\s*[-–-]?\s*(\d{2,})\b")
 
 def chunk_digits(d: str, k: int = 4) -> list[str]:
     return [d[i : i + k] for i in range(0, len(d), k)]
@@ -200,8 +201,8 @@ def main():
     ap.add_argument(
         "--query-field",
         type=str,
-        default="body_expansion_long",
-        help="Question key to use as query text (e.g. body, body_expansion_synonyms, body_expansion_long). Default: body_expansion_long for BM25.",
+        default="body",
+        help="Question key to use as query text (e.g. body, body_expansion_synonyms, body_expansion_long). Default: body.",
     )
     args = ap.parse_args()
 
