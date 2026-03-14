@@ -2,10 +2,10 @@
 #SBATCH -J pipeline_full
 #SBATCH -p frida
 #SBATCH --time=24:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=16
 #SBATCH --gres=gpu:1
 
 set -euo pipefail
