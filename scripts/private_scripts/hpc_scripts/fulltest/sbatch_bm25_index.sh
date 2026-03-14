@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J bm25_index
-#SBATCH -p frida
+#SBATCH -p amd
 #SBATCH --time=1-00:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=96G
