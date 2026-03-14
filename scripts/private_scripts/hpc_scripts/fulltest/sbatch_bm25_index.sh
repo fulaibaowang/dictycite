@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -J bm25_index
-#SBATCH -p amd
-#SBATCH --time=1-00:00:00
+#SBATCH -p dev
+#SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=96G
+#SBATCH --mem=64G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
 
