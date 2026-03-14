@@ -1,17 +1,16 @@
 #!/bin/bash
-#SBATCH -J pipeline_full_pubmed_sharded
-#SBATCH -p amd
+#SBATCH -J pipeline_full
+#SBATCH -p frida
 #SBATCH --time=24:00:00
 #SBATCH --mem=64G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
 #SBATCH --cpus-per-task=4
-
-##SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:1
 
 set -euo pipefail
 
-cd ~/BioASQ
+cd ~/dictycite
 mkdir -p logs
 
 # -----------------------------
@@ -20,11 +19,10 @@ mkdir -p logs
 CONTAINER_IMG="/shared/home/yun.wang/biolab/yun/bioasq_08.03.26.sqfs"
 WORKDIR="${PWD}"
 
-# Host path that will be mounted as /pubmed inside container
 PUBMED_HOST="/shared/workspace/biolab/pubmed"
 
-# Pipeline config
-PIPELINE_CONFIG="scripts/private_scripts/hpc/full_test/config_full_pubmed_sharded.env"
+# Pipeline config (single BM25 + single dense index)
+PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/fulltest/config_full.env"
 
 echo "Starting job ${SLURM_JOB_ID} on $(hostname) at $(date)"
 echo "Running pipeline script with config: ${PIPELINE_CONFIG}"
@@ -62,7 +60,6 @@ srun \
 
     export OMP_NUM_THREADS=8
     export PYTHONUNBUFFERED=1
-    # Avoid tqdm/sentence-transformers progress bars in .err (no TTY -> raw ^M and long logs)
     export TQDM_DISABLE=1
 
     echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
@@ -80,4 +77,3 @@ srun \
   "
 
 echo "Finished job ${SLURM_JOB_ID} at $(date)"
-
