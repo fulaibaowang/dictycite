@@ -41,3 +41,18 @@ python scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_sha
 #   cd ~/dictycite && sbatch scripts/private_scripts/hpc_scripts/query_expansion/sbatch_query_field_sweep.sh
 # Fixed long + rerank sweep (retrieval once + rerank body/synonyms/long):
 #   cd ~/dictycite && sbatch scripts/private_scripts/hpc_scripts/query_expansion/sbatch_rerank_sweep.sh
+
+# Combine 3×3 sweep (dense rows repeat by dense_query_field only — expected; figures are correct):
+#   python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --workflow_dir output/workflow_baseline_full_sweep/query_field_sweep --log_x --plot bm25 dense --wide
+# Combine rerank sweep:
+#   python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --rerank_sweep --workflow_dir output/workflow_baseline_full_sweep/fixed_long_rerank_sweep --log_x --wide
+
+python scripts/public/shared_scripts/compare_result_dirs.py \
+  --dirs output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_body output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_synonyms output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_long output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/hybrid \
+  --labels "body" "synonyms" "long" "hybrid" \
+  --plot both \
+  --map-ks 1,5,10,20,30,50,100,200 \
+  --train-json example/dicty_gold_llm_public_train_200.json \
+  --test-batch-jsons example/dicty_gold_llm_public_test_50.json \
+  --log-x --plots-by-split \
+  --output-dir output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/compare_plots
