@@ -26,7 +26,18 @@ python scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_sha
 
 # 3×3 query-field sweep (BM25 × Dense up to hybrid, no rerank)
 # Writes 9 subdirs under WORKFLOW_OUTPUT_DIR: bm25_body_dense_body, bm25_body_dense_synonyms, ...
-./scripts/private_scripts/hpc_scripts/run_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
+./scripts/private_scripts/hpc_scripts/query_expansion/run_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
 
 # x3 query-field sweep (rerank)
-./run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
+./scripts/private_scripts/hpc_scripts/query_expansion/run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
+
+# Sweep output (sbatch): output/workflow_baseline_full_sweep/query_field_sweep/ (9 combos) and .../fixed_long_rerank_sweep/ (rerank). No overlap.
+# Combine 3×3 results: python .../query_expansion/combine_query_field_sweep_results.py --workflow_dir output/workflow_baseline_full_sweep/query_field_sweep
+#
+# --- sbatch (fulltest config_full.env) ---
+# Pipeline only (same as interactive pipeline with config_full.env):
+#   cd ~/dictycite && sbatch scripts/private_scripts/hpc_scripts/fulltest/sbatch_pipeline_full.sh
+# 3×3 BM25 × Dense query-field sweep (no rerank):
+#   cd ~/dictycite && sbatch scripts/private_scripts/hpc_scripts/query_expansion/sbatch_query_field_sweep.sh
+# Fixed long + rerank sweep (retrieval once + rerank body/synonyms/long):
+#   cd ~/dictycite && sbatch scripts/private_scripts/hpc_scripts/query_expansion/sbatch_rerank_sweep.sh

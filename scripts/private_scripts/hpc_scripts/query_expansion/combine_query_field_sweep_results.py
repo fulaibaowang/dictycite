@@ -8,13 +8,13 @@ train/test split preserved (batch column), and plots recall curves:
 one figure per batch with curves for selected stages (bm25, dense, hybrid).
 
 Usage:
-  python scripts/public/combine_query_field_sweep_results.py
-  python scripts/public/combine_query_field_sweep_results.py --workflow_dir output/workflow_hpc_test --no_plot
-  python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense   # default
-  python scripts/public/combine_query_field_sweep_results.py --plot hybrid       # only hybrid
-  python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense hybrid
-  python scripts/public/combine_query_field_sweep_results.py --log_x   # log-scale x-axis (K)
-  python scripts/public/combine_query_field_sweep_results.py --log_y   # log-scale y-axis (recall)
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --workflow_dir output/workflow_hpc_test --no_plot
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --plot bm25 dense   # default
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --plot hybrid       # only hybrid
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --plot bm25 dense hybrid
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --log_x   # log-scale x-axis (K)
+  python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --log_y   # log-scale y-axis (recall)
 """
 
 from __future__ import annotations

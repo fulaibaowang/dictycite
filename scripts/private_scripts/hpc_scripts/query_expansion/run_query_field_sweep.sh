@@ -4,18 +4,18 @@
 # Stops at hybrid; no reranker. Each combination gets its own WORKFLOW_OUTPUT_DIR subdir.
 #
 # Usage:
-#   ./run_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
-#   source config.env && ./run_query_field_sweep.sh
+#   ./run_query_field_sweep.sh --config <config.env>
+#   From repo root: ./scripts/private_scripts/hpc_scripts/query_expansion/run_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
 #
 # Output layout (if WORKFLOW_OUTPUT_DIR is output/workflow_hpc_test):
 #   output/workflow_hpc_test/bm25_body_dense_body/    (bm25/, dense/, hybrid/)
-#   output/workflow_hpc_test/bm25_body_dense_synonyms/
 #   ... (9 dirs total)
+# When WORKFLOW_SWEEP_OUTPUT_DIR is set (e.g. by sbatch), writes under .../query_field_sweep/ (no overlap with rerank sweep).
 #
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 PIPELINE="$REPO_ROOT/scripts/public/shared_scripts/run_retrieval_rerank_pipeline.sh"
 
 CONFIG_FILE=""
@@ -77,8 +77,13 @@ for BM25_Q in "${BM25_OPTS[@]}"; do
       set +a
     fi
 
-    # Override: one output dir per combination (sibling to default or under it)
-    BASE_OUT="${WORKFLOW_OUTPUT_DIR:-$REPO_ROOT/output/workflow_hpc_test}"
+    # Override: one output dir per combination. Use WORKFLOW_SWEEP_OUTPUT_DIR if set (sbatch sets it).
+    # When WORKFLOW_SWEEP_OUTPUT_DIR is set, put 9 combos under query_field_sweep/ to avoid overlapping with rerank sweep.
+    if [ -n "${WORKFLOW_SWEEP_OUTPUT_DIR:-}" ]; then
+      BASE_OUT="${WORKFLOW_SWEEP_OUTPUT_DIR}/query_field_sweep"
+    else
+      BASE_OUT="${WORKFLOW_OUTPUT_DIR:-$REPO_ROOT/output/workflow_hpc_test}"
+    fi
     export WORKFLOW_OUTPUT_DIR="$BASE_OUT/$SUBDIR"
 
     echo ""

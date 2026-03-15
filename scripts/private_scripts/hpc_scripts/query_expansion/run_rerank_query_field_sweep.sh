@@ -5,21 +5,16 @@
 # Requires DOCS_JSONL in config (reranker needs it).
 #
 # Usage:
-#   ./run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
-#   source config.env && ./run_rerank_query_field_sweep.sh
+#   From repo root: ./scripts/private_scripts/hpc_scripts/query_expansion/run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
 #
-# Output layout (if WORKFLOW_OUTPUT_DIR is output/workflow_hpc_test):
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/bm25/
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/dense/
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/hybrid/
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_body/
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_synonyms/
-#   output/workflow_hpc_test/fixed_long_rerank_sweep/rerank_long/
+# Output layout: under BASE_OUT (fixed_long_rerank_sweep/ when WORKFLOW_SWEEP_OUTPUT_DIR is set):
+#   .../fixed_long_rerank_sweep/bm25/, dense/, hybrid/, rerank_body/, rerank_synonyms/, rerank_long/
+# When WORKFLOW_SWEEP_OUTPUT_DIR is set (e.g. by sbatch), BASE_OUT = .../fixed_long_rerank_sweep (no overlap with query_field_sweep).
 #
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 PIPELINE="$REPO_ROOT/scripts/public/shared_scripts/run_retrieval_rerank_pipeline.sh"
 PIPELINE_SCRIPT_DIR="$(cd "$(dirname "$PIPELINE")" && pwd)"
 
@@ -64,8 +59,13 @@ if [ -n "$CONFIG_FILE" ]; then
   set +a
 fi
 
-BASE_OUT="${WORKFLOW_OUTPUT_DIR:-$REPO_ROOT/output/workflow_hpc_test}"
-export WORKFLOW_OUTPUT_DIR="$BASE_OUT/fixed_long_rerank_sweep"
+# Use WORKFLOW_SWEEP_OUTPUT_DIR if set (sbatch sets it); rerank sweep always uses fixed_long_rerank_sweep/ subfolder.
+if [ -n "${WORKFLOW_SWEEP_OUTPUT_DIR:-}" ]; then
+  BASE_OUT="${WORKFLOW_SWEEP_OUTPUT_DIR}/fixed_long_rerank_sweep"
+else
+  BASE_OUT="${WORKFLOW_OUTPUT_DIR:-$REPO_ROOT/output/workflow_hpc_test}"
+fi
+export WORKFLOW_OUTPUT_DIR="$BASE_OUT"
 
 echo ""
 echo "========== Retrieval (BM25=long, Dense=long) -> $WORKFLOW_OUTPUT_DIR =========="
@@ -85,7 +85,7 @@ if [ -n "$CONFIG_FILE" ]; then
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
   set +a
-  export WORKFLOW_OUTPUT_DIR="$BASE_OUT/fixed_long_rerank_sweep"
+  export WORKFLOW_OUTPUT_DIR="$BASE_OUT"
 fi
 
 HYBRID_OUT="$WORKFLOW_OUTPUT_DIR/hybrid"
