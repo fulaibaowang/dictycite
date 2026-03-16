@@ -49,9 +49,9 @@ Evidence-level full agreement (pairs / queries):
 
 ## Query expansion and reranking
 
-**Retrieval (recall):** Query expansion helps at the retrieval step. In the query-field sweep (see `notebooks/query_expansion_and_test.ipynb`, last cells), hybrid retrieval with expanded query fields (long, synonyms) achieves higher mean recall over K ∈ {200, 300, 400, 500, 1000} than body-only (no expansion); the best profiles are (long, synonyms), (long, long), (long, body), with (body, body) ranked last. So expansion improves recall when retrieving.
+**Retrieval (recall):** Query expansion helps at the retrieval step. In the query-field sweep (see `notebooks/query_expansion_and_test.ipynb`, last cells), hybrid retrieval with expanded query fields (**+ Gene Synonyms**, **+ Gene Synonyms & Products**) achieves higher mean recall over K ∈ {200, 300, 400, 500, 1000} than **Original Query** (no expansion); the best profiles are ( + Gene Synonyms & Products, + Gene Synonyms & Products), with (Original Query, Original Query) ranked last. Expansion is implemented using dictyBase gene information (gene names, synonyms, and gene products) and improves recall when retrieving.
 
-**Reranking (MAP):** After reranking, expansion does **not** improve MAP@10. Compare summary (from `compare_result_dirs.py` on rerank_body, rerank_synonyms, rerank_long, hybrid): **body** ranks first on MAP@10 (mean across train/test), then long, synonyms, hybrid. The notebook has a rerank-comparison cell (MAP@10 by method, paired t-test).
+**Reranking (MAP):** For reranking, expansion can also improve MAP@10. Compare summary on rerank_body, rerank_synonyms, rerank_long, hybrid: **Rerank (+Gene Synonyms)** ranks first on MAP@10 (mean across train/test), followed by **Rerank (+ Gene Synonyms & Products)**, **Rerank (Original Query)**, and **Retrieval Fusion**. 
 
 ## Public release size
 
