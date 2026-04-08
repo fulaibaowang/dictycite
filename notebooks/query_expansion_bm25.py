@@ -19,7 +19,7 @@
 # This notebook builds **two expansion variants** for the goldset and runs BM25 (and RM3) retrieval tests.
 #
 # **Inputs**
-# - Gold parquet (e.g. `output/cleaned/golden_grouped.parquet`) with columns `query`, `docs`, etc.
+# - Gold parquet (e.g. `output/dicty_gold_build/4b_golden_grouped.parquet`) with columns `query`, `docs`, etc.
 # - dictybase_files/gene_information.txt: tab-separated table with columns GENE ID, Gene Name, Synonyms (comma-separated), Gene products. Used only for query expansion; ambiguous aliases (mapping to multiple genes) are skipped.
 #
 # **Expansion rules**
@@ -61,7 +61,7 @@ br = pt.BatchRetrieve(index, wmodel="BM25")
 
 # %%
 # 3) pick one query from gold (change row index if you want)
-gold = pl.read_parquet("../output/cleaned/golden_grouped.parquet")
+gold = pl.read_parquet("../output/dicty_gold_build/4b_golden_grouped.parquet")
 
 row = gold.select(["group_claim_id", "query", "docs"]).row(100, named=True)
 
@@ -415,7 +415,7 @@ with pl.Config(fmt_str_lengths=10_000, tbl_rows=5, tbl_cols=30):
 
 
 # %%
-zero_cases.write_csv("../output/cleaned/golden_zero_recall500_to_inspect.tsv", separator="\t")
+# zero_cases.write_csv(...)  # debugging artifact; dropped from output
 
 
 # %% [markdown]
@@ -1128,8 +1128,8 @@ with pl.Config(fmt_str_lengths=4000, tbl_rows=25, tbl_cols=20):
 # 6) Save gold with query_expand
 # -------------------------
 # Save as parquet
-gold_with_expand.write_parquet("../output/cleaned/gold_with_query_expand.parquet")
-print("Saved: ../output/cleaned/gold_with_query_expand.parquet")
+gold_with_expand.write_parquet("../output/dicty_gold_build/5a_gold_query_expand.parquet")
+print("Saved: ../output/dicty_gold_build/5a_gold_query_expand.parquet")
 
 # Flatten (unnest docs) and save as TSV
 gold_flat = (
@@ -1145,8 +1145,8 @@ gold_flat = (
     .drop("docs")
 )
 
-gold_flat.write_csv("../output/cleaned/gold_with_query_expand_flat.tsv", separator="\t")
-print("Saved: ../output/cleaned/gold_with_query_expand_flat.tsv")
+gold_flat.write_csv("../output/dicty_gold_build/5b_gold_query_expand_flat.tsv", separator="\t")
+print("Saved: ../output/dicty_gold_build/5b_gold_query_expand_flat.tsv")
 print(f"Rows in flat file: {len(gold_flat)}")
 
 

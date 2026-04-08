@@ -6,10 +6,10 @@ srun -p dev --time=12:00:00 --gres=gpu:1 -c 4 --mem=64G \
   --container-workdir /work \
   --pty bash
 
-python scripts/public/shared_scripts/index/build_bm25_index_from_jsonl_shards.py   --jsonl_glob "/work/output/cleaned/articles_all_cleaned_abstract.jsonl"   --index_path "/work/indexes/dicty_bm25_index"   --threads 4   --overwrite
+python scripts/public/shared_scripts/index/build_bm25_index_from_jsonl_shards.py   --jsonl_glob "/work/output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl"   --index_path "/work/indexes/dicty_bm25_index"   --threads 4   --overwrite
 
 python scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_shards.py \
-  --jsonl_glob "/work/output/cleaned/articles_all_cleaned_abstract.jsonl" \
+  --jsonl_glob "/work/output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl" \
   --out_dir "/work/indexes/dicty_medembed_index" \
   --device "cuda" \
   --batch_size 256 \

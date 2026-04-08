@@ -302,7 +302,7 @@ print(df2)
 # # full result
 
 # %% [markdown]
-# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:16.01.2026 python /dictycite/scripts/public/data_prep/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/dictycite/output/gene_publication_pmid.parquet"
+# command: docker run -it -v "$PWD/output:/dictycite/output" --platform=linux/amd64 fulaibaowang/dictycite:16.01.2026 python /dictycite/scripts/public/data_prep/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/dictycite/output/dicty_gold_build/2_gene_publication_pmid.parquet"
 #
 # takes around 10 hrs
 
@@ -310,11 +310,11 @@ print(df2)
 # In the first run some gene ids were not ot accessible at the moment, so were refetched in a second run. Merge two results and extract the publication IDs and pmids.
 
 # %%
-df = pl.read_parquet("output/gene_publication_pmid.parquet")
+# df = pl.read_parquet("output/gene_publication_pmid.parquet")  # intermediate; dropped
 df
 
 # %%
-df_rerun = pl.read_parquet("output/gene_publication_pmid_rerun_failed.parquet")
+# df_rerun = pl.read_parquet("output/gene_publication_pmid_rerun_failed.parquet")  # dropped
 
 
 # %%
@@ -361,14 +361,14 @@ pub_pmid_sorted = (
 pub_pmid_sorted
 
 # %%
-pub_pmid_sorted.write_csv("output/publication_id_pmid.csv")
+pub_pmid_sorted.write_csv("output/dicty_gold_build/2_publication_id_pmid.csv")
 
 
 # %% [markdown]
 # ## check if we cover the ids that in the curotor notes
 
 # %%
-publications_in_curated_notes = pl.read_parquet("output/publications.parquet")
+# publications_in_curated_notes = pl.read_parquet("output/publications.parquet")  # dropped
 publications_in_curated_notes
 
 # %% [markdown]

@@ -27,7 +27,7 @@ if not pt.started():
     pt.init()  # downloads Terrier jars, needs Java installed
 
 # %%
-PARQUET_PATH = "../output/cleaned/articles_all_cleaned_abstract.parquet"   
+PARQUET_PATH = "../output/dicty_gold_build/3_articles_cleaned_abstract.parquet"   
 INDEX_PATH = os.path.abspath("../indexes/terrier_index_dicty_22.01.26")              
 
 # %%

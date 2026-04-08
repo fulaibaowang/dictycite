@@ -490,7 +490,7 @@ rows
 #Optional (but recommended): incremental save / resume
 from pathlib import Path
 
-OUT = Path("curator_notes.parquet")
+OUT = Path("output/dicty_gold_build/1_curator_notes.parquet")
 
 if OUT.exists():
     df_done = pl.read_parquet(OUT)
@@ -549,7 +549,7 @@ if rows_buffer:
         df_batch.write_parquet(OUT)
 
 # %%
-df = pl.read_parquet("curator_notes.parquet")
+df = pl.read_parquet("output/dicty_gold_build/1_curator_notes.parquet")
 df
 
 # %% [markdown]
@@ -561,7 +561,7 @@ df
 # takes around 2 hrs
 
 # %%
-df = pl.read_parquet("output/curator_notes.parquet")
+df = pl.read_parquet("output/dicty_gold_build/1_curator_notes.parquet")
 df
 
 # %%
@@ -619,8 +619,8 @@ hits_2029[0,2]
 # ## let us quickly if two runs are consistent
 
 # %%
-df = pl.read_parquet("output/curator_notes.parquet")
-df_ = pl.read_parquet("output/curator_notes.parquet_")
+df = pl.read_parquet("output/dicty_gold_build/1_curator_notes.parquet")
+# df_ = pl.read_parquet("output/curator_notes.parquet_")  # backup file removed
 df.shape, df_.shape
 
 # %%
@@ -668,11 +668,11 @@ with pl.Config(
 # ## claims and pulications
 
 # %%
-claims = pl.read_parquet("output/curator_claims.parquet")
+claims = pl.read_parquet("output/dicty_gold_build/1_curator_claims.parquet")
 claims
 
 # %%
-publications = pl.read_parquet("output/publications.parquet")
+# publications = pl.read_parquet("output/publications.parquet")  # dropped from output
 publications
 
 # %%

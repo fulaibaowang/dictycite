@@ -11,7 +11,7 @@ Steps per gene:
 
 Output (resumable):
   - gene_id, publication_id, pmid
-  - default: output/gene_publication_pmid.parquet
+  - default: output/dicty_gold_build/2_gene_publication_pmid.parquet
 
 Resume behavior:
   - Resume keyed off gene_id: once a gene_id appears in output, it’s skipped on later runs.
@@ -414,8 +414,8 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scrape dictyBase references via References tab detection into Parquet.")
     p.add_argument(
         "--out",
-        default="output/gene_publication_pmid.parquet",
-        help="Output parquet path (default: output/gene_publication_pmid.parquet)",
+        default="output/dicty_gold_build/2_gene_publication_pmid.parquet",
+        help="Output parquet path (default: output/dicty_gold_build/2_gene_publication_pmid.parquet)",
     )
     p.add_argument("--limit", type=int, default=10, help="How many genes to process (default: 10). Use 0 for all.")
     p.add_argument("--batch-size", type=int, default=5000, help="Write every N rows (default: 5000).")

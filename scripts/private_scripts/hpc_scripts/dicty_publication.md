@@ -22,7 +22,7 @@ inside the container, inscrease time out to 90 is necessary:
 
 ```
 cd /dictycite
-python /dictycite/scripts/public/data_prep/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/gene_publication_pmid.parquet"
+python /dictycite/scripts/public/data_prep/dicty_publication.py --limit 0   --timeout 90 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/dicty_gold_build/2_gene_publication_pmid.parquet"
 ```
 
 
@@ -37,7 +37,7 @@ these genes can be rerun in a list with  --gene-list
 ```
 python3 scripts/public/data_prep/dicty_publication.py \
   --gene-list /work/failed_ids.txt \
-  --out /work/output/gene_publication_pmid_rerun_failed.parquet \
+  --out /work/output/dicty_gold_build/2_gene_publication_pmid_rerun.parquet \
   --timeout 60 --max-retries 4 \
   --sleep-base 0.5 --sleep-jitter 0.1
 ```

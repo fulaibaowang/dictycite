@@ -22,5 +22,5 @@ inside the container:
 
 ```
 cd /dictycite
-python /dictycite/scripts/public/data_prep/dicty_curator_notes.py --limit 0 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/curator_notes.parquet" --claims-out "/work/output/curator_claims.parquet" --pubs-out   "/work/output/publications.parquet"
+python /dictycite/scripts/public/data_prep/dicty_curator_notes.py --limit 0 --sleep-base 0.35 --sleep-jitter 0.10 --out "/work/output/dicty_gold_build/1_curator_notes.parquet" --claims-out "/work/output/dicty_gold_build/1_curator_claims.parquet" --pubs-out "/work/output/dicty_gold_build/1_publications.parquet"
 ```

@@ -173,7 +173,7 @@ def main() -> None:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("output/cleaned/dicty_gold_llm_public.json"),
+        default=Path("output/dicty_gold_build/7a_dicty_gold_llm_public.json"),
         help="Path to dicty_gold_llm_public.json",
     )
     parser.add_argument("--train-size", type=int, default=200)

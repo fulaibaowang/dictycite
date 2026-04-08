@@ -20,13 +20,52 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 import json
+import os
+from pathlib import Path
 
+
+def _repo_root() -> Path:
+    env = os.environ.get("DICTYCITE_ROOT", "").strip()
+    if env:
+        return Path(env).expanduser().resolve()
+
+    starts: list[Path] = []
+    try:
+        starts.append(Path(__file__).resolve().parent)
+    except NameError:
+        pass
+    starts.append(Path.cwd().resolve())
+
+    for start in starts:
+        p = start
+        while True:
+            if (p / ".git").exists():
+                return p
+            if p.parent == p:
+                break
+            p = p.parent
+
+    cwd = Path.cwd().resolve()
+    for base in (cwd, cwd.parent, *cwd.parents):
+        marker = base / "output" / "dicty_gold_build" / "1_curator_claims.parquet"
+        if marker.is_file():
+            return base
+    if cwd.name == "notebooks":
+        return cwd.parent
+    return cwd
+
+
+def _output_gold_build() -> Path:
+    return _repo_root() / "output" / "dicty_gold_build"
+
+
+OUTPUT_GOLD_BUILD = _output_gold_build()
 
 # %% [markdown]
 # # citation-claims
 
 # %%
-claims = pl.read_parquet("../output/curator_claims.parquet")
+claims = pl.read_parquet(OUTPUT_GOLD_BUILD / "1_curator_claims.parquet")
 claims.head()
 
 # %%
@@ -401,7 +440,7 @@ year_summary
 
 
 # %%
-claim_cleaned.write_parquet("../output/cleaned/claim_cleaned_long.parquet")
+# claim_cleaned.write_parquet(...)  # intermediate; dropped from output
 
 # %%
 claim_cleaned.select(
@@ -410,11 +449,7 @@ claim_cleaned.select(
 
 
 # %%
-(
-    claim_cleaned
-    .drop("anchors")
-    .write_csv("../output/cleaned/claim_cleaned_long.tsv", separator="\t")
-)
+# claim_cleaned TSV export removed (intermediate; dropped from output)
 
 
 # %% [markdown]
@@ -429,7 +464,7 @@ claim_cleaned_manual = claim_cleaned.filter(pl.col("anchor_pos") != 1)
 # # match pmid
 
 # %%
-pub_pmid = pl.read_csv("../output/publication_id_pmid.csv")
+pub_pmid = pl.read_csv(OUTPUT_GOLD_BUILD / "2_publication_id_pmid.csv")
 pub_pmid
 
 # %%
@@ -471,13 +506,13 @@ claim_cleaned_pmid = (
 claim_cleaned_pmid
 
 # %%
-claim_cleaned_pmid.write_parquet("../output/cleaned/claim_cleaned_long_pmids.parquet")
+# claim_cleaned_pmid.write_parquet(...)  # intermediate; dropped from output
 
 claim_cleaned_pmid_nonNA = claim_cleaned_pmid.filter(
     pl.col("pmid").is_not_null() & (pl.col("pmid") != "NA")
 )
 
-claim_cleaned_pmid_nonNA.write_parquet("../output/cleaned/claim_cleaned_long_pmids_nonNA.parquet")
+# claim_cleaned_pmid_nonNA.write_parquet(...)  # intermediate; dropped from output
 
 
 # %%
@@ -495,7 +530,7 @@ claim_cleaned_pmid_nonNA.select(
 # # how many we claims having abstracts on EPMC
 
 # %%
-EPMC = pl.read_parquet("../output/cleaned/articles_all_cleaned_abstract.parquet")
+EPMC = pl.read_parquet(OUTPUT_GOLD_BUILD / "3_articles_cleaned_abstract.parquet")
 
 # %%
 EPMC
@@ -544,7 +579,7 @@ claim_cleaned_pmid_nonNA_abstract = claim_small.join(epmc_small, on="pmid", how=
 claim_cleaned_pmid_nonNA_abstract
 
 # %%
-claim_cleaned_pmid_nonNA_abstract.write_parquet("../output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet")
+# claim_cleaned_pmid_nonNA_abstract.write_parquet(...)  # intermediate; dropped from output
 
 
 # %%
@@ -696,7 +731,7 @@ cluster_sizes = claim_group_map.group_by("group_claim_id").len().sort("len", des
 display(cluster_sizes.head(30))
 
 # %%
-claim_group_map.write_csv("../output/cleaned/claim_group_map.tsv", separator="\t")
+# (4a_claim_groups.parquet is written after `rep` is defined — includes claim text + genes + canonical query.)
 
 # %%
 # ---------------------------------------------
@@ -733,7 +768,7 @@ group_variants_flat = (
     ])
 )
 
-group_variants_flat.write_csv("../tmp/group_variants.tsv", separator="\t")
+# group_variants_flat.write_csv("../tmp/group_variants.tsv", separator="\t")  # tmp/ removed
 print("Wrote: tmp/group_variants.tsv")
 
 # %%
@@ -761,7 +796,7 @@ group_canon = (
 group_canon_flat = group_canon.with_columns(
     pl.col("variant_claim_ids").list.eval(pl.element().cast(pl.Utf8)).list.join(",").alias("variant_claim_ids")
 )
-group_canon_flat.write_csv("../tmp/group_canonical.tsv", separator="\t")
+# group_canon_flat.write_csv("../tmp/group_canonical.tsv", separator="\t")  # tmp/ removed
 print("Wrote: tmp/group_canonical.tsv")
 
 # %%
@@ -802,7 +837,7 @@ pairs2_df = pl.DataFrame({
 with pl.Config(fmt_str_lengths=500, tbl_rows=topN2, tbl_cols=20):
     display(pairs2_df)
 
-pairs2_df.write_csv("../tmp/group_pairwise_peek.tsv", separator="\t")
+# pairs2_df.write_csv("../tmp/group_pairwise_peek.tsv", separator="\t")  # tmp/ removed
 print("Wrote: tmp/group_pairwise_peek.tsv")
 
 # %%
@@ -847,6 +882,29 @@ rep = (
     ])
 )
 rep
+
+# %%
+gene_by_claim = (
+    claim_cleaned_pmid_nonNA_abstract
+    .group_by("claim_id")
+    .agg(
+        pl.col("gene_id").unique().sort().str.join(",").alias("gene_id"),
+    )
+)
+claim_groups_detail = (
+    claim_group_map
+    .join(claims_u, on="claim_id", how="left")
+    .join(gene_by_claim, on="claim_id", how="left")
+    .join(
+        rep.select(["group_claim_id", "rep_claim_id", "query"]).rename({"query": "canonical_query"}),
+        on="group_claim_id",
+        how="left",
+    )
+    .with_columns(
+        (pl.col("claim_id") == pl.col("rep_claim_id")).alias("is_representative_claim"),
+    )
+)
+claim_groups_detail.write_parquet(OUTPUT_GOLD_BUILD / "4a_claim_groups.parquet")
 
 # %%
 # 3) Count variants (metadata) — from the mapping, not from citations
@@ -905,7 +963,7 @@ gold.head(2)
 
 
 # %%
-gold.write_parquet("output/cleaned/golden_grouped.parquet")
+gold.write_parquet(OUTPUT_GOLD_BUILD / "4b_golden_grouped.parquet")
 
 # %%
 gold_flat = (
@@ -925,7 +983,7 @@ gold_flat = (
     ])
 )
 
-gold_flat.write_csv("../tmp/golden_flat.tsv", separator="\t")
+# gold_flat.write_csv("../tmp/golden_flat.tsv", separator="\t")  # tmp/ removed
 print("Wrote: tmp/golden_flat.tsv")
 
 # %% [markdown]

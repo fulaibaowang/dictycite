@@ -20,16 +20,16 @@
 # - EPMC documents JSONL (title/abstract store).
 #
 # Inputs:
-# - output/cleaned/gold_with_query_expand.parquet (columns: query, query_expand_synonyms, query_expand_long, docs; or query, query_expand, docs for backward compat)
-# - output/llama_full_agreement_cases.tsv (or output/llm_labels_*.jsonl)
-# - output/cleaned/articles_all_cleaned_abstract.parquet
+# - output/dicty_gold_build/5a_gold_query_expand.parquet (columns: query, query_expand_synonyms, query_expand_long, docs; or query, query_expand, docs for backward compat)
+# - output/dicty_gold_build/6d_llm_full_agreement.tsv
+# - output/dicty_gold_build/3_articles_cleaned_abstract.parquet
 #
 # Output JSON fields per question: id, body, body_expansion_synonyms, body_expansion_long, documents, docs.
 #
 # Outputs:
-# - output/cleaned/dicty_gold_llm_private.json (full payload, all fields)
-# - output/cleaned/dicty_gold_llm_public.json (clean, BioASQ-style keys only)
-# - output/cleaned/articles_all_cleaned_abstract.jsonl
+# - output/dicty_gold_build/7b_dicty_gold_llm_private.json (full payload, all fields)
+# - output/dicty_gold_build/7a_dicty_gold_llm_public.json (clean, BioASQ-style keys only)
+# - output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
 
 # %%
 from pathlib import Path
@@ -41,12 +41,12 @@ import polars as pl
 # ## Load inputs
 
 # %%
-GOLD_PATH = Path("../output/cleaned/gold_with_query_expand.parquet")
-LABELS_PATH = Path("../output/llama_full_agreement_cases.tsv")
-DOCS_PATH = Path("../output/cleaned/articles_all_cleaned_abstract.parquet")
-OUT_JSON = Path("../output/cleaned/dicty_gold_llm_public.json")
-OUT_JSON_PRIVATE = Path("../output/cleaned/dicty_gold_llm_private.json")
-DOCS_JSONL_OUT = Path("../output/cleaned/articles_all_cleaned_abstract.jsonl")
+GOLD_PATH = Path("../output/dicty_gold_build/5a_gold_query_expand.parquet")
+LABELS_PATH = Path("../output/dicty_gold_build/6d_llm_full_agreement.tsv")
+DOCS_PATH = Path("../output/dicty_gold_build/3_articles_cleaned_abstract.parquet")
+OUT_JSON = Path("../output/dicty_gold_build/7a_dicty_gold_llm_public.json")
+OUT_JSON_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.json")
+DOCS_JSONL_OUT = Path("../output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl")
 
 def load_labels(path: Path) -> pl.DataFrame:
     if path.suffix == ".jsonl":

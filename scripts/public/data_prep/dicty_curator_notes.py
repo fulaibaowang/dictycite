@@ -16,16 +16,16 @@ same key variables/functions as in the notebook:
 Outputs:
   1) Gene-level notes (resumable):
      - gene_id, curator_notes_html, curator_notes_plain
-     - default: output/curator_notes.parquet
+     - default: output/dicty_gold_build/1_curator_notes.parquet
 
   2) Claim-level training rows (derived from curator notes):
      - gene_id, claim_plain, sentence_plain, sentence_markers, cited_sentence_marked,
        anchors, publication_ids, citation_captions, citation_years
-     - default: output/curator_claims.parquet
+     - default: output/dicty_gold_build/1_curator_claims.parquet
 
   3) Publication table (dedup by publication_id):
      - publication_id, caption_plain, year
-     - default: output/publications.parquet
+     - default: output/dicty_gold_build/1_publications.parquet
 
 Resume behavior:
   - Resume is keyed off the gene-level notes output: if a gene_id is already present
@@ -510,18 +510,18 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scrape dictyBase Curator Notes + claim anchors into Parquet files.")
     p.add_argument(
         "--out",
-        default="output/curator_notes.parquet",
-        help="Output parquet path for gene-level notes (default: output/curator_notes.parquet)",
+        default="output/dicty_gold_build/1_curator_notes.parquet",
+        help="Output parquet path for gene-level notes (default: output/dicty_gold_build/1_curator_notes.parquet)",
     )
     p.add_argument(
         "--claims-out",
-        default="output/curator_claims.parquet",
-        help="Output parquet path for claim-level rows (default: output/curator_claims.parquet)",
+        default="output/dicty_gold_build/1_curator_claims.parquet",
+        help="Output parquet path for claim-level rows (default: output/dicty_gold_build/1_curator_claims.parquet)",
     )
     p.add_argument(
         "--pubs-out",
-        default="output/publications.parquet",
-        help="Output parquet path for publication table (default: output/publications.parquet)",
+        default="output/dicty_gold_build/1_publications.parquet",
+        help="Output parquet path for publication table (default: output/dicty_gold_build/1_publications.parquet)",
     )
     p.add_argument("--limit", type=int, default=10, help="How many genes to process (default: 10). Use 0 for all.")
     p.add_argument("--batch-size", type=int, default=200, help="Write every N genes (default: 200).")

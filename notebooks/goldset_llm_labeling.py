@@ -147,7 +147,7 @@ def parse_label_json(text: str) -> dict:
 # ## 3) Load TSV + run a few examples
 
 # %%
-TSV_PATH = "../output/cleaned/gold_with_query_expand_flat.tsv"  # <-- change
+TSV_PATH = "../output/dicty_gold_build/5b_gold_query_expand_flat.tsv"
 df = pd.read_csv(TSV_PATH, sep="\t", dtype=str).fillna("")
 df.head()
 
@@ -202,11 +202,11 @@ pd.DataFrame(results)
 #
 # results:
 #
-# output/llm_labels_goldset_run1.jsonl
+# output/dicty_gold_build/6a_llm_labels_run1.jsonl
 #
-# output/llm_labels_goldset_run2.jsonl
+# output/dicty_gold_build/6b_llm_labels_run2.jsonl
 #
-# output/llm_labels_goldset_run3.jsonl
+# output/dicty_gold_build/6c_llm_labels_run3.jsonl
 
 # %% [markdown]
 # # Compare labels across three runs
@@ -224,9 +224,9 @@ def load_jsonl(path):
     df["pmid"] = df["pmid"].astype(str)
     return df
 
-run1 = load_jsonl("../output/llm_labels_goldset_run1.jsonl")
-run2 = load_jsonl("../output/llm_labels_goldset_run2.jsonl")
-run3 = load_jsonl("../output/llm_labels_goldset_run3.jsonl")
+run1 = load_jsonl("../output/dicty_gold_build/6a_llm_labels_run1.jsonl")
+run2 = load_jsonl("../output/dicty_gold_build/6b_llm_labels_run2.jsonl")
+run3 = load_jsonl("../output/dicty_gold_build/6c_llm_labels_run3.jsonl")
 
 print(f"Run1: {len(run1)} records")
 print(f"Run2: {len(run2)} records")
@@ -442,11 +442,11 @@ print(full_agreement_table["evidence_level"].value_counts(dropna=False))
 
 # %%
 # Save
-out_dir = Path("../output")
+out_dir = Path("../output/dicty_gold_build")
 out_dir.mkdir(parents=True, exist_ok=True)
 
-agreement_table.to_csv(out_dir / "llama_agreement_summary.tsv", sep="\t", index=False)
-full_agreement_table.to_csv(out_dir / "llama_full_agreement_cases.tsv", sep="\t", index=False)
+# agreement_table.to_csv(...)  # intermediate; dropped from output
+full_agreement_table.to_csv(Path("../output/dicty_gold_build/6d_llm_full_agreement.tsv"), sep="\t", index=False)
 
 print("Saved tables to", out_dir)
 
@@ -455,7 +455,7 @@ print("Saved tables to", out_dir)
 # **doc_match=yes, evidence=abstract_supports_core  | abstract_supports_detail** as gold sets
 
 # %% [markdown]
-# we can intesect **output/cleaned/gold_with_query_expand.parquet** and **output/cleaned/gold_with_query_expand_flat.tsv** to get the filter dataset
+# we can intesect **output/dicty_gold_build/5a_gold_query_expand.parquet** and **output/dicty_gold_build/5b_gold_query_expand_flat.tsv** to get the filter dataset
 
 # %% [markdown]
 # TODO: current expansion adds some noises, e.g AT, and might needs fix

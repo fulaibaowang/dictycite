@@ -14,62 +14,20 @@
 # ---
 
 # %%
-# from a group claim id (qurey id) this returns me the gene_id that i can take a look at dictybase. Makes my life easier.
+# from a group claim id (query id) look up genes and claim text.
+# `4a_claim_groups.parquet`: claim_id, group_claim_id, claim_plain, claim_sim, gene_id,
+# rep_claim_id, canonical_query, is_representative_claim.
 
 # %%
 import polars as pl
-claim_cleaned_pmid_nonNA_abstract=pl.read_parquet("../output/cleaned/claim_cleaned_long_pmids_nonNA_abstract.parquet")
+
+claim_groups = pl.read_parquet("../output/dicty_gold_build/4a_claim_groups.parquet")
+gold = pl.read_parquet("../output/dicty_gold_build/4b_golden_grouped.parquet")
 
 # %%
-claim_cleaned_pmid_nonNA_abstract
+claim_groups
 
 # %%
-claim_group_map=pl.read_csv("../output/cleaned/claim_group_map.tsv", separator="\t")
-
-# %%
-group_gene_map = (
-    claim_cleaned_pmid_nonNA_abstract
-    .select(["claim_id", "gene_id"])
-    .unique()
-    .join(claim_group_map, on="claim_id", how="left")
-    .group_by("group_claim_id")
-    .agg(
-        pl.col("gene_id")
-          .drop_nulls()
-          .unique()
-          .sort()
-          .alias("gene_ids")
-    )
-)
-
-# %%
-group_gene_map
-
-# %%
-group_gene_dict = {
-    row[0]: row[1]
-    for row in group_gene_map.select(["group_claim_id", "gene_ids"]).iter_rows()
-}
-
-def get_gene_ids(group_claim_id):
-    return group_gene_dict.get(group_claim_id, [])
-
-
-
-# %%
-get_gene_ids(1468)
-
-
-# %% [markdown]
-# http://dictybase.org/gene/DDB_G0284977
-
-# %%
-get_gene_ids(1616)
-
-
-# %%
-get_gene_ids(1005)
-
-
+gold.select(["group_claim_id", "query", "n_variants", "n_citations"]).head(10)
 
 # %%

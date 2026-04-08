@@ -522,7 +522,7 @@ pmid_table
 # ## check how this overlaps all publications on dictybase that has pmids
 
 # %%
-dicty_pmid_csv = "output/publication_id_pmid.csv"
+dicty_pmid_csv = "output/dicty_gold_build/2_publication_id_pmid.csv"
 dicty_pmid = pl.read_csv(dicty_pmid_csv)
 
 # %%
@@ -761,6 +761,6 @@ df_abs_clean_small = df_abs_clean.select([
     "file",
 ])
 
-df_abs_clean_small.write_parquet("output/cleaned/articles_all_cleaned_abstract.parquet")
+df_abs_clean_small.write_parquet("output/dicty_gold_build/3_articles_cleaned_abstract.parquet")
 
 # %%

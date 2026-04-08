@@ -66,11 +66,11 @@ To reduce false positives, we run a labeling step to build a higher-quality gold
 - Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
 
 Labeling details (summary):
-- Input: `output/cleaned/gold_with_query_expand_flat.tsv` (claim + PMID + title/abstract). The labeler uses **query_expand** (long variant: synonyms + gene products) as the claim text when present, otherwise **query**.
+- Input: `output/dicty_gold_build/5b_gold_query_expand_flat.tsv` (claim + PMID + title/abstract). The labeler uses **query_expand** (long variant: synonyms + gene products) as the claim text when present, otherwise **query**.
 - Run the labeler 3 times to measure consistency:
-	- `output/llm_labels_goldset_run1.jsonl`
-	- `output/llm_labels_goldset_run2.jsonl`
-	- `output/llm_labels_goldset_run3.jsonl`
+	- `output/dicty_gold_build/6a_llm_labels_run1.jsonl`
+	- `output/dicty_gold_build/6b_llm_labels_run2.jsonl`
+	- `output/dicty_gold_build/6c_llm_labels_run3.jsonl`
 - Compare runs and compute agreement 
 
 ## 6) Final Public Export (JSON)
@@ -80,8 +80,8 @@ Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and 
 
 - Notebook: [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb)
 - Outputs:
-	- `output/cleaned/dicty_gold_llm_public.json`
-	- `output/cleaned/articles_all_cleaned_abstract.jsonl`
+	- `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
+	- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`
 
 Schema (high level):
 
@@ -95,8 +95,8 @@ EPMC JSONL:
 
 ## Outputs
 
-- `output/cleaned/dicty_gold_llm_public.json`
-- `output/cleaned/articles_all_cleaned_abstract.jsonl`
+- `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
+- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`
 
 ## Summary (short)
 
