@@ -5,13 +5,13 @@ curator_notes.parquet
 output/
 !output/
 output/*
-!output/llm_labels_goldset_run1.jsonl
-!output/llm_labels_goldset_run2.jsonl
-!output/llm_labels_goldset_run3.jsonl
-!output/cleaned/
-output/cleaned/*
-!output/cleaned/dicty_gold_llm_public.json
-!output/cleaned/articles_all_cleaned_abstract.jsonl
+!output/dicty_gold_build/
+output/dicty_gold_build/*
+!output/dicty_gold_build/6a_llm_labels_run1.jsonl
+!output/dicty_gold_build/6b_llm_labels_run2.jsonl
+!output/dicty_gold_build/6c_llm_labels_run3.jsonl
+!output/dicty_gold_build/7a_dicty_gold_llm_public.json
+!output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
 scripts/public/article_fetching/output/
 NCBI_API_KEY
 dictybase_files/dicty21/dicty21.Data/
@@ -23,3 +23,4 @@ llama_API_KEY
 indexes/
 dicty_simulated_data/
 **/__pycache__/
+dictybase_files/ontology/

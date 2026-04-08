@@ -91,11 +91,12 @@ recall_cols = sorted(
     set(recall_cols_bm25) & set(recall_cols_hybrid),
     key=lambda c: int(c.split("@")[1]),
 )
+recall_cols = [c for c in recall_cols if int(c.split("@")[1]) <= 2000]
 k_values = [int(c.split("@")[1]) for c in recall_cols]
 
-print("Shared K values:", k_values)
+print("Shared K values (plotted up to 2000):", k_values)
 
-tick_candidates = [50, 200, 500, 1000, 2000, 5000]
+tick_candidates = [50, 200, 500, 1000, 2000]
 tick_values = [k for k in tick_candidates if k in k_values]
 
 methods_cfg = {
@@ -104,7 +105,7 @@ methods_cfg = {
     "BM25 Dense Fusion": {"df": hybrid_metrics, "color": "#2ca02c", "marker": "D"},
 }
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharex=True, sharey=True)
 
 global_ymin, global_ymax = 1.0, 0.0
 for split in splits:
@@ -421,7 +422,7 @@ for split in splits:
         map_vals = _map_at_ks_for_run(run_df, qrels_split, map_ks)
         map_curves[method_name][split] = map_vals
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
 
 all_maps = []
 for method_dict in map_curves.values():
@@ -477,6 +478,60 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 fig_path = output_dir / "04_hybrid_rerank_fusion_mapk_per_split.png"
 plt.savefig(fig_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig_path)
+plt.show()
+
+# Same MAP@K curves without post-rerank fusion (clearer when fusion overlaps / dominates).
+map_curves_rr = {k: v for k, v in map_curves.items() if k != "Post-rerank fusion"}
+colors_map_rr = {
+    "BM25 Dense Fusion": colors_map["BM25 Dense Fusion"],
+    "Rerank": "#9467bd",
+}
+all_maps_rr = []
+for method_dict in map_curves_rr.values():
+    for split_vals in method_dict.values():
+        all_maps_rr.extend(split_vals.values())
+
+if all_maps_rr:
+    y_min_rr = max(0.0, min(all_maps_rr) - 0.02)
+    y_max_rr = min(1.0, max(all_maps_rr) + 0.02)
+else:
+    y_min_rr, y_max_rr = 0.0, 1.0
+
+fig2, axes2 = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
+for idx, split in enumerate(splits):
+    ax = axes2[idx]
+    for method_name, method_dict in map_curves_rr.items():
+        if split not in method_dict:
+            continue
+        vals = [method_dict[split].get(k, 0.0) for k in map_ks]
+        ax.plot(
+            map_ks,
+            vals,
+            marker="o",
+            color=colors_map_rr.get(method_name),
+            label=method_name,
+            linewidth=1.8,
+        )
+    ax.set_title(split_labels.get(split, split), fontsize=15, fontweight="bold")
+    ax.set_ylim(y_min_rr, y_max_rr)
+    if idx == 0:
+        ax.set_ylabel("MAP@K")
+    else:
+        ax.set_ylabel("")
+    ax.set_xlabel("K")
+    ax.set_xticks(map_ks)
+    ax.set_xticklabels([str(k) for k in map_ks], rotation=90)
+    ax.set_xlim(0, 100)
+    ax.grid(True, axis="y")
+    ax.grid(True, axis="x")
+
+handles2, labels2 = axes2[0].get_legend_handles_labels()
+fig2.legend(handles2, labels2, loc="lower right", bbox_to_anchor=(0.95, 0.15), fontsize=13)
+fig2.suptitle("Retrieval vs Rerank – MAP@K", fontsize=16, fontweight="bold", y=0.98)
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+fig_path_rr = output_dir / "04_hybrid_rerank_mapk_per_split_no_post_fusion.png"
+plt.savefig(fig_path_rr, dpi=150, bbox_inches="tight")
+print("Saved:", fig_path_rr)
 plt.show()
 
 # %% [markdown]
@@ -1091,7 +1146,9 @@ for split in splits:
         )
         ax_map.set_title(f"{col_title} (n={n_q})", fontweight="bold")
         ax_map.set_ylim(y_min_m, y_max_m)
-        ax_map.set_ylabel("MAP@K")
+        ax_map.set_ylabel("MAP@K" if idx == 0 else "")
+        if idx != 0:
+            ax_map.tick_params(axis="y", labelleft=False)
         ax_map.grid(True, axis="y")
         ax_map.grid(True, axis="x")
 
@@ -1104,7 +1161,9 @@ for split in splits:
             linewidth=1.8,
         )
         ax_rec.set_ylim(y_min_r, y_max_r)
-        ax_rec.set_ylabel("Recall@K")
+        ax_rec.set_ylabel("Recall@K" if idx == 0 else "")
+        if idx != 0:
+            ax_rec.tick_params(axis="y", labelleft=False)
         ax_rec.set_xlabel("K")
         ax_rec.grid(True, axis="y")
         ax_rec.grid(True, axis="x")
