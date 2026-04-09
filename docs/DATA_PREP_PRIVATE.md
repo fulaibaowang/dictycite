@@ -44,3 +44,12 @@ Output:
 - `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
 - `output/dicty_gold_build/7b_dicty_gold_llm_private.json`
 - `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`
+
+## 8) Gold-linked notes build (optional, for generation / grounding provenance)
+
+- `output/dicty_gold_build/8_raw_notes_snapshot.jsonl`
+- `output/dicty_gold_build/8a_gold_linked_notes_build.jsonl`
+- `output/dicty_gold_build/8c_build_provenance_stats.tsv`
+- `output/dicty_gold_build/8d_build_provenance_report.md`
+
+Built by `scripts/public/data_prep/build_gold_linked_notes_dataset.py` (see `docs/USAGE.md`).

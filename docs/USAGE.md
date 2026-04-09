@@ -43,3 +43,20 @@ Use [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb
 
 - output/dicty_gold_build/7a_dicty_gold_llm_public.json
 - output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
+
+## Gold-linked full curator notes (build dataset)
+
+From the repository root, after `7a`, `4a`, `1_curator_claims`, `gene_information.txt`, and `2_publication_id_pmid.csv` exist under `output/dicty_gold_build/` (and `dictybase_files/`):
+
+```
+.venv/bin/python scripts/public/data_prep/build_gold_linked_notes_dataset.py
+```
+
+This re-fetches `summary.json` for every gene linked to the current gold set, writes `8_raw_notes_snapshot.jsonl` and `8a_gold_linked_notes_build.jsonl`, and refreshes `8c` / `8d`. Default behavior **truncates** prior `8_*` artifacts.
+
+Continue an interrupted run (reuse raw snapshots, append only missing genes):
+
+```
+.venv/bin/python scripts/public/data_prep/build_gold_linked_notes_dataset.py \
+  --resume --resume-build --no-overwrite
+```

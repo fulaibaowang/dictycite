@@ -678,3 +678,26 @@ One JSON object per line. Key `abstract` holds the cleaned abstract text.
 | **Labeled query--document pairs** | **2,028** | |
 | **Unique PMIDs in gold** | **1,289** | |
 | EPMC corpus records | 20,447 | |
+
+---
+
+## Gold-linked notes build dataset (Step 8)
+
+After the public gold JSON exists, we optionally build a **gene-level provenance dataset** for generation / grounding work. It is **not** the retrieval gold set; it reconnects each **gold-linked** `gene_id` (from `4a_claim_groups.parquet` restricted to `group_claim_id` present in `7a_dicty_gold_llm_public.json`) to the **full** dictyBase curator note from `GET /gene/{gene_id}/gene/summary.json`.
+
+**Script:** `scripts/public/data_prep/build_gold_linked_notes_dataset.py`
+
+**Outputs** (under `output/dicty_gold_build/`):
+
+| File | Role |
+| --- | --- |
+| `8_raw_notes_snapshot.jsonl` | One JSON object per gene: `gene_id`, fetch metadata, and `summary_json_raw` (full API payload). |
+| `8a_gold_linked_notes_build.jsonl` | One JSON object per gene: gene metadata (from `gene_information.txt`), `summary_json_raw`, canonical **`curator_notes_blocks`**, derived **`curator_notes_marked_text`** / **`curator_notes_plain_text`**, **`citation_anchors`**, `gold_linkage` (groups, bodies, publication_ids, pmids), and `coverage` stats. |
+| `8c_build_provenance_stats.tsv` | Per-gene summary metrics (rebuilt from the full `8a` file after each run). |
+| `8d_build_provenance_report.md` | Short human-readable run summary. |
+
+**Canonical blocks:** Curator notes are mixed HTML + text + publication and gene links. Tokens from the API are converted to an ordered list of blocks (`text` with raw HTML fragment, `citation` with `publication_id` / caption / url, `gene_link`, `break` for `<br>`). **Plain and marked strings are derived** by concatenating block renderings in order. Citation blocks carry dictyBase **`publication_id`** (internal reference id) for joins to PMID via `2_publication_id_pmid.csv`.
+
+**Anchors:** `citation_anchors` entries reference `stream` (`marked` or `plain`), `start` / `end` (Python string indices into the corresponding derived string), and `publication_id`.
+
+**CLI notes:** Default run truncates `8_*` outputs first. Use `--resume --resume-build --no-overwrite` to continue after an interrupted run (reuse `8_raw` snapshots, append missing genes to `8a`).
