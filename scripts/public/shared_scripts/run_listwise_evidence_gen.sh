@@ -5,14 +5,14 @@
 # Runs in the MAIN container (not the listwise/vLLM container) because it
 # reuses the same evidence/generation Python scripts as the main pipeline.
 #
-# Default route: listwise_fused (RRF fusion of listwise single-window + snippet_rrf).
+# Default route: listwise_fused (RRF fusion of listwise single-window + snippet_doc_fusion).
 # Optional: listwise_fused_sliding (if LISTWISE_FUSE_SLIDING=1).
 #
 # Usage:
 #   ./run_listwise_evidence_gen.sh --config <path/to/config.env>
 #
 # Required config variables: WORKFLOW_OUTPUT_DIR, DOCS_JSONL
-# Optional: TRAIN_JSON, TEST_BATCH_JSONS, EVIDENCE_TOP_K, GENERATION_*
+# Optional: TRAIN_JSON, TEST_BATCH_JSONS, EVIDENCE_TOP_K (post_rerank top-k; default 10), GENERATION_*
 #
 set -e
 
@@ -77,7 +77,7 @@ if [ "$_DOCS_JSONL_OK" = "0" ]; then
 fi
 
 LISTWISE_OUTPUT_DIR="${LISTWISE_OUTPUT_DIR:-${WORKFLOW_OUTPUT_DIR}/listwise_rerank}"
-SNIPPET_WINDOWS="${WORKFLOW_OUTPUT_DIR}/snippet_rerank/windows"
+SNIPPET_WINDOWS="${WORKFLOW_OUTPUT_DIR}/snippet/snippet_rerank/windows"
 RUN_GENERATION_LISTWISE="${RUN_GENERATION_LISTWISE:-1}"
 
 if [ ! -d "$LISTWISE_OUTPUT_DIR" ]; then
@@ -117,8 +117,8 @@ _resolve_query_json() {
 _process_route() {
   local _route_label="$1"     # e.g. "listwise_single" or "listwise_sliding"
   local _runs_dir="$2"        # path to runs/ dir with TSVs
-  local _evidence_subdir="evidence_${_route_label}"
-  local _gen_subdir="generation_${_route_label}"
+  local _evidence_subdir="evidence/evidence_${_route_label}"
+  local _gen_subdir="generation/generation_${_route_label}"
   local _post_dir="${LISTWISE_OUTPUT_DIR}/${_route_label}"
 
   if [ ! -d "$_runs_dir" ]; then
@@ -227,6 +227,7 @@ _process_route() {
         RESCUE_ARGS=(--input "$_gen_json")
         [ -n "${GENERATION_RESCUE_TIMEOUT:-}" ] && RESCUE_ARGS+=(--timeout "$GENERATION_RESCUE_TIMEOUT")
         [ -n "${GENERATION_RESCUE_RETRY_SLEEP:-}" ] && RESCUE_ARGS+=(--retry-sleep "$GENERATION_RESCUE_RETRY_SLEEP")
+        [ -n "$_max_ctx" ] && RESCUE_ARGS+=(--max-contexts "$_max_ctx")
         [ -n "${GENERATION_MAX_CHARS_PER_CONTEXT:-}" ] && RESCUE_ARGS+=(--max-chars-per-context "$GENERATION_MAX_CHARS_PER_CONTEXT")
         python "$SCRIPT_DIR/generation/rescue_failed_generation.py" "${RESCUE_ARGS[@]}"
       fi

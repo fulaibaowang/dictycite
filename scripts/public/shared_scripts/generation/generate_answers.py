@@ -7,7 +7,22 @@ documents, contexts), calls an LLM per question, parses ideal_answer and
 evidence_ids (and exact_answer for yesno/factoid/list), and writes a single
 JSON file to output_dir (e.g. output_dir/<stem>_answers.json).
 
-Requires: LLAMA_API_KEY in env or .env at repo root.
+Backend and model come **only** from the process environment and CLI (sourced run
+``config.env``, ``export``, scheduler, etc.). Repo-root ``.env`` is read **only**
+for ``GEN_API_KEY`` and ``LLAMA_API_KEY`` (``setdefault`` — never overrides an
+already-exported key). It does **not** load ``GENERATION_BACKEND``,
+``GENERATION_MODEL``, or ``GEN_API_BASE`` from that file.
+
+- ``GENERATION_BACKEND`` (default ``ollama`` when unset): ``ollama`` — HTTP to
+  ``OLLAMA_URL`` with ``LLAMA_API_KEY`` (export, scheduler, or ``LLAMA_API_KEY`` in repo-root ``.env``).
+  ``openai_compat`` (aliases: ``openrouter``, ``openai``) — POST
+  ``{GEN_API_BASE}/chat/completions`` with ``GEN_API_KEY``. Requires ``GEN_API_BASE``.
+
+- **Model id**: ``--model`` (pipeline may set ``GENERATION_MODEL`` for the same value).
+  Default when ``--model`` is omitted: ``llama3.3:latest`` (Ollama tag).
+
+OpenAI-compatible path is equivalent to the OpenAI client's ``base_url`` +
+``chat.completions``; this script uses ``requests`` only.
 """
 
 from __future__ import annotations
@@ -58,19 +73,36 @@ def _is_retryable_request_error(exc: BaseException) -> bool:
     return False
 
 
-def _load_dotenv() -> None:
+# Only these keys are read from repo-root .env (never override existing exports).
+_DOTENV_ALLOWED_KEYS = frozenset({"GEN_API_KEY", "LLAMA_API_KEY"})
+
+
+def _load_gen_api_key_from_dotenv() -> None:
+    """Set GEN_API_KEY / LLAMA_API_KEY from repo-root .env if unset. Ignores all other keys in that file."""
     env_path = REPO_ROOT / ".env"
+    if not env_path.is_file():
+        return
     try:
-        from dotenv import load_dotenv as _load
-        _load(env_path)
-    except ImportError:
-        if env_path.exists():
-            with open(env_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        k, _, v = line.partition("=")
-                        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        with open(env_path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.lower().startswith("export "):
+                    line = line[7:].strip()
+                if "=" not in line:
+                    continue
+                key, _, rest = line.partition("=")
+                key = key.strip()
+                if key not in _DOTENV_ALLOWED_KEYS:
+                    continue
+                val = rest.split("#", 1)[0].strip()
+                if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+                    val = val[1:-1]
+                if val:
+                    os.environ.setdefault(key, val)
+    except OSError as e:
+        logger.warning("Could not read .env for generation API keys: %s", e)
 
 
 def parse_args() -> argparse.Namespace:
@@ -141,19 +173,22 @@ def parse_args() -> argparse.Namespace:
         "--model",
         type=str,
         default=OLLAMA_MODEL,
-        help=f"Ollama model name for generation (default: {OLLAMA_MODEL}).",
+        help=(
+            f"Model id: Ollama tag when GENERATION_BACKEND is ollama (default: {OLLAMA_MODEL}); "
+            f"OpenAI-compatible model id when GENERATION_BACKEND is openai_compat."
+        ),
     )
     parser.add_argument(
         "--temperature",
         type=float,
         default=0.0,
-        help="LLM sampling temperature passed via Ollama 'options.temperature' (default: 0.0).",
+        help="Sampling temperature (Ollama options or chat completions body; default: 0.0).",
     )
     parser.add_argument(
         "--top-p",
         type=float,
         default=1.0,
-        help="Nucleus sampling top_p passed via Ollama 'options.top_p' (default: 1.0 = no truncation).",
+        help="Top-p sampling (Ollama options or chat completions when < 1.0; default: 1.0).",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging.")
     parser.add_argument(
@@ -170,16 +205,56 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_api_key() -> str:
+def openai_compat_enabled() -> bool:
+    """True when GENERATION_BACKEND requests OpenAI-compatible chat completions."""
+    raw = (os.getenv("GENERATION_BACKEND") or "").strip().lower()
+    if not raw or raw == "ollama":
+        return False
+    if raw in ("openai_compat", "openrouter", "openai"):
+        return True
+    raise RuntimeError(
+        f"Unknown GENERATION_BACKEND={raw!r}; use ollama (default) or openai_compat"
+    )
+
+
+def chat_completions_endpoint(gen_api_base: str) -> str:
+    """Return full URL for POST .../chat/completions given GEN_API_BASE (e.g. https://openrouter.ai/api/v1)."""
+    base = gen_api_base.strip().rstrip("/")
+    if base.lower().endswith("/chat/completions"):
+        return base
+    return f"{base}/chat/completions"
+
+
+def get_ollama_api_key() -> str:
     key = (os.getenv("LLAMA_API_KEY") or "").strip()
     if not key:
         raise RuntimeError(
-            "Missing LLAMA_API_KEY in environment or .env"
+            "Missing LLAMA_API_KEY (Ollama backend). "
+            "Export it, inject via scheduler, or set LLAMA_API_KEY in repo-root .env "
+            "(read if unset, same rule as GEN_API_KEY)."
         )
     return key
 
 
-def call_llm(
+def get_openai_compat_api_key() -> str:
+    key = (os.getenv("GEN_API_KEY") or "").strip()
+    if not key:
+        raise RuntimeError(
+            "Missing GEN_API_KEY (required when GENERATION_BACKEND=openai_compat). "
+            "Export it, inject via scheduler, or set only GEN_API_KEY in repo-root .env "
+            "(generate_answers reads that key from .env if unset)."
+        )
+    return key
+
+
+def get_api_key() -> str:
+    """Return the active backend API key (GEN_API_KEY or LLAMA_API_KEY) based on GENERATION_BACKEND."""
+    if openai_compat_enabled():
+        return get_openai_compat_api_key()
+    return get_ollama_api_key()
+
+
+def call_llm_ollama(
     api_key: str,
     system_prompt: str,
     user_prompt: str,
@@ -206,6 +281,92 @@ def call_llm(
     r.raise_for_status()
     data = r.json()
     return data.get("response", "")
+
+
+def call_llm_openai_compat(
+    api_key: str,
+    gen_api_base: str,
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    timeout: int = 120,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+) -> str:
+    """OpenAI-compatible chat completions (OpenRouter, vLLM, OpenAI, etc.)."""
+    url = chat_completions_endpoint(gen_api_base)
+    payload: Dict[str, Any] = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": float(temperature),
+    }
+    if float(top_p) < 1.0:
+        payload["top_p"] = float(top_p)
+    r = requests.post(
+        url,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=timeout,
+    )
+    r.raise_for_status()
+    data = r.json()
+    if isinstance(data, dict) and data.get("error"):
+        err = data["error"]
+        if isinstance(err, dict):
+            msg = str(err.get("message", err))
+        else:
+            msg = str(err)
+        raise RuntimeError(f"Chat API error: {msg}")
+    choices = data.get("choices") if isinstance(data, dict) else None
+    if not choices or not isinstance(choices, list):
+        raise ValueError("No choices in chat completions response")
+    msg0 = choices[0].get("message") if isinstance(choices[0], dict) else None
+    if not isinstance(msg0, dict):
+        raise ValueError("Invalid message object in chat completions response")
+    content = msg0.get("content")
+    if content is None:
+        raise ValueError("Empty message content in chat completions response")
+    return str(content)
+
+
+def call_llm(
+    api_key: str,
+    system_prompt: str,
+    user_prompt: str,
+    model: str = OLLAMA_MODEL,
+    timeout: int = 120,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+    *,
+    openai_compat: bool = False,
+    gen_api_base: str = "",
+) -> str:
+    if openai_compat:
+        return call_llm_openai_compat(
+            api_key,
+            gen_api_base,
+            system_prompt,
+            user_prompt,
+            model=model,
+            timeout=timeout,
+            temperature=temperature,
+            top_p=top_p,
+        )
+    return call_llm_ollama(
+        api_key,
+        system_prompt,
+        user_prompt,
+        model=model,
+        timeout=timeout,
+        temperature=temperature,
+        top_p=top_p,
+    )
 
 
 def format_evidence_block(
@@ -260,6 +421,39 @@ def snippets_to_contexts(snippets: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     return contexts
 
 
+def resolve_schema_block(schemas_dir: Path, qtype: str) -> str:
+    """Resolve schema snippet: typed ``{qtype}.txt`` if present; untyped uses ``default.txt`` if present; else ``""``."""
+    raw = (qtype or "").strip().lower()
+    if raw:
+        path = schemas_dir / f"{raw}.txt"
+        if path.exists():
+            return path.read_text(encoding="utf-8").strip()
+        return ""
+    default_path = schemas_dir / "default.txt"
+    if default_path.exists():
+        return default_path.read_text(encoding="utf-8").strip()
+    return ""
+
+
+def format_user_prompt(
+    user_base_text: str,
+    *,
+    schema_block: str,
+    qtype: str,
+    question: str,
+    evidence_block: str,
+) -> str:
+    raw = (qtype or "").strip().lower()
+    schema_prefix = (schema_block.strip() + "\n\n") if schema_block.strip() else ""
+    question_header = (f"Question (type={raw}):\n" if raw else "Question:\n")
+    return (
+        user_base_text.replace("{SCHEMA_BLOCK}", schema_prefix)
+        .replace("{QUESTION_HEADER}", question_header)
+        .replace("{QUESTION}", question)
+        .replace("{EVIDENCE_BLOCK}", evidence_block)
+    )
+
+
 def build_full_prompt_for_record(
     record: Dict[str, Any],
     prompts_dir: Path,
@@ -279,16 +473,14 @@ def build_full_prompt_for_record(
         return ""
     system_text = system_path.read_text(encoding="utf-8").strip()
     user_base_text = user_path.read_text(encoding="utf-8").strip()
-    schema_path = schemas_dir / f"{qtype}.txt"
-    if not schema_path.exists():
-        schema_path = schemas_dir / "summary.txt"
-    schema_block = schema_path.read_text(encoding="utf-8").strip()
+    schema_block = resolve_schema_block(schemas_dir, record.get("type") or "")
     evidence_block = format_evidence_block(contexts, max_contexts, max_chars_per_context)
-    user_prompt = (
-        user_base_text.replace("{SCHEMA_BLOCK}", schema_block)
-        .replace("{QTYPE}", qtype)
-        .replace("{QUESTION}", question)
-        .replace("{EVIDENCE_BLOCK}", evidence_block)
+    user_prompt = format_user_prompt(
+        user_base_text,
+        schema_block=schema_block,
+        qtype=qtype,
+        question=question,
+        evidence_block=evidence_block,
     )
     return f"[SYSTEM]\n{system_text}\n\n[USER]\n{user_prompt}"
 
@@ -348,10 +540,10 @@ def parse_answer_json_for_type(raw: str, qtype: str, q_id: Optional[str] = None)
     if not isinstance(ev_ids, list) or not all(isinstance(x, str) for x in ev_ids):
         raise ValueError("'evidence_ids' must be a list of strings")
 
-    qtype = (qtype or "summary").strip().lower()
+    qt = (qtype or "").strip().lower()
     out: Dict[str, Any] = {"ideal_answer": ideal, "evidence_ids": ev_ids}
 
-    if qtype == "yesno":
+    if qt == "yesno":
         if "exact_answer" not in obj:
             raise ValueError("yesno type requires 'exact_answer'")
         ea = obj["exact_answer"]
@@ -360,26 +552,26 @@ def parse_answer_json_for_type(raw: str, qtype: str, q_id: Optional[str] = None)
         if ea.strip().lower() not in ("yes", "no"):
             raise ValueError(f"yesno exact_answer must be 'yes' or 'no', got: {ea!r}")
         out["exact_answer"] = ea.strip().lower()
-    elif qtype in ("factoid", "list"):
+    elif qt in ("factoid", "list"):
         if "exact_answer" not in obj:
-            raise ValueError(f"{qtype} type requires 'exact_answer'")
+            raise ValueError(f"{qt} type requires 'exact_answer'")
         ea = obj["exact_answer"]
         if not isinstance(ea, list):
-            raise ValueError(f"{qtype} exact_answer must be a list (or list of lists)")
+            raise ValueError(f"{qt} exact_answer must be a list (or list of lists)")
         if len(ea) == 0:
             out["exact_answer"] = []
         elif isinstance(ea[0], str):
             # Flat list of strings -> array-of-arrays (one inner array per answer)
             if not all(isinstance(x, str) for x in ea):
-                raise ValueError(f"{qtype} exact_answer list must contain only strings")
+                raise ValueError(f"{qt} exact_answer list must contain only strings")
             out["exact_answer"] = [[s] for s in ea]
         elif isinstance(ea[0], list):
             # Already array-of-arrays
             if not all(isinstance(inner, list) and all(isinstance(x, str) for x in inner) for inner in ea):
-                raise ValueError(f"{qtype} exact_answer must be list of lists of strings")
+                raise ValueError(f"{qt} exact_answer must be list of lists of strings")
             out["exact_answer"] = ea
         else:
-            raise ValueError(f"{qtype} exact_answer must be list of strings or list of lists of strings")
+            raise ValueError(f"{qt} exact_answer must be list of strings or list of lists of strings")
 
     return out
 
@@ -405,14 +597,37 @@ def main() -> int:
         configure_logging_from_env()
     except ImportError:
         pass
+    _load_gen_api_key_from_dotenv()
     args = parse_args()
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s: %(message)s",
     )
+    try:
+        openai_compat = openai_compat_enabled()
+    except RuntimeError as e:
+        logger.error("%s", e)
+        return 1
 
-    _load_dotenv()
-    api_key = get_api_key()
+    if openai_compat:
+        gen_base = (os.getenv("GEN_API_BASE") or "").strip()
+        if not gen_base:
+            logger.error(
+                "GENERATION_BACKEND=openai_compat requires GEN_API_BASE (e.g. https://.../v1 in run env)."
+            )
+            return 1
+        api_key = get_openai_compat_api_key()
+        effective_model = args.model
+        logger.info(
+            "Generation backend: OpenAI-compatible chat (%s) model=%s",
+            chat_completions_endpoint(gen_base),
+            effective_model,
+        )
+    else:
+        gen_base = ""
+        api_key = get_ollama_api_key()
+        effective_model = args.model
+        logger.info("Generation backend: Ollama model=%s", effective_model)
 
     # Default prompts directory: resolve relative to this script so layout is portable.
     # This works for both:
@@ -446,43 +661,17 @@ def main() -> int:
     with open(user_base_path, "r", encoding="utf-8") as f:
         user_base_text = f.read().strip()
 
-    SCHEMA_BLOCKS: Dict[str, str] = {}
+    schema_cache: Dict[str, str] = {}
 
     def get_schema_block(qtype: str) -> str:
-        """
-        Resolve schema text for a question type.
+        key = (qtype or "").strip().lower()
+        if key not in schema_cache:
+            schema_cache[key] = resolve_schema_block(schemas_dir, qtype)
+        return schema_cache[key]
 
-        - If qtype is empty/None, return "" (no schema block).
-        - If the specific schema file is missing, return "" instead of falling back to any default.
-        """
-        raw = (qtype or "").strip().lower()
-        if not raw:
-            return ""
-        if raw in SCHEMA_BLOCKS:
-            return SCHEMA_BLOCKS[raw]
-        path = schemas_dir / f"{raw}.txt"
-        if not path.exists():
-            # No schema for this type; treat schema as optional.
-            SCHEMA_BLOCKS[raw] = ""
-            return ""
-        with open(path, "r", encoding="utf-8") as f:
-            block = f.read().strip()
-        SCHEMA_BLOCKS[raw] = block
-        return block
-
-    # Priming specific schemas is no longer necessary now that schema blocks are optional,
-    # but we keep this call to warm the cache for standard types when schema files exist.
-    for _q in ("summary", "yesno", "factoid", "list"):
+    # Warm cache for common typed labels and untyped ("") default.txt resolution.
+    for _q in ("", "summary", "yesno", "factoid", "list"):
         get_schema_block(_q)
-
-    def fill_user_prompt(question: str, evidence_block: str, qtype: str, schema_block: str) -> str:
-        return (
-            user_base_text
-            .replace("{SCHEMA_BLOCK}", schema_block)
-            .replace("{QTYPE}", qtype)
-            .replace("{QUESTION}", question)
-            .replace("{EVIDENCE_BLOCK}", evidence_block)
-        )
 
     all_objs = load_contexts_json(args.input_path)
     total = len(all_objs)
@@ -499,7 +688,7 @@ def main() -> int:
 
     def process_one(idx: int, obj: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
         q_id = obj.get("id")
-        qtype = obj.get("type") or ""
+        qtype = (obj.get("type") or "").strip().lower()
         question = obj.get("body", "") or ""
         if args.evidence_source == "contexts":
             contexts = obj.get("contexts") or []
@@ -524,7 +713,13 @@ def main() -> int:
         evidence_block = format_evidence_block(
             contexts, args.max_contexts, args.max_chars_per_context
         )
-        user_prompt = fill_user_prompt(question, evidence_block, qtype, schema_block)
+        user_prompt = format_user_prompt(
+            user_base_text,
+            schema_block=schema_block,
+            qtype=qtype,
+            question=question,
+            evidence_block=evidence_block,
+        )
 
         raw = None
         last_error: Optional[Exception] = None
@@ -534,10 +729,12 @@ def main() -> int:
                     api_key,
                     system_text,
                     user_prompt,
-                    model=args.model,
+                    model=effective_model,
                     timeout=args.timeout,
                     temperature=args.temperature,
                     top_p=args.top_p,
+                    openai_compat=openai_compat,
+                    gen_api_base=gen_base,
                 )
                 if args.sleep > 0:
                     time.sleep(args.sleep)
@@ -605,7 +802,7 @@ def main() -> int:
                 rec["ideal_answer"] = None
                 rec["evidence_ids"] = []
                 rec["error"] = str(e)
-                qtype = obj.get("type", "summary")
+                qtype = (obj.get("type") or "").strip().lower()
                 if qtype in ("yesno", "factoid", "list"):
                     rec["exact_answer"] = None
                 results_by_idx[idx] = rec
@@ -626,7 +823,7 @@ def main() -> int:
             rec["ideal_answer"] = None
             rec["evidence_ids"] = []
             rec["error"] = "missing_from_results"
-            if obj.get("type") in ("yesno", "factoid", "list"):
+            if (obj.get("type") or "").strip().lower() in ("yesno", "factoid", "list"):
                 rec["exact_answer"] = None
             records_out.append(rec)
             logger.warning("No result for index %d (id=%s); added record with error", i, obj.get("id"))
