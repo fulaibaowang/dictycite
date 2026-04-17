@@ -3,8 +3,8 @@
 Rescue failed questions from a generation output JSON.
 
 Loads an answers JSON file, finds records with an "error" field (optionally
-only 504 timeouts), re-runs generation with a longer client timeout and a
-lower max-chars-per-context (default 1100) to reduce JSON parse errors.
+only 504 timeouts), re-runs generation with a longer client timeout, optional --max-contexts
+(default 10), and a lower max-chars-per-context (default 1100) to reduce JSON parse errors.
 Note: 504 Gateway Time-out is set by the server/proxy, not by --timeout;
 retrying with concurrency 1 or during off-peak may help.
 By default overwrites the input file; use --output to write to a new file instead.
@@ -13,6 +13,8 @@ Usage:
   python rescue_failed_generation.py --input output/.../generation/13B3_golden_answers.json
   python rescue_failed_generation.py --input 13B3_golden_answers.json --output rescued.json
   python rescue_failed_generation.py --input 13B3_golden_answers.json --only-504 --timeout 300
+  # With openai_compat: export GENERATION_MODEL (or pass --model); GEN_API_KEY may come from repo .env
+  # (generate_answers loads only that key from .env). Backend/base/model otherwise come from the shell.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -59,6 +62,12 @@ def parse_args() -> argparse.Namespace:
         help="Client-side seconds to wait per LLM response (default: 300). 504 is usually from the server/gateway timeout; increasing this only avoids us giving up before the server responds.",
     )
     parser.add_argument(
+        "--max-contexts",
+        type=int,
+        default=10,
+        help="Cap on contexts in evidence block for rescue run (default: 10, same as generate_answers.py).",
+    )
+    parser.add_argument(
         "--max-chars-per-context",
         type=int,
         default=1100,
@@ -69,6 +78,15 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=60,
         help="Seconds to sleep between retries after a failed LLM call (default: 60 = 1 min).",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help=(
+            "Model id passed to generate_answers.py (OpenRouter / openai_compat). "
+            "Default: GENERATION_MODEL env if set; otherwise generate_answers uses its own default."
+        ),
     )
     parser.add_argument(
         "--only-504",
@@ -141,7 +159,7 @@ def main() -> int:
         q = {
             "id": r.get("id"),
             "body": r.get("body"),
-            "type": r.get("type", "summary"),
+            "type": r.get("type") or "",
             "documents": r.get("documents", []),
             "contexts": r.get("contexts", []),
         }
@@ -162,11 +180,16 @@ def main() -> int:
             "--output-dir", str(out_dir),
             "--timeout", str(args.timeout),
             "--retry-sleep", str(args.retry_sleep),
+            "--max-contexts", str(args.max_contexts),
             "--max-chars-per-context", str(args.max_chars_per_context),
             "--concurrency", "1",
         ]
         if args.verbose:
             cmd.append("--verbose")
+        # Match pipeline: forward provider model id when using openai_compat (generate_answers default is Ollama).
+        _gen_model = (args.model or os.getenv("GENERATION_MODEL") or "").strip()
+        if _gen_model:
+            cmd.extend(["--model", _gen_model])
         logger.info("Running: %s", " ".join(cmd))
         result = subprocess.run(cmd, check=False)
         if result.returncode != 0:
@@ -211,7 +234,7 @@ def main() -> int:
         full_prompt = build_full_prompt_for_record(
             rec,
             prompts_dir,
-            max_contexts=8,
+            max_contexts=args.max_contexts,
             max_chars_per_context=args.max_chars_per_context,
         )
         if full_prompt:
