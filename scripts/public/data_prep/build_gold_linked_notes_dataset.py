@@ -276,6 +276,31 @@ def load_gold_questions(path: Path) -> Tuple[Dict[str, Dict[str, Any]], List[int
     return by_id, gids
 
 
+def evidence_level_from_gold_question(q: Dict[str, Any]) -> str:
+    """Aggregate 7a `docs[].evidence_level` for one gold question (group_claim_id)."""
+    levels: List[str] = []
+    for doc in q.get("docs") or []:
+        if isinstance(doc, dict):
+            el = doc.get("evidence_level")
+            if el is not None and str(el).strip():
+                levels.append(str(el).strip())
+    unique = sorted(set(levels))
+    if not unique:
+        return ""
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+def evidence_level_tokens(evidence_level: Optional[str]) -> set[str]:
+    """Split 8b `claims[].evidence_level` (joined with ` | `) into token set."""
+    lev = (evidence_level or "").strip()
+    return {p.strip() for p in lev.split("|") if p.strip()}
+
+
+_ABSTRACT_ONLY_LEVELS = frozenset({"abstract_supports_detail", "abstract_supports_core"})
+
+
 def gold_linked_gene_ids(
     path_4a: Path,
     gold_group_ids: set[int],
@@ -641,6 +666,13 @@ def main() -> None:
     # Build 8b: gene-level examples with local claim IDs.
     # Inclusion rule (requested): genes with >2 claims AND zero non-gold claims.
     n_8b_rows = 0
+    n_8b_claims_total = 0
+    n_8b_claims_exact_detail = 0
+    n_8b_claims_abstract_only = 0
+    n_8b_claims_with_fulltext = 0
+    n_8b_genes_all_exact_detail = 0
+    n_8b_genes_abstract_only = 0
+    n_8b_genes_with_fulltext = 0
     if build_out.exists() and stats_tsv.exists():
         stats_df = pl.read_csv(stats_tsv, separator="\t").select(
             ["gene_id", "n_curator_claim_rows", "n_non_gold_claim_rows"]
@@ -680,11 +712,13 @@ def main() -> None:
                 for i, g in enumerate(gold_groups_sorted, start=1):
                     claim_id = f"c{i}"
                     body = (g.get("body") or "").strip()
+                    q = gold_by_id.get(str(g.get("group_claim_id")), {})
                     claims.append(
                         {
                             "claim_id": claim_id,
                             "text": body,
                             "importance": "",
+                            "evidence_level": evidence_level_from_gold_question(q),
                         }
                     )
 
@@ -703,7 +737,6 @@ def main() -> None:
                     )
 
                     pub_ids = g.get("publication_ids") or []
-                    q = gold_by_id.get(str(g.get("group_claim_id")), {})
                     q_docs = q.get("docs") or []
                     q_docs_by_pub: Dict[int, Dict[str, Any]] = {}
                     for doc in q_docs:
@@ -756,6 +789,29 @@ def main() -> None:
                 bf.write(json.dumps(example, ensure_ascii=False) + "\n")
                 n_8b_rows += 1
 
+                n_8b_claims_total += len(claims)
+                for c in claims:
+                    el = (c.get("evidence_level") or "").strip()
+                    toks = evidence_level_tokens(c.get("evidence_level"))
+                    if el == "abstract_supports_detail":
+                        n_8b_claims_exact_detail += 1
+                    if toks and toks <= _ABSTRACT_ONLY_LEVELS:
+                        n_8b_claims_abstract_only += 1
+                    if "needs_fulltext" in toks:
+                        n_8b_claims_with_fulltext += 1
+
+                if claims:
+                    per_toks = [evidence_level_tokens(c.get("evidence_level")) for c in claims]
+                    if all(
+                        (c.get("evidence_level") or "").strip() == "abstract_supports_detail"
+                        for c in claims
+                    ):
+                        n_8b_genes_all_exact_detail += 1
+                    if all(t and t <= _ABSTRACT_ONLY_LEVELS for t in per_toks):
+                        n_8b_genes_abstract_only += 1
+                    if any("needs_fulltext" in t for t in per_toks):
+                        n_8b_genes_with_fulltext += 1
+
     report_lines = [
         "# Gold-linked notes build — provenance report",
         "",
@@ -791,7 +847,26 @@ def main() -> None:
         "- **curator_notes_plain_text**: derived; citations rendered as stripped author–year captions.",
         "- **citation_anchors**: list of spans (`stream` = `marked` | `plain`) with `start`/`end` (Python string indices).",
         "- **8b local IDs**: `claims[].claim_id` are local (`c1..cn`) within each gene example; not global IDs.",
+        "- **8b evidence_level**: `claims[].evidence_level` copied from 7a `questions[].docs[].evidence_level`; if a question has multiple docs with different levels, unique values are sorted and joined with ` | `.",
         f"- **8b row count**: **{n_8b_rows}**.",
+        "",
+        "## 8b evidence-level summary",
+        "",
+        f"Per-gene categories partition the **{n_8b_rows}** genes that passed the 8b filter: each gene has at least one gold claim, and it falls in **abstract-only** iff every claim’s token set is non-empty and ⊆ `abstract_supports_detail` ∪ `abstract_supports_core`; otherwise it has **needs_fulltext** on at least one claim.",
+        "",
+        "| Metric | Count |",
+        "| --- | ---: |",
+        f"| Genes in 8b (one curator-note example per gene) | {n_8b_rows} |",
+        f"| Total claims (sum over genes) | {n_8b_claims_total} |",
+        f"| Genes: every claim is exactly `abstract_supports_detail` | {n_8b_genes_all_exact_detail} |",
+        f"| Genes: every claim uses only `abstract_supports_detail` and/or `abstract_supports_core` (no `needs_fulltext`) | {n_8b_genes_abstract_only} |",
+        f"| Genes: at least one claim includes `needs_fulltext` | {n_8b_genes_with_fulltext} |",
+        "",
+        "| Claims (row-level) | Count |",
+        "| --- | ---: |",
+        f"| Claim string is exactly `abstract_supports_detail` | {n_8b_claims_exact_detail} |",
+        f"| Claim tokens ⊆ `abstract_supports_detail` ∪ `abstract_supports_core` (non-empty) | {n_8b_claims_abstract_only} |",
+        f"| Claim includes token `needs_fulltext` | {n_8b_claims_with_fulltext} |",
         "",
     ]
     report_md.write_text("\n".join(report_lines), encoding="utf-8")
