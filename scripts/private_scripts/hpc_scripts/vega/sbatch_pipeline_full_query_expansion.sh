@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -J dicty_pipeline_qe
 #SBATCH -p gpu
-#SBATCH --time=24:00:00
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=256G
+#SBATCH --time=12:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
 #SBATCH --gres=gpu:1

@@ -25,3 +25,4 @@ indexes/
 dicty_simulated_data/
 **/__pycache__/
 dictybase_files/ontology/
+CLAUDE.md
