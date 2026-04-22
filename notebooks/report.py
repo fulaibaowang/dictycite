@@ -75,6 +75,42 @@ print("Loaded BM25:", bm25_metrics.shape)
 print("Loaded Dense:", dense_metrics.shape)
 print("Loaded Hybrid:", hybrid_metrics.shape)
 
+# %%
+# Helper: extract PMID from a PubMed URL or bare ID string
+def _extract_pmid(doc_entry):
+    if isinstance(doc_entry, dict):
+        doc_entry = doc_entry.get("document", "")
+    if not isinstance(doc_entry, str):
+        return None
+    if "/" in doc_entry:
+        return doc_entry.rsplit("/", 1)[-1]
+    return doc_entry
+
+
+def _load_qrels(path: Path) -> dict[str, set[str]]:
+    """Load gold qrels from a .jsonl file (one query record per line)."""
+    qrels: dict[str, set[str]] = {}
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            pmids = {_extract_pmid(d) for d in q.get("documents", []) if _extract_pmid(d)}
+            if qid and pmids:
+                qrels[qid] = pmids
+    return qrels
+
+
+qrels_paths = {
+    "dicty_gold_llm_public_train_200": base_dir / "example" / "dicty_gold_llm_public_train_200.jsonl",
+    "dicty_gold_llm_public_test_50": base_dir / "example" / "dicty_gold_llm_public_test_50.jsonl",
+}
+qrels_by_split = {s: _load_qrels(p) for s, p in qrels_paths.items()}
+n_per_split = {s: len(q) for s, q in qrels_by_split.items()}
+print("Qrels loaded:", {s: n for s, n in n_per_split.items()})
+
 # %% [markdown]
 # ## 3. Stage 1 Recall Curves – Per Split (1×2 panels)
 
@@ -105,7 +141,7 @@ methods_cfg = {
     "BM25 Dense Fusion": {"df": hybrid_metrics, "color": "#2ca02c", "marker": "D"},
 }
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
 
 global_ymin, global_ymax = 1.0, 0.0
 for split in splits:
@@ -139,7 +175,8 @@ for idx, split in enumerate(splits):
             linewidth=1.8,
         )
 
-    ax.set_title(split_labels.get(split, split), fontsize=15, fontweight="bold")
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
     ax.set_ylim(global_ymin, global_ymax)
 
     if idx == 0:
@@ -200,7 +237,7 @@ recall_cols_common = [f"MeanR@{k}" for k in k_vals_recall]
 
 print("Stage2+ K values (≤300):", k_vals_recall)
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
 
 global_ymin, global_ymax = 1.0, 0.0
 for split in splits:
@@ -236,7 +273,8 @@ for idx, split in enumerate(splits):
             linewidth=1.8,
         )
 
-    ax.set_title(split_labels.get(split, split), fontsize=15, fontweight="bold")
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
     ax.set_ylim(global_ymin, global_ymax)
 
     if idx == 0:
@@ -297,7 +335,8 @@ for idx, split in enumerate(splits):
     cur_ax.bar(x, vals, color=colors)
     cur_ax.set_xticks(x)
     cur_ax.set_xticklabels("", rotation=30, ha="right")
-    cur_ax.set_title(split_labels.get(split, split), fontsize=13, fontweight="bold")
+    n_split = n_per_split.get(split, "?")
+    cur_ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=13, fontweight="bold")
 
 handles_bar = [
     plt.matplotlib.patches.Patch(color=method_colors_bar[m], label=m)
@@ -316,33 +355,6 @@ plt.show()
 
 # %%
 map_ks = [1, 3, 5, 10, 20, 30, 40, 50, 75, 100]
-
-
-def _extract_pmid(doc_entry):
-    if isinstance(doc_entry, dict):
-        doc_entry = doc_entry.get("document", "")
-    if not isinstance(doc_entry, str):
-        return None
-    if "/" in doc_entry:
-        return doc_entry.rsplit("/", 1)[-1]
-    return doc_entry
-
-
-def _load_qrels(path: Path) -> dict[str, set[str]]:
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    qrels: dict[str, set[str]] = {}
-    for q in data.get("questions", []):
-        qid = str(q.get("id"))
-        docs = q.get("documents", [])
-        pmids = {
-            _extract_pmid(d)
-            for d in docs
-            if _extract_pmid(d)
-        }
-        if qid and pmids:
-            qrels[qid] = pmids
-    return qrels
 
 
 def _load_run(path: Path) -> pd.DataFrame:
@@ -375,6 +387,13 @@ def _ap_at_k(docs: list[str], rels: set[str], k: int) -> float:
     return score / denom
 
 
+def _mrr_at_k(docs: list[str], rels: set[str], k: int) -> float:
+    for i, doc in enumerate(docs[:k], start=1):
+        if doc in rels:
+            return 1.0 / i
+    return 0.0
+
+
 def _recall_at_k(docs: list[str], rels: set[str], k: int) -> float:
     if not rels:
         return 0.0
@@ -395,12 +414,17 @@ def _map_at_ks_for_run(run_df: pd.DataFrame, qrels: dict[str, set[str]], ks: lis
     return {k: (float(np.mean(v)) if v else 0.0) for k, v in per_q.items()}
 
 
-qrels_paths = {
-    "dicty_gold_llm_public_train_200": base_dir / "example" / "dicty_gold_llm_public_train_200.jsonl",
-    "dicty_gold_llm_public_test_50": base_dir / "example" / "dicty_gold_llm_public_test_50.jsonl",
-}
-
-qrels_by_split = {s: _load_qrels(p) for s, p in qrels_paths.items()}
+def _mrr_at_ks_for_run(run_df: pd.DataFrame, qrels: dict[str, set[str]], ks: list[int]) -> dict[int, float]:
+    qid_col, doc_col = run_df.columns.tolist()
+    per_q: dict[int, list[float]] = {k: [] for k in ks}
+    for qid, group in run_df.groupby(qid_col, sort=False):
+        rels = qrels.get(str(qid))
+        if not rels:
+            continue
+        docs = group[doc_col].tolist()
+        for k in ks:
+            per_q[k].append(_mrr_at_k(docs, rels, k))
+    return {k: (float(np.mean(v)) if v else 0.0) for k, v in per_q.items()}
 
 run_dirs = {
     "BM25 Dense Fusion": workflow_dir / "hybrid" / "runs",
@@ -409,6 +433,7 @@ run_dirs = {
 }
 
 map_curves: dict[str, dict[str, dict[int, float]]] = defaultdict(dict)
+mrr_curves: dict[str, dict[str, dict[int, float]]] = defaultdict(dict)
 
 for split in splits:
     qrels_split = qrels_by_split.get(split, {})
@@ -419,8 +444,8 @@ for split in splits:
             continue
         run_path = candidates[0]
         run_df = _load_run(run_path)
-        map_vals = _map_at_ks_for_run(run_df, qrels_split, map_ks)
-        map_curves[method_name][split] = map_vals
+        map_curves[method_name][split] = _map_at_ks_for_run(run_df, qrels_split, map_ks)
+        mrr_curves[method_name][split] = _mrr_at_ks_for_run(run_df, qrels_split, map_ks)
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
 
@@ -455,7 +480,8 @@ for idx, split in enumerate(splits):
             label=method_name,
             linewidth=1.8,
         )
-    ax.set_title(split_labels.get(split, split), fontsize=15, fontweight="bold")
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
     ax.set_ylim(y_min, y_max)
 
     if idx == 0:
@@ -480,8 +506,44 @@ plt.savefig(fig_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig_path)
 plt.show()
 
+# --- MRR@K version (mirrors MAP@K figure above) ---
+all_mrrs = [v for md in mrr_curves.values() for sv in md.values() for v in sv.values()]
+if all_mrrs:
+    y_min_mrr = max(0.0, min(all_mrrs) - 0.02)
+    y_max_mrr = min(1.0, max(all_mrrs) + 0.02)
+else:
+    y_min_mrr, y_max_mrr = 0.0, 1.0
+
+fig_mrr, axes_mrr = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
+for idx, split in enumerate(splits):
+    ax = axes_mrr[idx]
+    for method_name, method_dict in mrr_curves.items():
+        if split not in method_dict:
+            continue
+        vals = [method_dict[split].get(k, 0.0) for k in map_ks]
+        ax.plot(map_ks, vals, marker="o", color=colors_map.get(method_name), label=method_name, linewidth=1.8)
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
+    ax.set_ylim(y_min_mrr, y_max_mrr)
+    ax.set_ylabel("MRR@K" if idx == 0 else "")
+    ax.set_xlabel("K")
+    ax.set_xticks(map_ks)
+    ax.set_xticklabels([str(k) for k in map_ks], rotation=90)
+    ax.set_xlim(0, 100)
+    ax.grid(True, axis="y")
+    ax.grid(True, axis="x")
+handles_mrr, labels_mrr = axes_mrr[0].get_legend_handles_labels()
+fig_mrr.legend(handles_mrr, labels_mrr, loc="lower right", bbox_to_anchor=(0.95, 0.15), fontsize=13)
+fig_mrr.suptitle("Retrieval vs Rerank vs Post Rerank Fusion – MRR@K", fontsize=16, fontweight="bold", y=0.98)
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+fig_path_mrr = output_dir / "04b_hybrid_rerank_fusion_mrrk_per_split.png"
+plt.savefig(fig_path_mrr, dpi=150, bbox_inches="tight")
+print("Saved:", fig_path_mrr)
+plt.show()
+
 # Same MAP@K curves without post-rerank fusion (clearer when fusion overlaps / dominates).
 map_curves_rr = {k: v for k, v in map_curves.items() if k != "Post-rerank fusion"}
+mrr_curves_rr = {k: v for k, v in mrr_curves.items() if k != "Post-rerank fusion"}
 colors_map_rr = {
     "BM25 Dense Fusion": colors_map["BM25 Dense Fusion"],
     "Rerank": "#9467bd",
@@ -504,20 +566,11 @@ for idx, split in enumerate(splits):
         if split not in method_dict:
             continue
         vals = [method_dict[split].get(k, 0.0) for k in map_ks]
-        ax.plot(
-            map_ks,
-            vals,
-            marker="o",
-            color=colors_map_rr.get(method_name),
-            label=method_name,
-            linewidth=1.8,
-        )
-    ax.set_title(split_labels.get(split, split), fontsize=15, fontweight="bold")
+        ax.plot(map_ks, vals, marker="o", color=colors_map_rr.get(method_name), label=method_name, linewidth=1.8)
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
     ax.set_ylim(y_min_rr, y_max_rr)
-    if idx == 0:
-        ax.set_ylabel("MAP@K")
-    else:
-        ax.set_ylabel("")
+    ax.set_ylabel("MAP@K" if idx == 0 else "")
     ax.set_xlabel("K")
     ax.set_xticks(map_ks)
     ax.set_xticklabels([str(k) for k in map_ks], rotation=90)
@@ -532,6 +585,41 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 fig_path_rr = output_dir / "04_hybrid_rerank_mapk_per_split_no_post_fusion.png"
 plt.savefig(fig_path_rr, dpi=150, bbox_inches="tight")
 print("Saved:", fig_path_rr)
+plt.show()
+
+# --- MRR@K no-fusion version ---
+all_mrrs_rr = [v for md in mrr_curves_rr.values() for sv in md.values() for v in sv.values()]
+if all_mrrs_rr:
+    y_min_mrr_rr = max(0.0, min(all_mrrs_rr) - 0.02)
+    y_max_mrr_rr = min(1.0, max(all_mrrs_rr) + 0.02)
+else:
+    y_min_mrr_rr, y_max_mrr_rr = 0.0, 1.0
+
+fig2_mrr, axes2_mrr = plt.subplots(1, 2, figsize=(9, 5), sharex=True, sharey=True)
+for idx, split in enumerate(splits):
+    ax = axes2_mrr[idx]
+    for method_name, method_dict in mrr_curves_rr.items():
+        if split not in method_dict:
+            continue
+        vals = [method_dict[split].get(k, 0.0) for k in map_ks]
+        ax.plot(map_ks, vals, marker="o", color=colors_map_rr.get(method_name), label=method_name, linewidth=1.8)
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=15, fontweight="bold")
+    ax.set_ylim(y_min_mrr_rr, y_max_mrr_rr)
+    ax.set_ylabel("MRR@K" if idx == 0 else "")
+    ax.set_xlabel("K")
+    ax.set_xticks(map_ks)
+    ax.set_xticklabels([str(k) for k in map_ks], rotation=90)
+    ax.set_xlim(0, 100)
+    ax.grid(True, axis="y")
+    ax.grid(True, axis="x")
+handles2_mrr, labels2_mrr = axes2_mrr[0].get_legend_handles_labels()
+fig2_mrr.legend(handles2_mrr, labels2_mrr, loc="lower right", bbox_to_anchor=(0.95, 0.15), fontsize=13)
+fig2_mrr.suptitle("Retrieval vs Rerank – MRR@K", fontsize=16, fontweight="bold", y=0.98)
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+fig_path_mrr_rr = output_dir / "04c_hybrid_rerank_mrrk_per_split_no_post_fusion.png"
+plt.savefig(fig_path_mrr_rr, dpi=150, bbox_inches="tight")
+print("Saved:", fig_path_mrr_rr)
 plt.show()
 
 # %% [markdown]
@@ -768,6 +856,7 @@ snippet_run_dirs = {
 snippet_map_ks = list(range(10, 101, 10))
 
 snippet_map_curves: dict[str, dict[str, dict[int, float]]] = defaultdict(dict)
+snippet_mrr_curves: dict[str, dict[str, dict[int, float]]] = defaultdict(dict)
 
 for split in splits:
     qrels_split = qrels_by_split.get(split, {})
@@ -780,8 +869,8 @@ for split in splits:
             continue
         run_path = candidates[0]
         run_df = _load_run(run_path)
-        map_vals = _map_at_ks_for_run(run_df, qrels_split, snippet_map_ks)
-        snippet_map_curves[method_name][split] = map_vals
+        snippet_map_curves[method_name][split] = _map_at_ks_for_run(run_df, qrels_split, snippet_map_ks)
+        snippet_mrr_curves[method_name][split] = _mrr_at_ks_for_run(run_df, qrels_split, snippet_map_ks)
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
 
@@ -815,7 +904,8 @@ for idx, split in enumerate(splits):
             color=colors_snippet[method_name],
             label=method_name,
         )
-    ax.set_title(split_labels.get(split, split), fontsize=14, fontweight="bold")
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=14, fontweight="bold")
     ax.set_ylim(y_min_s, y_max_s)
     ax.grid(True, axis="y")
     ax.grid(True, axis="x")
@@ -846,6 +936,40 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 fig_path = output_dir / "08_snippet_rerank_vs_rerank_hybrid200_mapk.png"
 plt.savefig(fig_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig_path)
+plt.show()
+
+# --- MRR@K version ---
+all_vals_snippet_mrr = [v for md in snippet_mrr_curves.values() for sv in md.values() for v in sv.values()]
+if all_vals_snippet_mrr:
+    y_min_s_mrr = max(0.0, min(all_vals_snippet_mrr) - 0.02)
+    y_max_s_mrr = min(1.0, max(all_vals_snippet_mrr) + 0.02)
+else:
+    y_min_s_mrr, y_max_s_mrr = 0.0, 1.0
+
+fig_s_mrr, axes_s_mrr = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
+for idx, split in enumerate(splits):
+    ax = axes_s_mrr[idx]
+    for method_name, method_dict in snippet_mrr_curves.items():
+        if split not in method_dict:
+            continue
+        vals = [method_dict[split].get(k, 0.0) for k in snippet_map_ks]
+        ax.plot(snippet_map_ks, vals, marker="o", linewidth=1.8, color=colors_snippet[method_name], label=method_name)
+    n_split = n_per_split.get(split, "?")
+    ax.set_title(f"{split_labels.get(split, split)} (n={n_split})", fontsize=14, fontweight="bold")
+    ax.set_ylim(y_min_s_mrr, y_max_s_mrr)
+    ax.grid(True, axis="y")
+    ax.grid(True, axis="x")
+    ax.set_ylabel("MRR@K" if idx == 0 else "")
+    ax.set_xlabel("K")
+    ax.set_xticks(snippet_map_ks)
+    ax.set_xticklabels([str(k) for k in snippet_map_ks], rotation=90)
+legend_s_mrr = [Line2D([0], [0], color=colors_snippet[n], marker="o", label=n) for n in colors_snippet]
+fig_s_mrr.legend(handles=legend_s_mrr, loc="lower right", bbox_to_anchor=(0.95, 0.15), fontsize=14)
+fig_s_mrr.suptitle("Rerank Hybrid 200 vs Snippet Rerank – MRR@K", fontsize=16, fontweight="bold", y=0.98)
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+fig_path_s_mrr = output_dir / "08b_snippet_rerank_vs_rerank_hybrid200_mrrk.png"
+plt.savefig(fig_path_s_mrr, dpi=150, bbox_inches="tight")
+print("Saved:", fig_path_s_mrr)
 plt.show()
 
 # %% [markdown]
@@ -1042,30 +1166,35 @@ EVIDENCE_LEVEL_LABELS = {
 ks_evidence = [1, 5, 10, 20, 30,  50, 75, 100]
 
 
-def _load_evidence_levels(gold_json: Path) -> dict[str, str]:
-    with gold_json.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    qid_to_level: dict[str, str] = {}
-    for i, q in enumerate(data.get("questions", [])):
-        qid = str(q.get("id") or q.get("qid") or i)
-        docs = q.get("docs") or []
-        if docs:
-            level = (docs[0].get("evidence_level") or "unknown").strip() or "unknown"
-        else:
-            level = "unknown"
-        qid_to_level[qid] = level
-    return qid_to_level
+def _load_qrels_by_evidence_level(gold_jsonl: Path) -> dict[str, dict[str, set[str]]]:
+    """Return {evidence_level: {qid: {pmid, ...}}} where each pmid belongs only to
+    the level assigned to it in the docs list.  A single qid can appear in multiple
+    levels if its gold docs carry different evidence labels.
+    """
+    level_qrels: dict[str, dict[str, set[str]]] = {}
+    with gold_jsonl.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            for doc in (q.get("docs") or []):
+                level = (doc.get("evidence_level") or "unknown").strip() or "unknown"
+                pmid = str(doc.get("pmid") or "")
+                if pmid:
+                    level_qrels.setdefault(level, {}).setdefault(qid, set()).add(pmid)
+    return level_qrels
 
 
 for split in splits:
     print(f"Building evidence-level curves for split={split} ...")
-    qrels_split = qrels_by_split.get(split, {})
-    if not qrels_split:
+    if not qrels_by_split.get(split):
         print("  No qrels for this split; skipping.")
         continue
 
-    gold_json = qrels_paths[split]
-    qid_to_level = _load_evidence_levels(gold_json)
+    # Per-level filtered qrels: {level: {qid: {pmids with that level}}}
+    level_qrels = _load_qrels_by_evidence_level(qrels_paths[split])
 
     fusion_runs_dir = workflow_dir / "rerank_hybrid_200" / "runs"
     fusion_candidates = list(
@@ -1081,9 +1210,7 @@ for split in splits:
     for qid, group in fusion_run_df.groupby(qid_col, sort=False):
         run_docs[str(qid)] = group[doc_col].tolist()
 
-    levels_present = sorted(
-        {lvl for qid, lvl in qid_to_level.items() if qid in run_docs and qid in qrels_split}
-    )
+    levels_present = sorted({lvl for lvl, lvl_q in level_qrels.items() if any(q in run_docs for q in lvl_q)})
     levels = [lvl for lvl in EVIDENCE_LEVEL_ORDER if lvl in levels_present]
     levels += [lvl for lvl in levels_present if lvl not in levels]
     if not levels:
@@ -1092,58 +1219,60 @@ for split in splits:
 
     map_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
     rec_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
+    mrr_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
     n_by_level: dict[str, int] = {lvl: 0 for lvl in levels}
 
     for lvl in levels:
-        qids_lvl = [
-            qid
-            for qid, l in qid_to_level.items()
-            if l == lvl and qid in run_docs and qid in qrels_split
-        ]
+        # qrels filtered to only the pmids carrying this evidence level
+        lvl_qrels = level_qrels.get(lvl, {})
+        qids_lvl = [qid for qid in lvl_qrels if qid in run_docs]
         if not qids_lvl:
             map_by_level[lvl] = [0.0] * len(ks_evidence)
             rec_by_level[lvl] = [0.0] * len(ks_evidence)
+            mrr_by_level[lvl] = [0.0] * len(ks_evidence)
             continue
         n_by_level[lvl] = len(qids_lvl)
         map_vals: list[float] = []
         rec_vals: list[float] = []
+        mrr_vals: list[float] = []
         for k in ks_evidence:
             ap_scores: list[float] = []
             rec_scores: list[float] = []
+            mrr_scores: list[float] = []
             for qid in qids_lvl:
-                rels = qrels_split.get(qid)
-                if not rels:
+                rels_set = lvl_qrels[qid]   # only pmids with this level
+                if not rels_set:
                     continue
                 docs = run_docs[qid]
-                rels_set = set(rels)
                 ap_scores.append(_ap_at_k(docs, rels_set, k))
                 rec_scores.append(_recall_at_k(docs, rels_set, k))
+                mrr_scores.append(_mrr_at_k(docs, rels_set, k))
             map_vals.append(float(np.mean(ap_scores)) if ap_scores else 0.0)
             rec_vals.append(float(np.mean(rec_scores)) if rec_scores else 0.0)
+            mrr_vals.append(float(np.mean(mrr_scores)) if mrr_scores else 0.0)
         map_by_level[lvl] = map_vals
         rec_by_level[lvl] = rec_vals
+        mrr_by_level[lvl] = mrr_vals
 
     all_map_vals = [v for vals in map_by_level.values() for v in vals]
     all_rec_vals = [v for vals in rec_by_level.values() for v in vals]
+    all_mrr_vals = [v for vals in mrr_by_level.values() for v in vals]
     y_min_m = max(0.0, min(all_map_vals) - 0.02) if all_map_vals else 0.0
     y_max_m = min(1.0, max(all_map_vals) + 0.02) if all_map_vals else 1.0
     y_min_r = max(0.0, min(all_rec_vals) - 0.02) if all_rec_vals else 0.0
     y_max_r = min(1.0, max(all_rec_vals) + 0.02) if all_rec_vals else 1.0
+    y_min_mrr = max(0.0, min(all_mrr_vals) - 0.02) if all_mrr_vals else 0.0
+    y_max_mrr = min(1.0, max(all_mrr_vals) + 0.02) if all_mrr_vals else 1.0
 
-    fig, axes = plt.subplots(2, 3, figsize=(16, 8), sharex=True)
+    fig, axes = plt.subplots(3, 3, figsize=(16, 11), sharex=True)
     axes_flat = axes.flatten()
 
     for idx, lvl in enumerate(levels):
         col_title = EVIDENCE_LEVEL_LABELS.get(lvl, lvl)
         n_q = n_by_level.get(lvl, 0)
+
         ax_map = axes_flat[idx]
-        ax_map.plot(
-            ks_evidence,
-            map_by_level[lvl],
-            marker="o",
-            color="#1f77b4",
-            linewidth=1.8,
-        )
+        ax_map.plot(ks_evidence, map_by_level[lvl], marker="o", color="#1f77b4", linewidth=1.8)
         ax_map.set_title(f"{col_title} (n={n_q})", fontweight="bold")
         ax_map.set_ylim(y_min_m, y_max_m)
         ax_map.set_ylabel("MAP@K" if idx == 0 else "")
@@ -1153,38 +1282,42 @@ for split in splits:
         ax_map.grid(True, axis="x")
 
         ax_rec = axes_flat[idx + 3]
-        ax_rec.plot(
-            ks_evidence,
-            rec_by_level[lvl],
-            marker="o",
-            color="#ff7f0e",
-            linewidth=1.8,
-        )
+        ax_rec.plot(ks_evidence, rec_by_level[lvl], marker="o", color="#ff7f0e", linewidth=1.8)
         ax_rec.set_ylim(y_min_r, y_max_r)
         ax_rec.set_ylabel("Recall@K" if idx == 0 else "")
         if idx != 0:
             ax_rec.tick_params(axis="y", labelleft=False)
-        ax_rec.set_xlabel("K")
         ax_rec.grid(True, axis="y")
         ax_rec.grid(True, axis="x")
+
+        ax_mrr = axes_flat[idx + 6]
+        ax_mrr.plot(ks_evidence, mrr_by_level[lvl], marker="o", color="#2ca02c", linewidth=1.8)
+        ax_mrr.set_ylim(y_min_mrr, y_max_mrr)
+        ax_mrr.set_ylabel("MRR@K" if idx == 0 else "")
+        if idx != 0:
+            ax_mrr.tick_params(axis="y", labelleft=False)
+        ax_mrr.set_xlabel("K")
+        ax_mrr.grid(True, axis="y")
+        ax_mrr.grid(True, axis="x")
 
     for j in range(len(levels), 3):
         axes_flat[j].set_visible(False)
         axes_flat[j + 3].set_visible(False)
+        axes_flat[j + 6].set_visible(False)
 
     for ax in axes_flat:
         ax.set_xlim(0, 100)
 
     fig.suptitle(
-        f"Post-rerank Fusion – MAP@K and Recall@K by Evidence Level ({split_labels.get(split, split)})",
+        f"Post-rerank Fusion – MAP@K, Recall@K and MRR@K by Evidence Level ({split_labels.get(split, split)})",
         fontsize=16,
         fontweight="bold",
-        y=0.97,
+        y=0.98,
     )
-    plt.tight_layout(rect=[0, 0, 1, 0.94])
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     fig_path = (
         output_dir
-        / f"12_post_rerank_fusion_map_recall_by_evidence_level_{split_labels.get(split, split)}.png"
+        / f"12_post_rerank_fusion_map_recall_mrr_by_evidence_level_{split_labels.get(split, split)}.png"
     )
     plt.savefig(fig_path, dpi=150, bbox_inches="tight")
     print("Saved:", fig_path)

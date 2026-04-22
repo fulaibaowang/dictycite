@@ -848,6 +848,90 @@ claim_group_map.select(pl.col("group_claim_id").n_unique().alias("n_group_claim_
 # we still have 1705 claims. This is nice
 
 # %% [markdown]
+# ## Semantic duplicate inspection (dense embeddings)
+#
+# Encode each canonical claim with a sentence-transformer, compute all-pairs
+# cosine similarity (1705 × 1705 fits easily in memory), inspect the top-K
+# most similar pairs, and plot the nearest-neighbour similarity distribution —
+# same visual-first approach as the TF-IDF section above.
+#
+# This does NOT merge anything; it is an inspection step to decide whether
+# a semantic merge pass is warranted.
+
+# %%
+from sentence_transformers import SentenceTransformer
+import matplotlib.pyplot as plt
+
+SEMANTIC_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+SEMANTIC_TOP_K = 20   # <--- rows shown in the inspection table
+
+# Encode canonical texts (normalised → dot product = cosine similarity)
+_sem_model = SentenceTransformer(SEMANTIC_MODEL)
+sem_emb = _sem_model.encode(
+    group_texts, normalize_embeddings=True, show_progress_bar=True, convert_to_numpy=True
+)
+print(f"Embeddings shape: {sem_emb.shape}")
+
+# %%
+# All-pairs cosine similarity matrix
+sem_sim_matrix = (sem_emb @ sem_emb.T).astype(float)   # shape (g, g)
+
+# Upper-triangle indices (exclude self-pairs)
+_tri_i, _tri_j = np.triu_indices(g, k=1)
+_tri_sims = sem_sim_matrix[_tri_i, _tri_j]
+_order = np.argsort(-_tri_sims)
+
+sem_pairs_df = pl.DataFrame({
+    "i":          [int(_tri_i[k]) for k in _order[:SEMANTIC_TOP_K]],
+    "j":          [int(_tri_j[k]) for k in _order[:SEMANTIC_TOP_K]],
+    "sem_sim":    [float(_tri_sims[k]) for k in _order[:SEMANTIC_TOP_K]],
+    "group_id_i": [group_ids[_tri_i[k]] for k in _order[:SEMANTIC_TOP_K]],
+    "group_id_j": [group_ids[_tri_j[k]] for k in _order[:SEMANTIC_TOP_K]],
+    "text_i":     [group_texts[_tri_i[k]] for k in _order[:SEMANTIC_TOP_K]],
+    "text_j":     [group_texts[_tri_j[k]] for k in _order[:SEMANTIC_TOP_K]],
+}).sort("sem_sim", descending=True)
+
+with pl.Config(fmt_str_lengths=500, tbl_rows=SEMANTIC_TOP_K, tbl_cols=20):
+    display(sem_pairs_df)
+
+# %%
+# Save full sorted pairs for manual inspection
+_all_sem_pairs_df = pl.DataFrame({
+    "i":          _tri_i[_order].tolist(),
+    "j":          _tri_j[_order].tolist(),
+    "sem_sim":    _tri_sims[_order].tolist(),
+    "group_id_i": [group_ids[_tri_i[k]] for k in _order],
+    "group_id_j": [group_ids[_tri_j[k]] for k in _order],
+    "text_i":     [group_texts[_tri_i[k]] for k in _order],
+    "text_j":     [group_texts[_tri_j[k]] for k in _order],
+})
+_sem_pairs_out = OUTPUT_GOLD_BUILD / "semantic_sim_top_pairs.tsv"
+_all_sem_pairs_df.write_csv(_sem_pairs_out, separator="\t")
+print(f"Saved: {_sem_pairs_out}  ({len(_all_sem_pairs_df):,} pairs)")
+
+# %%
+# Histogram: each claim's nearest-neighbour semantic similarity
+_nn_sim = sem_sim_matrix.copy()
+np.fill_diagonal(_nn_sim, 0.0)
+nn_sem_sim = _nn_sim.max(axis=1)   # shape (g,)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(nn_sem_sim, bins=50, edgecolor="white", linewidth=0.4)
+ax.axvline(np.median(nn_sem_sim), color="C1", linestyle="--", label=f"median={np.median(nn_sem_sim):.3f}")
+ax.set_xlabel("Max cosine similarity to nearest other claim")
+ax.set_ylabel("Count")
+ax.set_title(
+    f"Nearest-neighbour semantic similarity — {SEMANTIC_MODEL.split('/')[-1]}\n"
+    f"(n={g} canonical claims after lexical dedup)"
+)
+ax.legend()
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# it seems lexical method is probably already enough for the actual duplicate merging. sematic method is not required.
+
+# %% [markdown]
 # let us get our golden set
 
 # %%
