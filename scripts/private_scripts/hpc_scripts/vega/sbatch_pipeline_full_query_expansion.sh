@@ -46,7 +46,7 @@ fi
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${SCRATCH:-${TMPDIR:-/tmp}}/apptainer-cache}"
 mkdir -p "${APPTAINER_CACHEDIR}"
 
-srun singularity exec \
+srun --mpi=none singularity exec \
   --cleanenv \
   "${APPTAINER_GPU_ARGS[@]}" \
   -B "${WORKDIR}:/work" \
