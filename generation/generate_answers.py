@@ -2,10 +2,11 @@
 """
 Generate BioASQ answers from contexts JSON using an LLM.
 
-Reads the JSON produced by build_contexts_from_documents.py (id, body, type,
-documents, contexts), calls an LLM per question, parses ideal_answer and
+Reads contexts JSONL from build_contexts_from_documents.py / build_contexts_from_snippets.py
+(``query_id``, ``query_text``, ``query_type``, contexts with ``doc_id`` per row; optional ``doc_ids`` on the question),
+calls an LLM per question, parses ideal_answer and
 evidence_ids (and exact_answer for yesno/factoid/list), and writes a single
-JSON file to output_dir (e.g. output_dir/<stem>_answers.json).
+JSONL file to output_dir (e.g. output_dir/<stem>_answers.jsonl).
 
 Backend and model come **only** from the process environment and CLI (sourced run
 ``config.env``, ``export``, scheduler, etc.). Repo-root ``.env`` is read **only**
@@ -23,6 +24,11 @@ already-exported key). It does **not** load ``GENERATION_BACKEND``,
 
 OpenAI-compatible path is equivalent to the OpenAI client's ``base_url`` +
 ``chat.completions``; this script uses ``requests`` only.
+
+Schema snippets for ``{SCHEMA_BLOCK}`` in ``user_base.txt``: directory of ``*.txt``
+(typed names + optional ``default.txt``). Resolution: ``--schemas-dir``, then
+``GENERATION_SCHEMAS_DIR``, then ``<prompts-dir>/schemas`` (default prompts dir is
+next to this script under ``shared_scripts/prompts``).
 """
 
 from __future__ import annotations
@@ -62,6 +68,20 @@ OLLAMA_MODEL = "llama3.3:latest"
 MAX_LLM_RETRIES = 3
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_generation_record(rec: Dict[str, Any]) -> None:
+    """Slim answer JSONL: drop question-level window blob; strip rejected_windows; trim window rows."""
+    rec.pop("doc_snippet_windows", None)
+    for ctx in rec.get("contexts") or []:
+        if not isinstance(ctx, dict):
+            continue
+        ctx.pop("rejected_windows", None)
+        sw = ctx.get("selected_windows")
+        if isinstance(sw, list):
+            for w in sw:
+                if isinstance(w, dict):
+                    w.pop("window_idx", None)
 
 
 def _is_retryable_request_error(exc: BaseException) -> bool:
@@ -107,19 +127,19 @@ def _load_gen_api_key_from_dotenv() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate BioASQ answers from contexts JSON using an LLM."
+        description="Generate BioASQ answers from contexts JSONL using an LLM."
     )
     parser.add_argument(
         "--input-path",
         type=Path,
         required=True,
-        help="Path to contexts JSON (output of build_contexts_from_documents.py).",
+        help="Path to contexts .jsonl (output of build_contexts_*.py).",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
         required=True,
-        help="Output directory; writes <stem>_answers.json here.",
+        help="Output directory; writes <stem>_answers.jsonl here.",
     )
     parser.add_argument(
         "--concurrency",
@@ -150,6 +170,15 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Prompts directory (default: REPO_ROOT/scripts/public/shared_scripts/prompts).",
+    )
+    parser.add_argument(
+        "--schemas-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Directory of schema *.txt files (per question type + optional default.txt). "
+            "Overrides GENERATION_SCHEMAS_DIR; if both unset, uses <prompts-dir>/schemas."
+        ),
     )
     parser.add_argument(
         "--timeout",
@@ -401,23 +430,34 @@ def snippets_to_contexts(snippets: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         if raw_id:
             cid = str(raw_id)
         else:
-            doc_url = str(snip.get("document") or snip.get("doc") or "")
-            m = pmid_re.search(doc_url)
+            doc_ref = str(snip.get("document") or snip.get("doc") or "").strip()
+            m = pmid_re.search(doc_ref)
             if m:
-                pmid = m.group(1)
-                offset_raw = snip.get("offsetInBeginSection")
-                cid = pmid
-                if offset_raw is not None:
-                    try:
-                        offset_int = int(offset_raw)
-                        cid = f"{pmid}-{offset_int}"
-                    except (TypeError, ValueError):
-                        cid = pmid
+                doc_id = m.group(1)
+            elif doc_ref.isdigit():
+                doc_id = doc_ref
             else:
-                cid = f"snippet-{idx}"
-        doc_url = str(snip.get("document") or snip.get("doc") or "")
+                doc_id = ""
+            offset_raw = snip.get("offsetInBeginSection")
+            cid = doc_id if doc_id else f"snippet-{idx}"
+            if doc_id and offset_raw is not None:
+                try:
+                    offset_int = int(offset_raw)
+                    cid = f"{doc_id}-{offset_int}"
+                except (TypeError, ValueError):
+                    cid = doc_id
+        doc_ref = str(snip.get("document") or snip.get("doc") or "").strip()
         text = str(snip.get("text", "")).strip()
-        contexts.append({"id": cid, "doc": doc_url, "text": text})
+        ctx: Dict[str, Any] = {"id": cid, "text": text}
+        if doc_ref:
+            if doc_ref.isdigit():
+                ctx["doc_id"] = doc_ref
+            else:
+                ctx["doc"] = doc_ref
+                m2 = pmid_re.search(doc_ref)
+                if m2:
+                    ctx["doc_id"] = m2.group(1)
+        contexts.append(ctx)
     return contexts
 
 
@@ -459,21 +499,38 @@ def build_full_prompt_for_record(
     prompts_dir: Path,
     max_contexts: int = 8,
     max_chars_per_context: int = 1200,
+    schemas_dir: Optional[Path] = None,
 ) -> str:
-    """Build the exact prompt that would be sent for this record. Used by rescue script."""
-    qtype = (record.get("type") or "").strip().lower()
-    question = (record.get("body") or "").strip()
+    """Build the exact prompt that would be sent for this record. Used by rescue script.
+
+    Schema snippets: explicit ``schemas_dir`` if passed; else ``GENERATION_SCHEMAS_DIR``;
+    else ``prompts_dir / "schemas"`` (same order as ``main()`` without ``--schemas-dir``).
+    """
+    _shared = Path(__file__).resolve().parents[1]
+    if str(_shared) not in sys.path:
+        sys.path.insert(0, str(_shared))
+    from retrieval_eval.common import question_body, question_type
+
+    qtype = question_type(record).lower()
+    question = question_body(record)
     contexts = record.get("contexts") or []
     if not question or not contexts:
         return ""
     system_path = prompts_dir / "system.txt"
     user_path = prompts_dir / "user_base.txt"
-    schemas_dir = prompts_dir / "schemas"
+    if schemas_dir is not None:
+        _schemas = schemas_dir.expanduser().resolve()
+    else:
+        env_schemas = (os.getenv("GENERATION_SCHEMAS_DIR") or "").strip()
+        if env_schemas:
+            _schemas = Path(env_schemas).expanduser().resolve()
+        else:
+            _schemas = (prompts_dir / "schemas").resolve()
     if not system_path.exists() or not user_path.exists():
         return ""
     system_text = system_path.read_text(encoding="utf-8").strip()
     user_base_text = user_path.read_text(encoding="utf-8").strip()
-    schema_block = resolve_schema_block(schemas_dir, record.get("type") or "")
+    schema_block = resolve_schema_block(_schemas, question_type(record) or "")
     evidence_block = format_evidence_block(contexts, max_contexts, max_chars_per_context)
     user_prompt = format_user_prompt(
         user_base_text,
@@ -576,15 +633,16 @@ def parse_answer_json_for_type(raw: str, qtype: str, q_id: Optional[str] = None)
     return out
 
 
-def load_contexts_json(path: Path) -> List[Dict[str, Any]]:
-    """Load contexts from JSON: expects {"questions": [...]} or a top-level list."""
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict) and "questions" in data:
-        return data["questions"]
-    raise ValueError("Input JSON must be a list or an object with 'questions' key")
+def load_contexts_jsonl(path: Path) -> List[Dict[str, Any]]:
+    """Load one question record per line from contexts .jsonl."""
+    _shared = Path(__file__).resolve().parents[1]
+    if str(_shared) not in sys.path:
+        sys.path.insert(0, str(_shared))
+    from retrieval_eval.common import iter_questions_jsonl
+
+    if path.suffix.lower() != ".jsonl":
+        raise ValueError(f"Contexts input must be .jsonl, got: {path}")
+    return list(iter_questions_jsonl(path))
 
 
 def main() -> int:
@@ -637,23 +695,31 @@ def main() -> int:
     prompts_dir = args.prompts_dir or default_prompts_dir
     system_path = prompts_dir / "system.txt"
     user_base_path = prompts_dir / "user_base.txt"
-    schemas_dir = prompts_dir / "schemas"
 
-    # Optional overrides from environment/config:
+    # Schema snippets: --schemas-dir > GENERATION_SCHEMAS_DIR > <prompts-dir>/schemas
+    if args.schemas_dir is not None:
+        schemas_dir = args.schemas_dir.expanduser().resolve()
+    else:
+        schemas_override = (os.getenv("GENERATION_SCHEMAS_DIR") or "").strip()
+        if schemas_override:
+            schemas_dir = Path(schemas_override).expanduser().resolve()
+        else:
+            schemas_dir = (prompts_dir / "schemas").resolve()
+
+    # Optional override from environment/config:
     # - GENERATION_SYSTEM_PATH: path to system.txt replacement
-    # - GENERATION_SCHEMAS_DIR: directory containing schema *.txt files
     system_override = (os.getenv("GENERATION_SYSTEM_PATH") or "").strip()
     if system_override:
         system_path = Path(system_override)
-    schemas_override = (os.getenv("GENERATION_SCHEMAS_DIR") or "").strip()
-    if schemas_override:
-        schemas_dir = Path(schemas_override)
 
     if not system_path.exists() or not user_base_path.exists():
         logger.error("Prompts not found under %s", prompts_dir)
         return 1
     if not args.input_path.exists():
         logger.error("Input file not found: %s", args.input_path)
+        return 1
+    if args.input_path.suffix.lower() != ".jsonl":
+        logger.error("Input must be .jsonl, got %s", args.input_path)
         return 1
 
     with open(system_path, "r", encoding="utf-8") as f:
@@ -673,7 +739,9 @@ def main() -> int:
     for _q in ("", "summary", "yesno", "factoid", "list"):
         get_schema_block(_q)
 
-    all_objs = load_contexts_json(args.input_path)
+    from retrieval_eval.common import question_body, question_qid, question_type, write_questions_jsonl
+
+    all_objs = load_contexts_jsonl(args.input_path)
     total = len(all_objs)
     if total == 0:
         logger.warning("No questions in input; nothing to write.")
@@ -684,21 +752,24 @@ def main() -> int:
         stem = stem[: -len("_contexts")]
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.output_dir / f"{stem}_answers.json"
+    json_path = args.output_dir / f"{stem}_answers.jsonl"
 
     def process_one(idx: int, obj: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
-        q_id = obj.get("id")
-        qtype = (obj.get("type") or "").strip().lower()
-        question = obj.get("body", "") or ""
+        q_id = question_qid(obj)
+        qtype = question_type(obj).lower()
+        question = question_body(obj) or ""
         if args.evidence_source == "contexts":
             contexts = obj.get("contexts") or []
         else:
             snippets = obj.get("snippets") or []
             contexts = snippets_to_contexts(snippets) if snippets else []
-        documents = obj.get("documents", [])
-
         out = dict(obj)
-        out.setdefault("documents", documents)
+        doc_ids = obj.get("doc_ids") or obj.get("docnos")
+        if isinstance(doc_ids, list) and doc_ids:
+            out["doc_ids"] = list(doc_ids)
+            out.pop("documents", None)
+        else:
+            out.setdefault("documents", obj.get("documents", []))
         out.setdefault("contexts", contexts)
 
         if not question or not contexts:
@@ -707,6 +778,7 @@ def main() -> int:
             out["error"] = "missing_question_or_contexts"
             if qtype in ("yesno", "factoid", "list"):
                 out["exact_answer"] = None
+            sanitize_generation_record(out)
             return idx, out
 
         schema_block = get_schema_block(qtype)
@@ -774,6 +846,7 @@ def main() -> int:
             out["error"] = str(last_error)
             if qtype in ("yesno", "factoid", "list"):
                 out["exact_answer"] = None
+        sanitize_generation_record(out)
         return idx, out
 
     results_by_idx: Dict[int, Dict[str, Any]] = {}
@@ -795,16 +868,22 @@ def main() -> int:
                 _, rec = fut.result()
                 results_by_idx[idx] = rec
             except Exception as e:
-                logger.warning("Task failed for id=%s: %s; recording as error", obj.get("id"), e)
+                logger.warning("Task failed for id=%s: %s; recording as error", question_qid(obj), e)
                 rec = dict(obj)
-                rec.setdefault("documents", obj.get("documents", []))
+                _ids = obj.get("doc_ids") or obj.get("docnos")
+                if isinstance(_ids, list) and _ids:
+                    rec["doc_ids"] = list(_ids)
+                    rec.pop("documents", None)
+                else:
+                    rec.setdefault("documents", obj.get("documents", []))
                 rec.setdefault("contexts", obj.get("contexts", []))
                 rec["ideal_answer"] = None
                 rec["evidence_ids"] = []
                 rec["error"] = str(e)
-                qtype = (obj.get("type") or "").strip().lower()
+                qtype = question_type(obj).lower()
                 if qtype in ("yesno", "factoid", "list"):
                     rec["exact_answer"] = None
+                sanitize_generation_record(rec)
                 results_by_idx[idx] = rec
             completed_count += 1
             if progress_every and (completed_count == 1 or completed_count % progress_every == 0 or completed_count == total):
@@ -818,18 +897,23 @@ def main() -> int:
         else:
             obj = all_objs[i - 1]
             rec = dict(obj)
-            rec.setdefault("documents", obj.get("documents", []))
+            _ids2 = obj.get("doc_ids") or obj.get("docnos")
+            if isinstance(_ids2, list) and _ids2:
+                rec["doc_ids"] = list(_ids2)
+                rec.pop("documents", None)
+            else:
+                rec.setdefault("documents", obj.get("documents", []))
             rec.setdefault("contexts", obj.get("contexts", []))
             rec["ideal_answer"] = None
             rec["evidence_ids"] = []
             rec["error"] = "missing_from_results"
-            if (obj.get("type") or "").strip().lower() in ("yesno", "factoid", "list"):
+            if question_type(obj).lower() in ("yesno", "factoid", "list"):
                 rec["exact_answer"] = None
+            sanitize_generation_record(rec)
             records_out.append(rec)
-            logger.warning("No result for index %d (id=%s); added record with error", i, obj.get("id"))
+            logger.warning("No result for index %d (id=%s); added record with error", i, question_qid(obj))
 
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump({"questions": records_out}, f, ensure_ascii=False, indent=2)
+    write_questions_jsonl(json_path, records_out)
 
     logger.info("Wrote %d records to %s", len(records_out), json_path)
     return 0

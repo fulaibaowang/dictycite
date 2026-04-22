@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
-Build contexts from post-rerank JSON using top CE windows from snippet reranking.
+Build contexts from post-rerank JSONL using top CE windows from snippet reranking.
 
-Reads the JSON produced by post_rerank_json.py and the window JSONL from
-snippet_rerank (qid, docno, window_idx, ce_score, optional query_field).
-For each (qid, doc) in the post-rerank documents, max-pools CE scores per
-window_idx across lines (multi-query concat), ranks distinct windows, then:
+Reads post-rerank JSONL (from ``post_rerank_jsonl.py``). Window CE may be embedded as
+compact ``doc_snippet_windows`` (``pmid`` → ``{"selected_windows": [...]}`` from post_rerank),
+or as the legacy flat list per PMID (unsupported for new post-rerank outputs; regenerate),
+or supplied via ``--snippet-windows-dir`` / ``{split}.jsonl`` when post-rerank has no windows.
+Each output question includes ``context_mode``: ``snippet``.
+
+For each (qid, doc_id) in the first ``--evidence-top-k`` post-rerank ``doc_ids``, ranks
+distinct windows, then:
 
 - top-windows=1: keep the best window only.
 - top-windows=2: keep the best window; add the second-ranked window only if its
@@ -32,9 +36,43 @@ from typing import Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
-PUBMED_URL_PATTERN = re.compile(r"pubmed/(\d+)/?$", re.I)
-# When ce_score ties, prefer lexicographically smaller query_field; missing sorts last.
-_QF_TIE_SENTINEL = "\uffff"
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[1]
+_EVIDENCE_DIR = Path(__file__).resolve().parent
+for _p in (_SHARED_SCRIPTS, _EVIDENCE_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+from retrieval_eval.common import iter_questions_jsonl, question_qid, write_questions_jsonl
+from retrieval_eval.doc_id_util import ranked_doc_ids_for_evidence
+
+from snippet_window_ce import (
+    CONTEXT_MODE_SNIPPET,
+    DOC_SNIPPET_WINDOWS_KEY,
+    is_compact_doc_snippet_windows,
+    merge_window_selection_from_embedded_questions,
+    questions_use_embedded_windows,
+    select_windows_max_pool_from_path,
+)
+
+
+def _embedded_window_source_label(questions: List[dict]) -> str:
+    """How doc_snippet_windows is represented when embedded (stats only)."""
+    seen_compact = False
+    seen_legacy = False
+    for q in questions:
+        raw = q.get(DOC_SNIPPET_WINDOWS_KEY)
+        if not isinstance(raw, dict) or not raw:
+            continue
+        if is_compact_doc_snippet_windows(raw):
+            seen_compact = True
+        else:
+            seen_legacy = True
+    if seen_compact and seen_legacy:
+        return "embedded_mixed"
+    if seen_compact:
+        return "embedded_compact"
+    if seen_legacy:
+        return "embedded_legacy"
+    return "embedded"
 
 
 def _top_windows_int(value: str) -> int:
@@ -46,20 +84,23 @@ def _top_windows_int(value: str) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build contexts from post-rerank JSON and snippet window JSONL "
-        "(max-pool CE, top 1–2 distinct windows; second kept only if disjoint, then merge sentences).",
+        description="Build contexts from post-rerank JSONL and snippet CE windows "
+        "(embedded doc_snippet_windows or legacy windows JSONL; max-pool, top 1–2 distinct windows).",
     )
     parser.add_argument(
+        "--post-rerank-jsonl",
         "--post-rerank-json",
         type=Path,
         required=True,
-        help="Path to post-rerank JSON (output of post_rerank_json.py).",
+        dest="post_rerank_jsonl",
+        help="Path to post-rerank .jsonl (output of post_rerank_jsonl.py). --post-rerank-json is deprecated.",
     )
     parser.add_argument(
         "--snippet-windows-dir",
         type=Path,
-        required=True,
-        help="Path to snippet/snippet_rerank/windows directory (contains per-split JSONL).",
+        default=None,
+        help="Path to snippet/snippet_rerank/windows directory (legacy). Not required when "
+        "post-rerank JSONL contains doc_snippet_windows.",
     )
     parser.add_argument(
         "--split-name",
@@ -77,7 +118,7 @@ def parse_args() -> argparse.Namespace:
         "--output-path",
         type=Path,
         default=None,
-        help="Path to output contexts JSON (not used with --stats-only).",
+        help="Path to output contexts .jsonl (not used with --stats-only).",
     )
     parser.add_argument(
         "--window-size",
@@ -92,9 +133,16 @@ def parse_args() -> argparse.Namespace:
         help="1 or 2: top CE windows per doc; with 2, second window is kept only if disjoint from the first.",
     )
     parser.add_argument(
+        "--evidence-top-k",
+        type=int,
+        default=10,
+        help="Max doc_ids per question used for contexts and corpus indexing (default: 10). "
+        "Post-rerank JSONL may list a larger pool.",
+    )
+    parser.add_argument(
         "--stats-only",
         action="store_true",
-        help="Only read post-rerank + windows JSONL and write stats JSON (no corpus, no contexts).",
+        help="Only read post-rerank + windows and write stats JSON (no corpus, no contexts).",
     )
     parser.add_argument(
         "--stats-output-path",
@@ -115,164 +163,17 @@ def default_stats_output_path(output_path: Path) -> Path:
     return output_path.parent / f"{base}_snippet_window_stats.json"
 
 
-def pmid_from_url(url: str) -> Optional[str]:
-    """Extract PMID from a PubMed URL, or return None."""
-    if not url:
-        return None
-    m = PUBMED_URL_PATTERN.search(url.strip())
-    return m.group(1) if m else None
-
-
-def load_post_rerank_questions(post_rerank_path: Path) -> Tuple[List[dict], Set[str]]:
-    """Load post-rerank JSON and return (questions list, set of all PMIDs in documents)."""
-    with open(post_rerank_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    questions = data.get("questions", [])
-    needed_pmids: Set[str] = set()
+def load_post_rerank_questions(
+    post_rerank_path: Path,
+    evidence_top_k: Optional[int],
+) -> Tuple[List[dict], Set[str]]:
+    """Load post-rerank JSONL; ``needed`` is PMIDs referenced by capped doc lists."""
+    questions = list(iter_questions_jsonl(post_rerank_path))
+    needed: Set[str] = set()
     for q in questions:
-        for url in q.get("documents") or []:
-            pmid = pmid_from_url(url)
-            if pmid:
-                needed_pmids.add(pmid)
-    return questions, needed_pmids
-
-
-def _sent_ids_for_window(window_idx: int, window_size: int) -> List[int]:
-    return [window_idx + j for j in range(window_size)]
-
-
-def _better_max_candidate(
-    score: float,
-    qf: Optional[str],
-    best_score: float,
-    best_qf: Optional[str],
-) -> bool:
-    if score > best_score:
-        return True
-    if score < best_score:
-        return False
-    a = qf if qf is not None else _QF_TIE_SENTINEL
-    b = best_qf if best_qf is not None else _QF_TIE_SENTINEL
-    return a < b
-
-
-def select_windows_max_pool(
-    windows_path: Path,
-    window_size: int,
-    top_windows: int,
-) -> Tuple[
-    Dict[Tuple[str, str], List[int]],
-    Dict[Tuple[str, str], List[dict]],
-    Dict[Tuple[str, str], List[dict]],
-    Dict[Tuple[str, str], dict],
-]:
-    """
-    Max-pool CE per (qid, docno, window_idx), rank distinct windows by (-ce_score, window_idx).
-
-    top_windows=1: keep best only.
-    top_windows=2: keep best; add second-ranked only if sentence spans are disjoint.
-
-    Returns:
-        merged_sent_indices: (qid, docno) -> sorted union of kept sentence indices
-        selected_windows: (qid, docno) -> list of kept {window_idx, ce_score, sent_ids, query_field?}
-        rejected_windows: (qid, docno) -> list of {..., reason} (only non-empty when rank-2 dropped)
-        pair_aux: (qid, docno) -> {had_two_ranked, dropped_second_overlap, candidate_overlap_sent_count}
-    """
-    # (qid, docno, window_idx) -> (best_ce, best_query_field)
-    max_by_triple: Dict[Tuple[str, str, int], Tuple[float, Optional[str]]] = {}
-    with open(windows_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            qid = obj.get("qid")
-            docno = obj.get("docno")
-            if qid is None or docno is None:
-                continue
-            try:
-                wi = int(obj.get("window_idx", 0))
-            except (TypeError, ValueError):
-                continue
-            try:
-                ce_score = float(obj.get("ce_score", 0.0))
-            except (TypeError, ValueError):
-                ce_score = 0.0
-            qf_raw = obj.get("query_field", None)
-            qf: Optional[str] = str(qf_raw) if qf_raw is not None and qf_raw != "" else None
-
-            key3 = (str(qid), str(docno), wi)
-            if key3 not in max_by_triple:
-                max_by_triple[key3] = (ce_score, qf)
-            else:
-                bs, bqf = max_by_triple[key3]
-                if _better_max_candidate(ce_score, qf, bs, bqf):
-                    max_by_triple[key3] = (ce_score, qf)
-
-    by_pair: Dict[Tuple[str, str], List[Tuple[float, int, Optional[str]]]] = {}
-    for (qid, docno, wi), (sc, qf) in max_by_triple.items():
-        k2 = (qid, docno)
-        by_pair.setdefault(k2, []).append((sc, wi, qf))
-
-    def _window_record(sc: float, wi: int, qf: Optional[str], **extra: str) -> dict:
-        sids = _sent_ids_for_window(wi, window_size)
-        rec: dict = {
-            "window_idx": wi,
-            "ce_score": sc,
-            "sent_ids": sids,
-        }
-        if qf is not None:
-            rec["query_field"] = qf
-        rec.update(extra)
-        return rec
-
-    merged_by_pair: Dict[Tuple[str, str], List[int]] = {}
-    selected_by_pair: Dict[Tuple[str, str], List[dict]] = {}
-    rejected_by_pair: Dict[Tuple[str, str], List[dict]] = {}
-    pair_aux: Dict[Tuple[str, str], dict] = {}
-    for k2, scored in by_pair.items():
-        scored.sort(key=lambda x: (-x[0], x[1]))
-        ranked = scored[:top_windows]
-        aux: dict = {
-            "had_two_ranked": len(ranked) >= 2 and top_windows >= 2,
-            "dropped_second_overlap": False,
-            "candidate_overlap_sent_count": 0,
-        }
-        picked: List[Tuple[float, int, Optional[str]]] = []
-        rejected: List[dict] = []
-        if ranked:
-            picked.append(ranked[0])
-        if top_windows >= 2 and len(ranked) >= 2:
-            s0 = set(_sent_ids_for_window(ranked[0][1], window_size))
-            s1 = set(_sent_ids_for_window(ranked[1][1], window_size))
-            inter = s0 & s1
-            n_inter = len(inter)
-            aux["candidate_overlap_sent_count"] = n_inter
-            if not inter:
-                picked.append(ranked[1])
-            else:
-                aux["dropped_second_overlap"] = True
-                sc, wi, qf = ranked[1]
-                rejected.append(
-                    _window_record(sc, wi, qf, reason="overlap_with_top1"),
-                )
-
-        selected: List[dict] = []
-        indices: Set[int] = set()
-        for sc, wi, qf in picked:
-            sids = _sent_ids_for_window(wi, window_size)
-            for j in sids:
-                indices.add(j)
-            selected.append(_window_record(sc, wi, qf))
-        merged_by_pair[k2] = sorted(indices)
-        selected_by_pair[k2] = selected
-        if rejected:
-            rejected_by_pair[k2] = rejected
-        pair_aux[k2] = aux
-    return merged_by_pair, selected_by_pair, rejected_by_pair, pair_aux
+        for doc_id in ranked_doc_ids_for_evidence(q, evidence_top_k):
+            needed.add(doc_id)
+    return questions, needed
 
 
 def _resolve_corpus_paths(path_or_glob: str) -> List[Path]:
@@ -284,7 +185,7 @@ def _resolve_corpus_paths(path_or_glob: str) -> List[Path]:
         return paths
     p = Path(path_or_glob)
     if not p.exists():
-        raise FileNotFoundError(f"Corpus file not found: {p}")
+        raise FileNotFoundError(f"Corpus file not found: {path_or_glob}")
     return [p]
 
 
@@ -383,9 +284,10 @@ def compute_snippet_window_stats(
     window_size: int,
     track_corpus_fallback: bool,
     pmid_to_title_sents: Optional[Dict[str, Tuple[str, List[str]]]],
+    evidence_top_k: Optional[int],
 ) -> dict:
     """
-    Aggregate stats over (qid, pmid) doc slots in post-rerank JSON.
+    Aggregate stats over (qid, pmid) doc slots in post-rerank JSON (capped by evidence_top_k).
 
     With top-windows=2, final kept windows are never sentence-overlapping; overlap is
     reported on the *candidate* rank-1 vs rank-2 pair before the drop rule.
@@ -403,16 +305,13 @@ def compute_snippet_window_stats(
     pairs_candidate_top2_sentence_overlap = 0
 
     for q in questions:
-        qid = q.get("id")
+        qid = question_qid(q)
         if qid is None:
             continue
         qid_s = str(qid)
-        for url in q.get("documents") or []:
-            pmid = pmid_from_url(url)
-            if not pmid:
-                continue
+        for doc_id in ranked_doc_ids_for_evidence(q, evidence_top_k):
             doc_pairs_considered += 1
-            key = (qid_s, pmid)
+            key = (qid_s, doc_id)
             sw = selected_by_pair.get(key, [])
             aux = pair_aux.get(
                 key,
@@ -425,7 +324,7 @@ def compute_snippet_window_stats(
 
             use_fallback = len(sw) == 0
             if not use_fallback and track_corpus_fallback and pmid_to_title_sents is not None:
-                pair = pmid_to_title_sents.get(pmid)
+                pair = pmid_to_title_sents.get(doc_id)
                 if pair is None:
                     use_fallback = True
                 else:
@@ -466,6 +365,7 @@ def compute_snippet_window_stats(
         "split_name": split_name,
         "top_windows": top_windows,
         "window_size": window_size,
+        "evidence_top_k": evidence_top_k,
         "doc_pairs_considered": doc_pairs_considered,
         "pairs_final_two_windows": pairs_final_two_windows,
         "pairs_final_one_window": pairs_final_one_window,
@@ -516,23 +416,45 @@ def main() -> int:
             logger.error("Without --stats-only, --corpus-path and --output-path are required")
             return 1
 
-    if not args.post_rerank_json.exists():
-        logger.error("Post-rerank JSON not found: %s", args.post_rerank_json)
+    if not args.post_rerank_jsonl.exists():
+        logger.error("Post-rerank JSONL not found: %s", args.post_rerank_jsonl)
         return 1
 
-    windows_path = args.snippet_windows_dir / f"{args.split_name}.jsonl"
-    if not windows_path.exists():
-        logger.error("Snippet windows JSONL not found: %s", windows_path)
-        return 1
+    if not args.stats_only and args.output_path is not None:
+        if args.output_path.suffix.lower() != ".jsonl":
+            logger.error("--output-path must end with .jsonl, got %s", args.output_path)
+            return 1
 
-    logger.info("Loading post-rerank JSON: %s", args.post_rerank_json)
-    questions, needed_pmids = load_post_rerank_questions(args.post_rerank_json)
-    logger.info("Questions: %d, unique PMIDs: %d", len(questions), len(needed_pmids))
+    etk = args.evidence_top_k if args.evidence_top_k > 0 else None
 
-    logger.info("Loading snippet windows (max-pool + top-%d): %s", args.top_windows, windows_path)
-    merged_by_pair, selected_by_pair, rejected_by_pair, pair_aux = select_windows_max_pool(
-        windows_path, args.window_size, args.top_windows,
-    )
+    logger.info("Loading post-rerank JSONL: %s", args.post_rerank_jsonl)
+    questions, needed_pmids = load_post_rerank_questions(args.post_rerank_jsonl, etk)
+    logger.info("Questions: %d, unique PMIDs (evidence cap): %d", len(questions), len(needed_pmids))
+
+    use_embedded = questions_use_embedded_windows(questions)
+    if use_embedded:
+        if args.snippet_windows_dir is not None:
+            logger.info("Using embedded %s; ignoring --snippet-windows-dir", DOC_SNIPPET_WINDOWS_KEY)
+        logger.info("Window source: embedded post-rerank (%s)", DOC_SNIPPET_WINDOWS_KEY)
+        merged_by_pair, selected_by_pair, rejected_by_pair, pair_aux = merge_window_selection_from_embedded_questions(
+            questions, args.window_size, args.top_windows,
+        )
+    else:
+        if args.snippet_windows_dir is None:
+            logger.error(
+                "No %s in post-rerank JSONL; provide --snippet-windows-dir (legacy) or regenerate post-rerank "
+                "with --windows-jsonl.",
+                DOC_SNIPPET_WINDOWS_KEY,
+            )
+            return 1
+        windows_path = args.snippet_windows_dir / f"{args.split_name}.jsonl"
+        if not windows_path.exists():
+            logger.error("Snippet windows JSONL not found: %s", windows_path)
+            return 1
+        logger.info("Window source: file %s", windows_path)
+        merged_by_pair, selected_by_pair, rejected_by_pair, pair_aux = select_windows_max_pool_from_path(
+            windows_path, args.window_size, args.top_windows,
+        )
     logger.info("Snippet selection for %d (qid, docno) pairs", len(merged_by_pair))
 
     stats_path = args.stats_output_path
@@ -554,6 +476,10 @@ def main() -> int:
         args.window_size,
         track_corpus_fallback=not args.stats_only,
         pmid_to_title_sents=pmid_to_title_sents if not args.stats_only else None,
+        evidence_top_k=etk,
+    )
+    stats_payload["window_source"] = (
+        _embedded_window_source_label(questions) if use_embedded else "file"
     )
     if stats_path is not None:
         write_stats_json(stats_path, stats_payload)
@@ -585,28 +511,25 @@ def main() -> int:
     missing_total = 0
     out_questions: List[dict] = []
     for q in questions:
-        qid = q.get("id")
+        qid = question_qid(q)
         if qid is None:
             continue
         contexts: List[dict] = []
-        for url in q.get("documents") or []:
-            pmid = pmid_from_url(url)
-            if not pmid:
-                continue
-            pair = pmid_to_title_sents.get(pmid)
+        for doc_id in ranked_doc_ids_for_evidence(q, etk):
+            pair = pmid_to_title_sents.get(doc_id)
             if pair is None:
                 missing_total += 1
                 continue
             title, sentences = pair
-            key = (str(qid), str(pmid))
+            key = (str(qid), str(doc_id))
             indices = merged_by_pair.get(key)
             sw = selected_by_pair.get(key, [])
             rw = rejected_by_pair.get(key, [])
             if indices is not None and sentences and len(sw) > 0:
                 text = build_context_from_sentences(title, sentences, indices)
                 ctx: dict = {
-                    "id": f"{pmid}-1",
-                    "doc": f"http://www.ncbi.nlm.nih.gov/pubmed/{pmid}",
+                    "id": f"{doc_id}-1",
+                    "doc_id": doc_id,
                     "text": text,
                     "selected_windows": sw,
                     "rejected_windows": rw,
@@ -615,19 +538,19 @@ def main() -> int:
                 abstract = " ".join(sentences) if sentences else ""
                 text = build_context_title_abstract(title, abstract)
                 ctx = {
-                    "id": f"{pmid}-1",
-                    "doc": f"http://www.ncbi.nlm.nih.gov/pubmed/{pmid}",
+                    "id": f"{doc_id}-1",
+                    "doc_id": doc_id,
                     "text": text,
                     "selected_windows": [],
                     "rejected_windows": [],
                 }
             contexts.append(ctx)
         out_q = dict(q)
+        out_q["context_mode"] = CONTEXT_MODE_SNIPPET
         out_q["contexts"] = contexts
         out_questions.append(out_q)
 
-    with open(args.output_path, "w", encoding="utf-8") as f:
-        json.dump({"questions": out_questions}, f, ensure_ascii=False, indent=2)
+    write_questions_jsonl(args.output_path, out_questions)
 
     if missing_total:
         logger.warning("PMIDs missing from corpus: %d", missing_total)
