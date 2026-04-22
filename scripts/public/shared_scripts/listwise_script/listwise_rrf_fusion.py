@@ -32,6 +32,7 @@ from retrieval_eval.common import (  # type: ignore
     build_topics_and_gold,
     evaluate_run,
     load_questions,
+    question_qid_str,
     run_df_to_run_map,
 )
 
@@ -150,10 +151,11 @@ def parse_args() -> argparse.Namespace:
                     help="Weight for snippet_rrf side in RRF.")
     p.add_argument("--w-listwise", type=float, default=0.6,
                     help="Weight for listwise side in RRF.")
-    p.add_argument("--train-json", type=Path, default=None,
-                    help="Training questions JSON for metrics (optional).")
-    p.add_argument("--test-batch-jsons", type=Path, nargs="*", default=None,
-                    help="Test-batch question JSONs for metrics (optional).")
+    p.add_argument("--train-jsonl", "--train-json", type=Path, default=None, dest="train_jsonl",
+                    help="Training queries .jsonl for metrics (optional).")
+    p.add_argument("--test-batch-jsonls", "--test-batch-jsons", type=Path, nargs="*", default=None,
+                    dest="test_batch_jsonls",
+                    help="Test-batch .jsonl for metrics (optional).")
     p.add_argument("--disable-metrics", action="store_true",
                     help="Skip metrics and plots (only write fused runs).")
     return p.parse_args()
@@ -204,7 +206,7 @@ def _evaluate_run_lightweight(
 def _build_gold_map(questions: List[dict]) -> Dict[str, List[str]]:
     gold: Dict[str, List[str]] = {}
     for q in questions:
-        qid = str(q.get("id") or q.get("qid"))
+        qid = question_qid_str(q)
         docs = q.get("documents", [])
         pmids = [_normalize_pmid(d) for d in docs]
         pmids = [p for p in pmids if p]
@@ -315,19 +317,19 @@ def main() -> None:
         return
 
     all_questions: List[dict] = []
-    if args.train_json and args.train_json.exists():
-        qs = load_questions(args.train_json)
+    if args.train_jsonl and args.train_jsonl.exists():
+        qs = load_questions(args.train_jsonl)
         all_questions.extend(qs)
-        print(f"Loaded {len(qs)} questions from {args.train_json}")
-    if args.test_batch_jsons:
-        for p in args.test_batch_jsons:
+        print(f"Loaded {len(qs)} questions from {args.train_jsonl}")
+    if args.test_batch_jsonls:
+        for p in args.test_batch_jsonls:
             if p and p.exists():
                 qs = load_questions(p)
                 all_questions.extend(qs)
                 print(f"Loaded {len(qs)} questions from {p}")
 
     if not all_questions:
-        print("No question JSONs provided; skipping metrics.")
+        print("No query .jsonl provided; skipping metrics.")
         return
 
     gold_map = _build_gold_map(all_questions)

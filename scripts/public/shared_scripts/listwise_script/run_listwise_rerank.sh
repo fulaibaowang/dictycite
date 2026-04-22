@@ -11,18 +11,17 @@
 #   ./run_listwise_rerank.sh -c <path/to/config.env>
 #
 # Required config variables: WORKFLOW_OUTPUT_DIR
-# Optional:  TRAIN_JSON, TEST_BATCH_JSONS, LISTWISE_* (see workflow_config_full.env)
+# Optional: INPUT_JSONL / INPUT_BATCH_JSONLS (or legacy TRAIN_JSON / TEST_BATCH_JSONS; .jsonl only), LISTWISE_* (see workflow_config_full.env)
 #
 set -e
 
 # ---------------------------------------------------------------------------
-# Resolve SCRIPT_DIR (handles vendored copies via SHARED_SCRIPTS_DIR env)
+# Resolve LISTWISE_SCRIPT_DIR = this directory (listwise Python modules live here).
+# Portable: run from repo root, from this folder, or with a symlink; paths are absolute.
+# Optional SHARED_SCRIPTS_DIR does not affect these entrypoints (Python adds shared_scripts
+# to sys.path via __file__ for retrieval_eval).
 # ---------------------------------------------------------------------------
-if [ -n "${SHARED_SCRIPTS_DIR:-}" ]; then
-  SCRIPT_DIR="$SHARED_SCRIPTS_DIR"
-else
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-fi
+LISTWISE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse CLI
@@ -62,6 +61,23 @@ if [ -z "${WORKFLOW_OUTPUT_DIR:-}" ]; then
   echo "Error: WORKFLOW_OUTPUT_DIR is required (set in config or env)." >&2
   exit 1
 fi
+
+_legacy_train_var=TRAIN_JSON
+_legacy_batch_var=TEST_BATCH_JSONS
+[ -z "${INPUT_JSONL:-}" ] && [ -n "${!_legacy_train_var:-}" ] && INPUT_JSONL="${!_legacy_train_var}"
+[ -z "${INPUT_BATCH_JSONLS:-}" ] && [ -n "${!_legacy_batch_var:-}" ] && INPUT_BATCH_JSONLS="${!_legacy_batch_var}"
+case "${INPUT_JSONL:-}" in
+  "") ;;
+  *.jsonl) ;;
+  *) echo "Error: INPUT_JSONL must end with .jsonl or be empty: ${INPUT_JSONL}" >&2; exit 1 ;;
+esac
+for _pq in ${INPUT_BATCH_JSONLS:-}; do
+  [ -z "$_pq" ] && continue
+  case "$_pq" in
+    *.jsonl) ;;
+    *) echo "Error: INPUT_BATCH_JSONLS entries must be .jsonl: $_pq" >&2; exit 1 ;;
+  esac
+done
 
 SNIPPET_DOC_FUSION_RUNS="${WORKFLOW_OUTPUT_DIR}/snippet/snippet_doc_fusion/runs"
 SNIPPET_WINDOWS="${WORKFLOW_OUTPUT_DIR}/snippet/snippet_rerank/windows"
@@ -154,8 +170,8 @@ cat > "$LISTWISE_OUTPUT_DIR/config.json" <<CONFIGEOF
     "fuse_sliding": $LISTWISE_FUSE_SLIDING
   },
   "query_sources": {
-    "train_json": "${TRAIN_JSON:-null}",
-    "test_batch_jsons": "${TEST_BATCH_JSONS:-null}"
+    "train_jsonl": "${INPUT_JSONL:-null}",
+    "test_batch_jsonls": "${INPUT_BATCH_JSONLS:-null}"
   }
 }
 CONFIGEOF
@@ -202,21 +218,21 @@ else
     --query-field "$LISTWISE_QUERY_FIELD"
   )
 
-  [ -n "${TRAIN_JSON:-}" ] && [ -f "$TRAIN_JSON" ] && LISTWISE_ARGS+=(--train-json "$TRAIN_JSON")
-  if [ -n "${TEST_BATCH_JSONS:-}" ]; then
+  [ -n "${INPUT_JSONL:-}" ] && [ -f "$INPUT_JSONL" ] && LISTWISE_ARGS+=(--train-jsonl "$INPUT_JSONL")
+  if [ -n "${INPUT_BATCH_JSONLS:-}" ]; then
     _TEST_PATHS=()
-    for _p in $TEST_BATCH_JSONS; do
+    for _p in $INPUT_BATCH_JSONLS; do
       [ -f "$_p" ] && _TEST_PATHS+=("$_p")
     done
     if [ ${#_TEST_PATHS[@]} -gt 0 ]; then
-      LISTWISE_ARGS+=(--test-batch-jsons "${_TEST_PATHS[@]}")
+      LISTWISE_ARGS+=(--test-batch-jsonls "${_TEST_PATHS[@]}")
     fi
   fi
   [ "$LISTWISE_DISABLE_METRICS" = "1" ] && LISTWISE_ARGS+=(--disable-metrics)
   [ "$LISTWISE_RUN_SLIDING" != "1" ] && LISTWISE_ARGS+=(--no-sliding)
 
   echo "[listwise] Running listwise reranking..."
-  python3 "$SCRIPT_DIR/rerank/listwise_rerank.py" "${LISTWISE_ARGS[@]}"
+  python3 "$LISTWISE_SCRIPT_DIR/listwise_rerank.py" "${LISTWISE_ARGS[@]}"
 
   RERANK_END=$(date +%s)
   echo "[listwise] Reranking completed in $((RERANK_END - STEP_START))s"
@@ -242,14 +258,14 @@ _build_fusion_args() {
     --w-snippet-rrf "$LISTWISE_FUSION_W_SNIPPET"
     --w-listwise "$LISTWISE_FUSION_W_LISTWISE"
   )
-  [ -n "${TRAIN_JSON:-}" ] && [ -f "$TRAIN_JSON" ] && _FUSION_ARGS+=(--train-json "$TRAIN_JSON")
-  if [ -n "${TEST_BATCH_JSONS:-}" ]; then
+  [ -n "${INPUT_JSONL:-}" ] && [ -f "$INPUT_JSONL" ] && _FUSION_ARGS+=(--train-jsonl "$INPUT_JSONL")
+  if [ -n "${INPUT_BATCH_JSONLS:-}" ]; then
     local _TEST_PATHS=()
-    for _p in $TEST_BATCH_JSONS; do
+    for _p in $INPUT_BATCH_JSONLS; do
       [ -f "$_p" ] && _TEST_PATHS+=("$_p")
     done
     if [ ${#_TEST_PATHS[@]} -gt 0 ]; then
-      _FUSION_ARGS+=(--test-batch-jsons "${_TEST_PATHS[@]}")
+      _FUSION_ARGS+=(--test-batch-jsonls "${_TEST_PATHS[@]}")
     fi
   fi
   [ "$LISTWISE_DISABLE_METRICS" = "1" ] && _FUSION_ARGS+=(--disable-metrics)
@@ -266,7 +282,7 @@ if [ "$_HAS_FUSED" = "1" ]; then
 else
   echo "[listwise] RRF fusion: single_window + snippet_doc_fusion -> listwise_fused (pool_top=$LISTWISE_FUSION_POOL_TOP)..."
   FUSION_ARGS=($(_build_fusion_args "$_SINGLE_RUNS_DIR" "$_FUSED_DIR" "$LISTWISE_FUSION_POOL_TOP"))
-  python3 "$SCRIPT_DIR/rerank/listwise_rrf_fusion.py" "${FUSION_ARGS[@]}"
+  python3 "$LISTWISE_SCRIPT_DIR/listwise_rrf_fusion.py" "${FUSION_ARGS[@]}"
 fi
 
 # Sliding-window fusion (optional)
@@ -279,7 +295,7 @@ if [ "$LISTWISE_RUN_SLIDING" = "1" ] && [ "$LISTWISE_FUSE_SLIDING" = "1" ]; then
   else
     echo "[listwise] RRF fusion: sliding_window + snippet_doc_fusion -> listwise_fused_sliding (pool_top=$LISTWISE_POOL)..."
     FUSION_SLIDING_ARGS=($(_build_fusion_args "$_SLIDING_RUNS_DIR" "$_FUSED_SLIDING_DIR" "$LISTWISE_POOL"))
-    python3 "$SCRIPT_DIR/rerank/listwise_rrf_fusion.py" "${FUSION_SLIDING_ARGS[@]}"
+    python3 "$LISTWISE_SCRIPT_DIR/listwise_rrf_fusion.py" "${FUSION_SLIDING_ARGS[@]}"
   fi
 else
   echo "[listwise] Sliding-window fusion skipped (LISTWISE_RUN_SLIDING=$LISTWISE_RUN_SLIDING, LISTWISE_FUSE_SLIDING=$LISTWISE_FUSE_SLIDING)"

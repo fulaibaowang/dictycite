@@ -9,11 +9,12 @@
 #
 # Or: source my.env && ./run_retrieval_rerank_pipeline.sh 
 #
-# Config file sets: WORKFLOW_OUTPUT_DIR, TRAIN_JSON, TEST_BATCH_JSONS (optional), TOP_K,
+# Config file sets: WORKFLOW_OUTPUT_DIR, INPUT_JSONL / INPUT_BATCH_JSONLS (optional; .jsonl only), TOP_K,
 # RECALL_KS, BM25_INDEX_PATH, DENSE_INDEX_DIR, DOCS_JSONL (optional),
 # BM25_QUERY_FIELD / DENSE_QUERY_FIELD (comma-separated = multi-query RRF fusion per stage),
-# and stage overrides (BM25_*, DENSE_*, HYBRID_*, RERANK_*). Evidence: EVIDENCE_TOP_K and optional
-# EVIDENCE_TOP_K_BASELINE / EVIDENCE_TOP_K_SNIPPET. See workflow_config_full.env.
+# and stage overrides (BM25_*, DENSE_*, HYBRID_*, RERANK_*). Evidence: POST_RERANK_DOC_POOL (docs written
+# to post_rerank_*.jsonl), EVIDENCE_TOP_K and optional EVIDENCE_TOP_K_BASELINE / EVIDENCE_TOP_K_SNIPPET
+# (caps in build_contexts_from_*). See workflow_config_full.env.
 #
 set -e
 
@@ -38,8 +39,10 @@ else
   REPO_ROOT="$_d"
 fi
 
-# Parse -c / --config, --no-rerank, --no-rrf-fusion, --snippet-rrf, --run-both-routes, --no-generation*, -h / --help
+# Parse -c / --config, --no-rerank, --no-rrf-fusion, --snippet-rrf, --run-both-routes, --no-generation*,
+# --generation-schemas-dir, -h / --help
 CONFIG_FILE=""
+_PIPELINE_GENERATION_SCHEMAS_DIR=""
 # Allow environment to override defaults (and keep CLI flags as explicit overrides below).
 RUN_RERANK="${RUN_RERANK:-1}"
 RUN_RRF_FUSION="${RUN_RRF_FUSION:-1}"
@@ -102,8 +105,13 @@ while [ $# -gt 0 ]; do
       RUN_GENERATION_SNIPPET=0
       shift
       ;;
+    --generation-schemas-dir)
+      [ -z "${2:-}" ] && { echo "Error: --generation-schemas-dir requires a path." >&2; exit 1; }
+      _PIPELINE_GENERATION_SCHEMAS_DIR="$2"
+      shift 2
+      ;;
     -h|--help)
-      echo "Usage: $0 [--config|-c <config.env>] [--no-rerank] [--no-rrf-fusion] [--snippet-rrf] [--run-both-routes] [--no-generation] [--bm25-query-field F] ..."
+      echo "Usage: $0 [--config|-c <config.env>] [--no-rerank] [--no-rrf-fusion] [--snippet-rrf] [--run-both-routes] [--no-generation] [--generation-schemas-dir DIR] [--bm25-query-field F] ..."
       echo "  -c, --config PATH       Source PATH as config (env vars) before running."
       echo "  --no-rerank             Run only BM25, Dense, retrieval fusion; skip reranker even if DOCS_JSONL is set."
       echo "  --no-rrf-fusion         Disable post-rerank RRF fusion (retrieval fusion + cross-encoder) after reranker."
@@ -112,6 +120,7 @@ while [ $# -gt 0 ]; do
       echo "  --no-generation          Skip LLM generation (and rescue) for both baseline and snippet routes."
       echo "  --no-generation-baseline  Skip LLM generation for baseline route only (evidence still built)."
       echo "  --no-generation-snippet   Skip LLM generation for snippet route only (evidence still built)."
+      echo "  --generation-schemas-dir DIR  Schema *.txt directory for generate_answers.py (overrides GENERATION_SCHEMAS_DIR in config)."
       echo "  --bm25-query-field F    Use F as query text for BM25 (overrides env). Comma-separated = multi-query RRF fuse."
       echo "  --dense-query-field F   Use F as query text for Dense (overrides env). Comma-separated = multi-query RRF fuse."
       echo "  --rerank-query-field F  Use F for reranker and snippet CE (overrides env). Comma-separated = multi-query RRF fuse."
@@ -123,11 +132,13 @@ while [ $# -gt 0 ]; do
       echo "  RUN_RRF_FUSION=0|1      Control Hybrid+Rerank RRF fusion (default 1; 0 is same as --no-rrf-fusion)."
       echo "  RUN_GENERATION_BASELINE=0|1   Run generation for baseline route (default 1)."
       echo "  RUN_GENERATION_SNIPPET=0|1    Run generation for snippet route (default 1)."
-      echo "  EVIDENCE_TOP_K_BASELINE / EVIDENCE_TOP_K_SNIPPET   Per-route cap for post_rerank JSON (default: EVIDENCE_TOP_K or 10)."
+      echo "  GENERATION_SCHEMAS_DIR       Directory of schema *.txt for LLM prompts (default: scripts/public/shared_scripts/prompts/schemas under repo root)."
+      echo "  POST_RERANK_DOC_POOL         Max docs per query written into post_rerank_*.jsonl (default: 30)."
+      echo "  EVIDENCE_TOP_K / EVIDENCE_TOP_K_BASELINE / EVIDENCE_TOP_K_SNIPPET   Max docs per question for contexts (build_contexts; default: EVIDENCE_TOP_K or 10)."
       echo ""
       echo "Example: $0 --config scripts/private_scripts/config.env"
       echo "Example: $0 -c config.env --no-rerank --bm25-query-field body_expansion_long --dense-query-field body"
-      echo "Example: source workflow_config_small.env && $0"
+      echo "Example: source workflow_config_baseline.env && $0"
       exit 0
       ;;
     *)
@@ -174,9 +185,17 @@ fi
 
 cd "$REPO_ROOT"
 
+# Generation schema snippets: default portable path under shared_scripts; override with
+# GENERATION_SCHEMAS_DIR in config or --generation-schemas-dir (CLI wins over config).
+_DEFAULT_GENERATION_SCHEMAS_DIR="$REPO_ROOT/scripts/public/shared_scripts/prompts/schemas"
+if [ -n "${_PIPELINE_GENERATION_SCHEMAS_DIR:-}" ]; then
+  export GENERATION_SCHEMAS_DIR="$_PIPELINE_GENERATION_SCHEMAS_DIR"
+else
+  export GENERATION_SCHEMAS_DIR="${GENERATION_SCHEMAS_DIR:-$_DEFAULT_GENERATION_SCHEMAS_DIR}"
+fi
+
 # Required env (set by config file or by sourcing before run)
 : "${WORKFLOW_OUTPUT_DIR:?Set WORKFLOW_OUTPUT_DIR (e.g. output/workflow_run)}"
-: "${TRAIN_JSON:?Set TRAIN_JSON (path to training questions JSON)}"
 : "${BM25_INDEX_PATH:?Set BM25_INDEX_PATH (Terrier index directory)}"
 if [ -z "${DENSE_INDEX_GLOB:-}" ]; then
   : "${DENSE_INDEX_DIR:?Set DENSE_INDEX_DIR or DENSE_INDEX_GLOB (Dense HNSW index directory or shard glob)}"
@@ -184,6 +203,31 @@ fi
 
 TOP_K="${TOP_K:-5000}"
 RECALL_KS="${RECALL_KS:-50,100,200,300,400,500,1000,2000,5000}"
+
+# Query inputs (.jsonl only). Canonical: INPUT_JSONL / INPUT_BATCH_JSONLS. Legacy env names via indirect expansion (avoid duplicating deprecated identifiers in this file).
+_legacy_train_var=TRAIN_JSON
+_legacy_batch_var=TEST_BATCH_JSONS
+[ -z "${INPUT_JSONL:-}" ] && [ -n "${!_legacy_train_var:-}" ] && INPUT_JSONL="${!_legacy_train_var}"
+[ -z "${INPUT_BATCH_JSONLS:-}" ] && [ -n "${!_legacy_batch_var:-}" ] && INPUT_BATCH_JSONLS="${!_legacy_batch_var}"
+_have_pq=0
+[ -n "${INPUT_JSONL:-}" ] && _have_pq=1
+[ -n "${INPUT_BATCH_JSONLS:-}" ] && _have_pq=1
+if [ "$_have_pq" != 1 ]; then
+  echo "Error: set INPUT_JSONL and/or INPUT_BATCH_JSONLS (non-empty), or legacy TRAIN_JSON / TEST_BATCH_JSONS in your config." >&2
+  exit 1
+fi
+case "${INPUT_JSONL:-}" in
+  "") ;;
+  *.jsonl) ;;
+  *) echo "Error: INPUT_JSONL must end with .jsonl or be empty: ${INPUT_JSONL}" >&2; exit 1 ;;
+esac
+for _pq in ${INPUT_BATCH_JSONLS:-}; do
+  [ -z "$_pq" ] && continue
+  case "$_pq" in
+    *.jsonl) ;;
+    *) echo "Error: INPUT_BATCH_JSONLS entries must be .jsonl: $_pq" >&2; exit 1 ;;
+  esac
+done
 
 # Stage-specific retrieval depth (default to TOP_K)
 BM25_TOP_K="${BM25_TOP_K:-$TOP_K}"
@@ -301,7 +345,7 @@ _build_mquery_labels() {
   done
 }
 # Usage: _run_multi_query_fuse <out_runs_dir> <glob_pattern> <k_rrf> <weights_or_empty> <cap_or_empty> <labels_csv_or_empty> <body_weight_or_empty> -- <run_dir1> <run_dir2> ...
-# Eval is auto-enabled when HAVE_GROUND_TRUTH!=0 and TRAIN_JSON/TEST_BATCH_JSONS are set.
+# Eval is auto-enabled when HAVE_GROUND_TRUTH!=0 and INPUT_JSONL/INPUT_BATCH_JSONLS are set.
 # Set _FUSE_EXTRA_ARGS=(...) before calling to pass additional flags (e.g. --plot, --no-fused-all-plots, --recall-k-max).
 _run_multi_query_fuse() {
   local _out="$1" _pat="$2" _k="$3" _weights="$4" _cap="$5" _labels="$6" _body_w="$7"
@@ -325,8 +369,8 @@ _run_multi_query_fuse() {
   [ -n "$_labels" ] && _args+=(--labels "$_labels")
   [ -n "$_body_w" ] && _args+=(--body-weight "$_body_w")
   if [ "${HAVE_GROUND_TRUTH:-1}" != "0" ]; then
-    [ -n "${TRAIN_JSON:-}" ] && _args+=(--train-json "$TRAIN_JSON")
-    [ -n "${TEST_BATCH_JSONS:-}" ] && _args+=(--test-batch-jsons $TEST_BATCH_JSONS)
+    [ -n "${INPUT_JSONL:-}" ] && _args+=(--train-jsonl "$INPUT_JSONL")
+    [ -n "${INPUT_BATCH_JSONLS:-}" ] && _args+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
     [ -n "${RECALL_KS:-}" ] && _args+=(--ks "$RECALL_KS")
   else
     _args+=(--no-eval)
@@ -338,12 +382,12 @@ _run_multi_query_fuse() {
 # ----- BM25 -----
 BM25_ARGS=(
   --index_path "$BM25_INDEX_PATH"
-  --train_json "$TRAIN_JSON"
   --out_dir "$BM25_OUT"
   --k_eval "$BM25_TOP_K"
   --ks "$RECALL_KS"
 )
-[ -n "${TEST_BATCH_JSONS:-}" ] && BM25_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+[ -n "${INPUT_JSONL:-}" ] && BM25_ARGS+=(--train_jsonl "$INPUT_JSONL")
+[ -n "${INPUT_BATCH_JSONLS:-}" ] && BM25_ARGS+=(--test_batch_jsonls $INPUT_BATCH_JSONLS)
 [ -n "${BM25_JAVA_MEM:-}" ] && BM25_ARGS+=(--java_mem "$BM25_JAVA_MEM")
 [ -n "${BM25_THREADS:-}" ] && BM25_ARGS+=(--threads "$BM25_THREADS")
 [ -n "${BM25_RM3_FEEDBACK_POOL:-}" ] && BM25_ARGS+=(--k_feedback "$BM25_RM3_FEEDBACK_POOL")
@@ -423,7 +467,6 @@ if [ -n "${DENSE_INDEX_GLOB:-}" ]; then
   DENSE_ARGS=(
     --index_glob "$DENSE_INDEX_GLOB"
     --out_dir "$DENSE_OUT"
-    --train-json "$TRAIN_JSON"
     --topk "$DENSE_TOP_K"
     --ks "$RECALL_KS"
   )
@@ -431,12 +474,12 @@ else
   DENSE_ARGS=(
     --index_dir "$DENSE_INDEX_DIR"
     --out_dir "$DENSE_OUT"
-    --train-json "$TRAIN_JSON"
     --topk "$DENSE_TOP_K"
     --ks "$RECALL_KS"
   )
 fi
-[ -n "${TEST_BATCH_JSONS:-}" ] && DENSE_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+[ -n "${INPUT_JSONL:-}" ] && DENSE_ARGS+=(--train-jsonl "$INPUT_JSONL")
+[ -n "${INPUT_BATCH_JSONLS:-}" ] && DENSE_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
 [ -n "${DENSE_EF_SEARCH:-}" ] && DENSE_ARGS+=(--ef_search "$DENSE_EF_SEARCH")
 [ -n "${DENSE_EF_CAP:-}" ] && DENSE_ARGS+=(--ef_cap "$DENSE_EF_CAP")
 [ -n "${DENSE_BATCH_SIZE:-}" ] && DENSE_ARGS+=(--batch_size "$DENSE_BATCH_SIZE")
@@ -509,13 +552,13 @@ HYBRID_ARGS=(
   --bm25_method "$BM25_METHOD_FOR_HYBRID"
   --bm25_topk "$BM25_TOP_K"
   --dense_root "$DENSE_OUT"
-  --train-json "$TRAIN_JSON"
   --out_dir "$HYBRID_OUT"
   --k_max_eval "$HYBRID_K_MAX_EVAL"
   --cap "$HYBRID_CAP"
   --ks "$RECALL_KS"
 )
-[ -n "${TEST_BATCH_JSONS:-}" ] && HYBRID_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+[ -n "${INPUT_JSONL:-}" ] && HYBRID_ARGS+=(--train-jsonl "$INPUT_JSONL")
+[ -n "${INPUT_BATCH_JSONLS:-}" ] && HYBRID_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
 [ -n "${HYBRID_MODE:-}" ] && HYBRID_ARGS+=(--mode "$HYBRID_MODE")
 [ -n "${HYBRID_K_RRF:-}" ] && HYBRID_ARGS+=(--k_rrf "$HYBRID_K_RRF")
 [ -n "${HYBRID_W_BM25:-}" ] && HYBRID_ARGS+=(--w_bm25 "$HYBRID_W_BM25")
@@ -565,8 +608,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
     elif [ -f "$CROSS_ENCODER_OUT/metrics.csv" ]; then
       echo "[4/$TOTAL_STEPS] Reranker... (generating eval plots from existing results)"
       PLOT_ARGS=(--output-dir "$CROSS_ENCODER_OUT" --runs-dir "$HYBRID_OUT/runs")
-      [ -n "${TRAIN_JSON:-}" ] && PLOT_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && PLOT_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+      [ -n "${INPUT_JSONL:-}" ] && PLOT_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && PLOT_ARGS+=(--test_batch_jsonls $INPUT_BATCH_JSONLS)
       python "$SCRIPT_DIR/rerank/plot_rerank_eval.py" "${PLOT_ARGS[@]}"
     else
       echo "[4/$TOTAL_STEPS] Reranker... (skip: run TSVs exist but no metrics.csv; plots require metrics, e.g. HAVE_GROUND_TRUTH=1)"
@@ -606,8 +649,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
             --disable-metrics
             --skip-empty-query-field
           )
-          [ -n "${TRAIN_JSON:-}" ] && RERANK_ARGS+=(--train-json "$TRAIN_JSON")
-          [ -n "${TEST_BATCH_JSONS:-}" ] && RERANK_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+          [ -n "${INPUT_JSONL:-}" ] && RERANK_ARGS+=(--train-jsonl "$INPUT_JSONL")
+          [ -n "${INPUT_BATCH_JSONLS:-}" ] && RERANK_ARGS+=(--test_batch_jsonls $INPUT_BATCH_JSONLS)
           [ -n "${RERANK_MODEL:-}" ] && RERANK_ARGS+=(--model "$RERANK_MODEL")
           [ -n "${RERANK_MODEL_DEVICE:-}" ] && RERANK_ARGS+=(--model-device "$RERANK_MODEL_DEVICE")
           [ -n "${RERANK_MODEL_BATCH:-}" ] && RERANK_ARGS+=(--model-batch "$RERANK_MODEL_BATCH")
@@ -637,8 +680,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         --candidate-limit "$RERANK_EFFECTIVE"
         --ks-recall "${RERANK_KS_RECALL:-$RECALL_KS}"
       )
-      [ -n "${TRAIN_JSON:-}" ] && RERANK_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && RERANK_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+      [ -n "${INPUT_JSONL:-}" ] && RERANK_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && RERANK_ARGS+=(--test_batch_jsonls $INPUT_BATCH_JSONLS)
       [ -n "${RERANK_MODEL:-}" ] && RERANK_ARGS+=(--model "$RERANK_MODEL")
       [ -n "${RERANK_MODEL_DEVICE:-}" ] && RERANK_ARGS+=(--model-device "$RERANK_MODEL_DEVICE")
       [ -n "${RERANK_MODEL_BATCH:-}" ] && RERANK_ARGS+=(--model-batch "$RERANK_MODEL_BATCH")
@@ -708,8 +751,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
     fi
     [ -n "${RERANK_TSTAR_CAP:-}" ] && _TS_ARGS+=(--cap "$RERANK_TSTAR_CAP")
     if [ "${HAVE_GROUND_TRUTH:-1}" != "0" ] && [ "${RERANK_DISABLE_METRICS:-0}" != "1" ]; then
-      [ -n "${TRAIN_JSON:-}" ] && _TS_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && _TS_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
+      [ -n "${INPUT_JSONL:-}" ] && _TS_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && _TS_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
     else
       _TS_ARGS+=(--disable-metrics)
     fi
@@ -758,8 +801,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
       [ -n "${RRF_K_RRF:-}" ] && RRF_ARGS+=(--k-rrf "$RRF_K_RRF")
       [ -n "${RRF_W_BGE:-}" ] && RRF_ARGS+=(--w-bge "$RRF_W_BGE")
       [ -n "${RRF_W_HYBRID:-}" ] && RRF_ARGS+=(--w-hybrid "$RRF_W_HYBRID")
-      [ -n "${TRAIN_JSON:-}" ] && RRF_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && RRF_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
+      [ -n "${INPUT_JSONL:-}" ] && RRF_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && RRF_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
       [ -n "${RERANK_KS_RECALL:-}" ] && RRF_ARGS+=(--ks-recall "$RERANK_KS_RECALL")
       [ "${RERANK_DISABLE_METRICS:-0}" = "1" ] && RRF_ARGS+=(--disable-metrics)
       python "$SCRIPT_DIR/rerank/rerank_rrf_hybrid.py" "${RRF_ARGS[@]}"
@@ -795,8 +838,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         ${RRF_K_RRF:+--k-rrf "$RRF_K_RRF"} \
         ${RRF_W_BGE:+--w-bge "$RRF_W_BGE"} \
         ${RRF_W_HYBRID:+--w-hybrid "$RRF_W_HYBRID"} \
-        ${TRAIN_JSON:+--train-json "$TRAIN_JSON"} \
-        ${TEST_BATCH_JSONS:+--test-batch-jsons $TEST_BATCH_JSONS} \
+        ${INPUT_JSONL:+--train-jsonl "$INPUT_JSONL"} \
+        ${INPUT_BATCH_JSONLS:+--test-batch-jsonls $INPUT_BATCH_JSONLS} \
         ${RERANK_KS_RECALL:+--ks-recall "$RERANK_KS_RECALL"} \
         $([ "${RERANK_DISABLE_METRICS:-0}" = "1" ] && echo --disable-metrics)
     fi
@@ -832,9 +875,9 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         --force-from-runs
         --plots-by-split
       )
-      [ -n "${TRAIN_JSON:-}" ] && COMPARE_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && COMPARE_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
-      python "$SCRIPT_DIR/compare_result_dirs.py" "${COMPARE_ARGS[@]}"
+      [ -n "${INPUT_JSONL:-}" ] && COMPARE_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && COMPARE_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
+      python "$SCRIPT_DIR/analysis/compare_result_dirs.py" "${COMPARE_ARGS[@]}"
       STEP_COMPARE_END=$(date +%s)
       echo "[timing] Compare step: $((STEP_COMPARE_END-STEP_COMPARE_START))s"
       _log_run "step" "Compare" "$((STEP_COMPARE_END-STEP_COMPARE_START))s"
@@ -867,9 +910,9 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         --force-from-runs
         --plots-by-split
       )
-      [ -n "${TRAIN_JSON:-}" ] && COMPARE_200_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && COMPARE_200_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
-      python "$SCRIPT_DIR/compare_result_dirs.py" "${COMPARE_200_ARGS[@]}"
+      [ -n "${INPUT_JSONL:-}" ] && COMPARE_200_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && COMPARE_200_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
+      python "$SCRIPT_DIR/analysis/compare_result_dirs.py" "${COMPARE_200_ARGS[@]}"
       STEP_COMPARE_200_END=$(date +%s)
       echo "[timing] Compare (pool=200) step: $((STEP_COMPARE_200_END-STEP_COMPARE_200_START))s"
       _log_run "step" "Compare200" "$((STEP_COMPARE_200_END-STEP_COMPARE_200_START))s"
@@ -926,8 +969,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
               --disable-metrics
               --skip-empty-query-field
             )
-            [ -n "${TRAIN_JSON:-}" ] && SNIPPET_ARGS+=(--train-json "$TRAIN_JSON")
-            [ -n "${TEST_BATCH_JSONS:-}" ] && SNIPPET_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
+            [ -n "${INPUT_JSONL:-}" ] && SNIPPET_ARGS+=(--train-jsonl "$INPUT_JSONL")
+            [ -n "${INPUT_BATCH_JSONLS:-}" ] && SNIPPET_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
             [ -n "${SNIPPET_DENSE_DEVICE:-}" ] && SNIPPET_ARGS+=(--dense-device "$SNIPPET_DENSE_DEVICE")
             [ -n "${SNIPPET_DENSE_BATCH:-}" ] && SNIPPET_ARGS+=(--dense-batch "$SNIPPET_DENSE_BATCH")
             [ -n "${SNIPPET_CE_DEVICE:-}" ] && SNIPPET_ARGS+=(--ce-device "$SNIPPET_CE_DEVICE")
@@ -978,8 +1021,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
           --dense-model "${SNIPPET_DENSE_MODEL:-abhinand/MedEmbed-small-v0.1}"
           --ce-model "${SNIPPET_CE_MODEL:-${RERANK_MODEL:-BAAI/bge-reranker-v2-m3}}"
         )
-        [ -n "${TRAIN_JSON:-}" ] && SNIPPET_ARGS+=(--train-json "$TRAIN_JSON")
-        [ -n "${TEST_BATCH_JSONS:-}" ] && SNIPPET_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
+        [ -n "${INPUT_JSONL:-}" ] && SNIPPET_ARGS+=(--train-jsonl "$INPUT_JSONL")
+        [ -n "${INPUT_BATCH_JSONLS:-}" ] && SNIPPET_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
         [ -n "${SNIPPET_DENSE_DEVICE:-}" ] && SNIPPET_ARGS+=(--dense-device "$SNIPPET_DENSE_DEVICE")
         [ -n "${SNIPPET_DENSE_BATCH:-}" ] && SNIPPET_ARGS+=(--dense-batch "$SNIPPET_DENSE_BATCH")
         [ -n "${SNIPPET_CE_DEVICE:-}" ] && SNIPPET_ARGS+=(--ce-device "$SNIPPET_CE_DEVICE")
@@ -1038,8 +1081,8 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         --k-rrf "${SNIPPET_RRF_K:-60}" \
         --w-bge "${SNIPPET_RRF_W_SNIPPET:-0.2}" \
         --w-hybrid "${SNIPPET_RRF_W_DOCS:-0.8}" \
-        ${TRAIN_JSON:+--train-json "$TRAIN_JSON"} \
-        ${TEST_BATCH_JSONS:+--test-batch-jsons $TEST_BATCH_JSONS} \
+        ${INPUT_JSONL:+--train-jsonl "$INPUT_JSONL"} \
+        ${INPUT_BATCH_JSONLS:+--test-batch-jsonls $INPUT_BATCH_JSONLS} \
         ${RERANK_KS_RECALL:+--ks-recall "$RERANK_KS_RECALL"} \
         $([ "${RERANK_DISABLE_METRICS:-0}" = "1" ] && echo --disable-metrics)
     fi
@@ -1082,9 +1125,9 @@ if [ -n "${DOCS_JSONL:-}" ] && [ "$RUN_RERANK" = "1" ]; then
         --force-from-runs
         --plots-by-split
       )
-      [ -n "${TRAIN_JSON:-}" ] && SNIPPET_COMPARE_ARGS+=(--train-json "$TRAIN_JSON")
-      [ -n "${TEST_BATCH_JSONS:-}" ] && SNIPPET_COMPARE_ARGS+=(--test-batch-jsons $TEST_BATCH_JSONS)
-      python "$SCRIPT_DIR/compare_result_dirs.py" "${SNIPPET_COMPARE_ARGS[@]}"
+      [ -n "${INPUT_JSONL:-}" ] && SNIPPET_COMPARE_ARGS+=(--train-jsonl "$INPUT_JSONL")
+      [ -n "${INPUT_BATCH_JSONLS:-}" ] && SNIPPET_COMPARE_ARGS+=(--test-batch-jsonls $INPUT_BATCH_JSONLS)
+      python "$SCRIPT_DIR/analysis/compare_result_dirs.py" "${SNIPPET_COMPARE_ARGS[@]}"
       STEP_SNIPPET_COMPARE_END=$(date +%s)
       echo "[timing] Snippet compare step: $((STEP_SNIPPET_COMPARE_END-STEP_SNIPPET_COMPARE_START))s"
       _log_run "step" "SnippetCompare" "$((STEP_SNIPPET_COMPARE_END-STEP_SNIPPET_COMPARE_START))s"
@@ -1146,9 +1189,10 @@ _DOCS_JSONL_OK=0
       else
         _EVIDENCE_TOP_K="${EVIDENCE_TOP_K_SNIPPET:-${EVIDENCE_TOP_K:-10}}"
       fi
+      _POST_RERANK_POOL="${POST_RERANK_DOC_POOL:-30}"
       [ ! -d "$_EVIDENCE_RUNS_DIR" ] && continue
       mkdir -p "$WORKFLOW_OUTPUT_DIR/$_EVIDENCE_SUBDIR"
-      echo "[Evidence] Route: $_route -> $_EVIDENCE_SUBDIR, $_GEN_SUBDIR (post_rerank top_k=$_EVIDENCE_TOP_K)"
+      echo "[Evidence] Route: $_route -> $_EVIDENCE_SUBDIR, $_GEN_SUBDIR (post_rerank doc_pool=$_POST_RERANK_POOL evidence_top_k=$_EVIDENCE_TOP_K)"
     for _tsv in "$_EVIDENCE_RUNS_DIR/"*.tsv; do
       [ -f "$_tsv" ] || continue
       _stem=$(basename "$_tsv" .tsv)
@@ -1157,54 +1201,70 @@ _DOCS_JSONL_OK=0
       [ -n "$_split" ] || continue
 
       # Snippet evidence: windows are named by split (snippet_rerank writes {split}.jsonl).
-      # Resolve query JSON for this split: match split to basename (no .json) of TRAIN_JSON or any TEST_BATCH_JSONS
-      _query_json=""
-      if [ -f "${TRAIN_JSON:-}" ] && [ "$(basename "$TRAIN_JSON" .json)" = "$_split" ]; then
-        _query_json="$TRAIN_JSON"
+      # Resolve query JSONL for this split: match basename without .jsonl to split name.
+      _query_jsonl=""
+      if [ -f "${INPUT_JSONL:-}" ] && [ "$(basename "$INPUT_JSONL" .jsonl)" = "$_split" ]; then
+        _query_jsonl="$INPUT_JSONL"
       fi
-      if [ -z "$_query_json" ]; then
-        for _p in $TEST_BATCH_JSONS; do
+      if [ -z "$_query_jsonl" ]; then
+        for _p in ${INPUT_BATCH_JSONLS:-}; do
           [ -f "$_p" ] || continue
-          [ "$(basename "$_p" .json)" = "$_split" ] || continue
-          _query_json="$_p"
+          [ "$(basename "$_p" .jsonl)" = "$_split" ] || continue
+          _query_jsonl="$_p"
           break
         done
       fi
-      if [ -z "$_query_json" ]; then
-        echo "[Evidence] Skip $_split: no matching TRAIN_JSON or TEST_BATCH_JSONS (basename without .json)"
+      if [ -z "$_query_jsonl" ]; then
+        echo "[Evidence] Skip $_split: no matching INPUT_JSONL or INPUT_BATCH_JSONLS (basename without .jsonl)"
         continue
       fi
 
-      _post_json="$_EVIDENCE_POST_DIR/post_rerank_${_split}.json"
+      _post_json="$_EVIDENCE_POST_DIR/post_rerank_${_split}.jsonl"
       if [ ! -f "$_post_json" ]; then
-        echo "[Evidence] Post-rerank JSON ($_split)..."
-        python "$SCRIPT_DIR/evidence/post_rerank_json.py" \
-          --run-path "$_tsv" \
-          --query-json "$_query_json" \
-          --output-path "$_post_json" \
-          --top-k "$_EVIDENCE_TOP_K"
+        echo "[Evidence] Post-rerank JSONL ($_split)..."
+        if [ "$_USE_SNIPPET_CTX" = "1" ] && [ -f "$SNIPPET_RERANK_OUT/windows/${_split}.jsonl" ]; then
+          python "$SCRIPT_DIR/evidence/post_rerank_jsonl.py" \
+            --run-path "$_tsv" \
+            --query-jsonl "$_query_jsonl" \
+            --output-path "$_post_json" \
+            --top-k "$_POST_RERANK_POOL" \
+            --windows-jsonl "$SNIPPET_RERANK_OUT/windows/${_split}.jsonl" \
+            --window-size "${SNIPPET_WINDOW_SIZE:-3}" \
+            --top-windows "${SNIPPET_CONTEXT_TOP_WINDOWS:-2}"
+        else
+          if [ "$_USE_SNIPPET_CTX" = "1" ]; then
+            echo "[Evidence] Warning: no windows file $SNIPPET_RERANK_OUT/windows/${_split}.jsonl; post_rerank without CE merge" >&2
+          fi
+          python "$SCRIPT_DIR/evidence/post_rerank_jsonl.py" \
+            --run-path "$_tsv" \
+            --query-jsonl "$_query_jsonl" \
+            --output-path "$_post_json" \
+            --top-k "$_POST_RERANK_POOL"
+        fi
       else
-        echo "[Evidence] Post-rerank JSON ($_split)... (skip: output exists)"
+        echo "[Evidence] Post-rerank JSONL ($_split)... (skip: output exists)"
       fi
 
-      _ctx_json="$WORKFLOW_OUTPUT_DIR/$_EVIDENCE_SUBDIR/${_split}_contexts.json"
+      _ctx_json="$WORKFLOW_OUTPUT_DIR/$_EVIDENCE_SUBDIR/${_split}_contexts.jsonl"
       if [ ! -f "$_ctx_json" ]; then
         if [ "$_USE_SNIPPET_CTX" = "1" ]; then
           echo "[Evidence] Contexts from snippets ($_split)..."
           python "$SCRIPT_DIR/evidence/build_contexts_from_snippets.py" \
-            --post-rerank-json "$_post_json" \
+            --post-rerank-jsonl "$_post_json" \
             --snippet-windows-dir "$SNIPPET_RERANK_OUT/windows" \
             --split-name "$_split" \
             --corpus-path "$DOCS_JSONL" \
             --output-path "$_ctx_json" \
             --window-size "${SNIPPET_WINDOW_SIZE:-3}" \
-            --top-windows "${SNIPPET_CONTEXT_TOP_WINDOWS:-2}"
+            --top-windows "${SNIPPET_CONTEXT_TOP_WINDOWS:-2}" \
+            --evidence-top-k "$_EVIDENCE_TOP_K"
         else
           echo "[Evidence] Contexts from documents ($_split)..."
           python "$SCRIPT_DIR/evidence/build_contexts_from_documents.py" \
-            --post-rerank-json "$_post_json" \
+            --post-rerank-jsonl "$_post_json" \
             --corpus-path "$DOCS_JSONL" \
-            --output-path "$_ctx_json"
+            --output-path "$_ctx_json" \
+            --evidence-top-k "$_EVIDENCE_TOP_K"
         fi
       else
         echo "[Evidence] Contexts ($_split)... (skip: output exists)"
@@ -1224,8 +1284,8 @@ _DOCS_JSONL_OK=0
         _split="${_split%%_top*}"
         [ -n "$_split" ] || continue
 
-        _ctx_json="$WORKFLOW_OUTPUT_DIR/$_EVIDENCE_SUBDIR/${_split}_contexts.json"
-        _gen_json="$WORKFLOW_OUTPUT_DIR/$_GEN_SUBDIR/${_split}_answers.json"
+        _ctx_json="$WORKFLOW_OUTPUT_DIR/$_EVIDENCE_SUBDIR/${_split}_contexts.jsonl"
+        _gen_json="$WORKFLOW_OUTPUT_DIR/$_GEN_SUBDIR/${_split}_answers.jsonl"
         if [ -f "$_gen_json" ]; then
           echo "[Generation] $_split... (skip: output exists)"
         elif [ ! -f "$_ctx_json" ]; then
@@ -1235,6 +1295,7 @@ _DOCS_JSONL_OK=0
           GENERATION_ARGS=(
             --input-path "$_ctx_json"
             --output-dir "$WORKFLOW_OUTPUT_DIR/$_GEN_SUBDIR"
+            --schemas-dir "$GENERATION_SCHEMAS_DIR"
           )
           [ -n "${GENERATION_CONCURRENCY:-}" ] && GENERATION_ARGS+=(--concurrency "$GENERATION_CONCURRENCY")
           if [ "$_route" = "baseline" ]; then

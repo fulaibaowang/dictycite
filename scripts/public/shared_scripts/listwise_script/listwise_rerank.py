@@ -31,6 +31,11 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[1]
+if str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+from retrieval_eval.common import load_questions, question_body, question_qid_str
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -58,16 +63,18 @@ def parse_args() -> argparse.Namespace:
                    help="Root output directory (e.g. <workflow>/listwise_rerank).")
 
     # Query JSONs (for evaluation)
-    p.add_argument("--train-json", type=Path, default=None,
-                   help="Training query JSON (questions with id/body).")
-    p.add_argument("--test-batch-jsons", type=Path, nargs="*", default=[],
-                   help="Test-batch query JSONs.")
+    p.add_argument("--train-jsonl", "--train-json", type=Path, default=None,
+                   dest="train_jsonl",
+                   help="Training queries .jsonl (--train-json is deprecated).")
+    p.add_argument("--test-batch-jsonls", "--test-batch-jsons", type=Path, nargs="*", default=[],
+                   dest="test_batch_jsonls",
+                   help="Test-batch .jsonl files (--test-batch-jsons is deprecated).")
     p.add_argument(
         "--query-field",
         type=str,
-        default="body",
-        help="Question JSON key for listwise query text (e.g. body, body_hyde). "
-        "Falls back to body, query, question if the key is missing.",
+        default="query_text",
+        help="Question JSON key for listwise query text (e.g. query_text, body_hyde). "
+        "Falls back to question_body() (query_text / legacy body / query / question) if the key is missing.",
     )
 
     # Single-window config
@@ -172,13 +179,6 @@ def load_windows_jsonl(path: Path) -> Dict[Tuple[str, str], Tuple[str, float]]:
     return best
 
 
-def load_questions(json_path: Path) -> List[dict]:
-    data = json.loads(json_path.read_text(encoding="utf-8"))
-    if "questions" not in data:
-        raise KeyError(f"{json_path} missing top-level 'questions'")
-    return data["questions"]
-
-
 def estimate_query_token_len(tokenizer, query_text: str) -> int:
     return len(tokenizer.encode(query_text, add_special_tokens=False))
 
@@ -231,7 +231,7 @@ def evaluate_run(
 def build_gold_map(questions: List[dict]) -> Dict[str, List[str]]:
     gold: Dict[str, List[str]] = {}
     for q in questions:
-        qid = str(q.get("id") or q.get("qid"))
+        qid = question_qid_str(q)
         docs = q.get("documents", [])
         pmids = [normalize_pmid(d) for d in docs]
         pmids = [p for p in pmids if p]
@@ -440,22 +440,22 @@ def main():
     all_questions: List[dict] = []
     qid_to_query: Dict[str, str] = {}
     query_json_paths: List[Path] = []
-    if args.train_json and args.train_json.exists():
-        query_json_paths.append(args.train_json)
-    query_json_paths.extend(p for p in args.test_batch_jsons if p.exists())
+    if args.train_jsonl and args.train_jsonl.exists():
+        query_json_paths.append(args.train_jsonl)
+    query_json_paths.extend(p for p in args.test_batch_jsonls if p.exists())
 
     for p in query_json_paths:
         qs = load_questions(p)
         all_questions.extend(qs)
         logger.info("Loaded %d questions from %s", len(qs), p)
 
-    qf = (args.query_field or "body").strip() or "body"
+    qf = (args.query_field or "query_text").strip() or "query_text"
     for q in all_questions:
-        qid = str(q.get("id") or q.get("qid"))
+        qid = question_qid_str(q)
         raw = q.get(qf)
         body = str(raw).strip() if raw is not None else ""
         if not body:
-            body = str(q.get("body") or q.get("query") or q.get("question") or "")
+            body = question_body(q)
         qid_to_query[qid] = body
     logger.info("Total: %d queries loaded", len(qid_to_query))
 
