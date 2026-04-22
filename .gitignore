@@ -10,7 +10,7 @@ output/dicty_gold_build/*
 !output/dicty_gold_build/6a_llm_labels_run1.jsonl
 !output/dicty_gold_build/6b_llm_labels_run2.jsonl
 !output/dicty_gold_build/6c_llm_labels_run3.jsonl
-!output/dicty_gold_build/7a_dicty_gold_llm_public.json
+!output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl
 !output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
 !output/dicty_gold_build/8b_gold_linked_notes_examples.jsonl
 scripts/public/article_fetching/output/
@@ -26,3 +26,4 @@ dicty_simulated_data/
 **/__pycache__/
 dictybase_files/ontology/
 CLAUDE.md
+7a_dicty_gold_llm_public.json
