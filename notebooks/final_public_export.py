@@ -24,7 +24,7 @@
 # - output/dicty_gold_build/6d_llm_full_agreement.tsv
 # - output/dicty_gold_build/3_articles_cleaned_abstract.parquet
 #
-# Output JSONL fields per question: query_id, query_text, body_expansion_synonyms, body_expansion_long, documents, docs.
+# Output JSONL fields per question: query_id, query_text, query_text_expansion_synonyms, query_text_expansion_long, documents, docs.
 #
 # Outputs:
 # - output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl (full payload, all fields)
@@ -138,8 +138,8 @@ for q in questions:
     # Canonical pipeline keys
     q["query_id"] = str(q.get("group_claim_id", ""))
     q["query_text"] = (q.get("query") or "").strip()
-    q["body_expansion_synonyms"] = (q.get("query_expand_synonyms") or "").strip()
-    q["body_expansion_long"] = (q.get("query_expand_long") or "").strip()
+    q["query_text_expansion_synonyms"] = (q.get("query_expand_synonyms") or "").strip()
+    q["query_text_expansion_long"] = (q.get("query_expand_long") or "").strip()
     q["documents"] = [PUBMED_URL_PREFIX + str(p) for p in pmids if p]
 
 def _write_jsonl(path: Path, records) -> None:
@@ -152,13 +152,13 @@ def _write_jsonl(path: Path, records) -> None:
 _write_jsonl(OUT_JSONL_PRIVATE, questions)
 print(f"Saved (private): {OUT_JSONL_PRIVATE}")
 
-# Clean public: query_id, query_text, expansion variants, documents, docs
+# Clean public: query_id, query_text, query_text_expansion_*, documents, docs
 def to_public_question(q):
     return {
         "query_id": q["query_id"],
         "query_text": q["query_text"],
-        "body_expansion_synonyms": q["body_expansion_synonyms"],
-        "body_expansion_long": q["body_expansion_long"],
+        "query_text_expansion_synonyms": q["query_text_expansion_synonyms"],
+        "query_text_expansion_long": q["query_text_expansion_long"],
         "documents": q["documents"],
         "docs": q.get("docs", []),
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Run retrieval once with BM25 and Dense fixed to body_expansion_long, then run the
-# reranker 3 times with query-field body, body_expansion_synonyms, body_expansion_long.
+# Run retrieval once with BM25 and Dense fixed to query_text_expansion_long, then run the
+# reranker 3 times with query-field query_text, query_text_expansion_synonyms, query_text_expansion_long.
 # Requires DOCS_JSONL in config (reranker needs it).
 #
 # Usage:
@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
       ;;
     -h|--help)
       echo "Usage: $0 [--config|-c <config.env>]"
-      echo "  Runs retrieval once (BM25+Dense+Hybrid with body_expansion_long), then reranker 3 times (body, synonyms, long)."
+      echo "  Runs retrieval once (BM25+Dense+Hybrid with query_text_expansion_long), then reranker 3 times (query_text, synonyms, long)."
       echo "  -c, --config PATH   Source PATH before running (required unless already sourced)."
       exit 0
       ;;
@@ -47,9 +47,9 @@ if [ -n "$CONFIG_FILE" ]; then
   echo "Using config: $CONFIG_FILE"
 fi
 
-QF_BODY="body"
-QF_SYNONYMS="body_expansion_synonyms"
-QF_LONG="body_expansion_long"
+QF_BODY="query_text"
+QF_SYNONYMS="query_text_expansion_synonyms"
+QF_LONG="query_text_expansion_long"
 
 # ----- 1) Run retrieval once (BM25 + Dense + Hybrid, both use long) -----
 if [ -n "$CONFIG_FILE" ]; then

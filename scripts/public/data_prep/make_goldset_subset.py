@@ -2,8 +2,8 @@
 """
 Create stratified train/test subsets from dicty_gold_llm_public.jsonl.
 
-Input/output use canonical pipeline schema (query_id, query_text, body_expansion_synonyms,
-body_expansion_long, documents) so scripts/public/shared_scripts/retrieval_eval/common.py
+Input/output use canonical pipeline schema (query_id, query_text, query_text_expansion_synonyms,
+query_text_expansion_long, documents) so scripts/public/shared_scripts/retrieval_eval/common.py
 can load the subsets. All other metadata (docs, pmids, ...) is preserved.
 
 Default behavior:

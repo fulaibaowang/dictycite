@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Run BM25 + Dense + Hybrid for all 3×3 query-field combinations (body, body_expansion_synonyms, body_expansion_long).
+# Run BM25 + Dense + Hybrid for all 3×3 query-field combinations (query_text, query_text_expansion_synonyms, query_text_expansion_long).
 # Stops at hybrid; no reranker. Each combination gets its own WORKFLOW_OUTPUT_DIR subdir.
 #
 # Usage:
@@ -48,9 +48,9 @@ if [ -n "$CONFIG_FILE" ]; then
 fi
 
 # Query-field options (full values for --query-field)
-QF_BODY="body"
-QF_SYNONYMS="body_expansion_synonyms"
-QF_LONG="body_expansion_long"
+QF_BODY="query_text"
+QF_SYNONYMS="query_text_expansion_synonyms"
+QF_LONG="query_text_expansion_long"
 
 # Short names for directory naming
 declare -A QF_SHORT
