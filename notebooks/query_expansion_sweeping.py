@@ -323,8 +323,8 @@ import json
 
 # Paths
 RERANK_SWEEP_DIR = Path("../output/workflow_baseline_full_sweep/fixed_long_rerank_sweep")
-GOLD_TRAIN = Path("../example/dicty_gold_llm_public_train_200.json")
-GOLD_TEST = Path("../example/dicty_gold_llm_public_test_50.json")
+GOLD_TRAIN = Path("../example/dicty_gold_llm_public_train_200.jsonl")
+GOLD_TEST = Path("../example/dicty_gold_llm_public_test_50.jsonl")
 
 RERANK_DIRS = {
     "body": RERANK_SWEEP_DIR / "rerank_body",

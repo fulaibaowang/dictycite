@@ -24,11 +24,11 @@
 # - output/dicty_gold_build/6d_llm_full_agreement.tsv
 # - output/dicty_gold_build/3_articles_cleaned_abstract.parquet
 #
-# Output JSON fields per question: id, body, body_expansion_synonyms, body_expansion_long, documents, docs.
+# Output JSONL fields per question: query_id, query_text, body_expansion_synonyms, body_expansion_long, documents, docs.
 #
 # Outputs:
-# - output/dicty_gold_build/7b_dicty_gold_llm_private.json (full payload, all fields)
-# - output/dicty_gold_build/7a_dicty_gold_llm_public.json (clean, BioASQ-style keys only)
+# - output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl (full payload, all fields)
+# - output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl (canonical pipeline keys)
 # - output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
 
 # %%
@@ -44,8 +44,8 @@ import polars as pl
 GOLD_PATH = Path("../output/dicty_gold_build/5a_gold_query_expand.parquet")
 LABELS_PATH = Path("../output/dicty_gold_build/6d_llm_full_agreement.tsv")
 DOCS_PATH = Path("../output/dicty_gold_build/3_articles_cleaned_abstract.parquet")
-OUT_JSON = Path("../output/dicty_gold_build/7a_dicty_gold_llm_public.json")
-OUT_JSON_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.json")
+OUT_JSONL = Path("../output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl")
+OUT_JSONL_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl")
 DOCS_JSONL_OUT = Path("../output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl")
 
 def load_labels(path: Path) -> pl.DataFrame:
@@ -135,22 +135,28 @@ questions = grouped.sort("group_claim_id").to_dicts()
 for q in questions:
     pmids = [d.get("pmid") for d in q.get("docs", []) if d.get("pmid")]
     q["pmids"] = pmids
-    # BioASQ-like fields: body = raw query; expansion variants for retrieval --query-field
-    q["id"] = str(q.get("group_claim_id", ""))
-    q["body"] = (q.get("query") or "").strip()
+    # Canonical pipeline keys
+    q["query_id"] = str(q.get("group_claim_id", ""))
+    q["query_text"] = (q.get("query") or "").strip()
     q["body_expansion_synonyms"] = (q.get("query_expand_synonyms") or "").strip()
     q["body_expansion_long"] = (q.get("query_expand_long") or "").strip()
     q["documents"] = [PUBMED_URL_PREFIX + str(p) for p in pmids if p]
 
-# Full payload (all fields) → private
-OUT_JSON_PRIVATE.write_text(json.dumps({"questions": questions}, indent=2), encoding="utf-8")
-print(f"Saved (private): {OUT_JSON_PRIVATE}")
+def _write_jsonl(path: Path, records) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        for rec in records:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
-# Clean public: id, body, expansion variants, documents, docs
+# Full payload (all fields) → private
+_write_jsonl(OUT_JSONL_PRIVATE, questions)
+print(f"Saved (private): {OUT_JSONL_PRIVATE}")
+
+# Clean public: query_id, query_text, expansion variants, documents, docs
 def to_public_question(q):
     return {
-        "id": q["id"],
-        "body": q["body"],
+        "query_id": q["query_id"],
+        "query_text": q["query_text"],
         "body_expansion_synonyms": q["body_expansion_synonyms"],
         "body_expansion_long": q["body_expansion_long"],
         "documents": q["documents"],
@@ -158,8 +164,8 @@ def to_public_question(q):
     }
 
 questions_public = [to_public_question(q) for q in questions]
-OUT_JSON.write_text(json.dumps({"questions": questions_public}, indent=2), encoding="utf-8")
-print(f"Saved (public): {OUT_JSON}")
+_write_jsonl(OUT_JSONL, questions_public)
+print(f"Saved (public): {OUT_JSONL}")
 
 
 # %% [markdown]

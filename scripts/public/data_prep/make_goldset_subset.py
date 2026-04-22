@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Create stratified train/test subsets from dicty_gold_llm_public.json.
+Create stratified train/test subsets from dicty_gold_llm_public.jsonl.
 
-Input/output use BioASQ-like schema (id, body, body_expansion_synonyms, body_expansion_long, documents) so
-scripts/public/shared_scripts/retrieval_eval/common.py can load the subsets. All other
-metadata (group_claim_id, query, query_expand, docs, pmids, ...) is preserved.
+Input/output use canonical pipeline schema (query_id, query_text, body_expansion_synonyms,
+body_expansion_long, documents) so scripts/public/shared_scripts/retrieval_eval/common.py
+can load the subsets. All other metadata (docs, pmids, ...) is preserved.
 
 Default behavior:
-- Treat each item in "questions" as one query keyed by group_claim_id.
+- Treat each line in the input JSONL as one query.
 - Define minority as queries with >= 2 citations (len(docs) >= 2).
 - Create disjoint train/test splits with a fixed seed.
 - Slightly oversample minority while enforcing a minimum fraction.
-- Write JSON outputs with the same schema plus a stats JSON.
+- Write JSONL outputs (one record per line) plus a stats JSON.
 """
 
 from __future__ import annotations
@@ -25,12 +25,16 @@ from typing import Any, Dict, List, Tuple
 
 
 def load_questions(path: Path) -> List[Dict[str, Any]]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or "questions" not in data:
-        raise ValueError("Expected top-level dict with 'questions' key")
-    questions = data["questions"]
-    if not isinstance(questions, list):
-        raise ValueError("'questions' must be a list")
+    questions = []
+    with open(path, encoding="utf-8") as f:
+        for lineno, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            obj = json.loads(line)
+            if not isinstance(obj, dict):
+                raise ValueError(f"{path}:{lineno}: expected JSON object, got {type(obj)}")
+            questions.append(obj)
     return questions
 
 
@@ -162,10 +166,11 @@ def summarize(questions: List[Dict[str, Any]], minority_min_citations: int) -> D
     }
 
 
-def write_json(path: Path, questions: List[Dict[str, Any]]) -> None:
+def write_jsonl(path: Path, questions: List[Dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"questions": questions}
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+    with open(path, "w", encoding="utf-8") as f:
+        for q in questions:
+            f.write(json.dumps(q, ensure_ascii=False) + "\n")
 
 
 def main() -> None:
@@ -173,8 +178,8 @@ def main() -> None:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("output/dicty_gold_build/7a_dicty_gold_llm_public.json"),
-        help="Path to dicty_gold_llm_public.json",
+        default=Path("output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl"),
+        help="Path to dicty_gold_llm_public.jsonl",
     )
     parser.add_argument("--train-size", type=int, default=200)
     parser.add_argument("--test-size", type=int, default=50)
@@ -186,12 +191,12 @@ def main() -> None:
     parser.add_argument(
         "--train-out",
         type=Path,
-        default=Path("example/dicty_gold_llm_public_train_200.json"),
+        default=Path("example/dicty_gold_llm_public_train_200.jsonl"),
     )
     parser.add_argument(
         "--test-out",
         type=Path,
-        default=Path("example/dicty_gold_llm_public_test_50.json"),
+        default=Path("example/dicty_gold_llm_public_test_50.jsonl"),
     )
     parser.add_argument(
         "--stats-out",
@@ -224,8 +229,8 @@ def main() -> None:
         min_minority_fraction=args.min_minority_fraction,
     )
 
-    write_json(args.train_out, train_items)
-    write_json(args.test_out, test_items)
+    write_jsonl(args.train_out, train_items)
+    write_jsonl(args.test_out, test_items)
 
     stats = {
         "input": str(args.input),

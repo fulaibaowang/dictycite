@@ -396,8 +396,8 @@ def _map_at_ks_for_run(run_df: pd.DataFrame, qrels: dict[str, set[str]], ks: lis
 
 
 qrels_paths = {
-    "dicty_gold_llm_public_train_200": base_dir / "example" / "dicty_gold_llm_public_train_200.json",
-    "dicty_gold_llm_public_test_50": base_dir / "example" / "dicty_gold_llm_public_test_50.json",
+    "dicty_gold_llm_public_train_200": base_dir / "example" / "dicty_gold_llm_public_train_200.jsonl",
+    "dicty_gold_llm_public_test_50": base_dir / "example" / "dicty_gold_llm_public_test_50.jsonl",
 }
 
 qrels_by_split = {s: _load_qrels(p) for s, p in qrels_paths.items()}

@@ -1,6 +1,6 @@
 #subset
 python3 scripts/public/data_prep/make_goldset_subset.py \
-  --input output/dicty_gold_build/7a_dicty_gold_llm_public.json \
+  --input output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl \
   --train-size 200 \
   --test-size 50 \
   --seed 42
@@ -9,8 +9,8 @@ python3 scripts/public/data_prep/make_goldset_subset.py \
 ./scripts/public/shared_scripts/run_retrieval_rerank_pipeline.sh --config scripts/private_scripts/local/config.env --no-rerank
 
 #plots that splits different evidence_level 
-python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.json
-python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.json --rerank-dir rerank_bge
+python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl
+python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl --rerank-dir rerank_bge
 
 #plots for sweeping different query expansion
 python scripts/public/combine_query_field_sweep_results.py \
@@ -31,9 +31,9 @@ python scripts/public/shared_scripts/compare_result_dirs.py \
   --labels "body" "synonyms" "long" "hybird" \
   --plot both \
   --map-ks 10,20,50,100,200 \
-  --train-json example/dicty_gold_llm_public_train_200.json \
-  --test-batch-jsons example/dicty_gold_llm_public_test_50.json \
+  --train-json example/dicty_gold_llm_public_train_200.jsonl \
+  --test-batch-jsons example/dicty_gold_llm_public_test_50.jsonl \
   --log-x --plots-by-split \
   --output-dir output/workflow_hpc_test/fixed_long_rerank_sweep/compare_plots
 
-python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test/fixed_long_rerank_sweep --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.json  --rerank-dir rerank_long
+python3 scripts/public/plot_by_evidence_level.py --workflow-dir output/workflow_hpc_test/fixed_long_rerank_sweep --gold-json output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl  --rerank-dir rerank_long

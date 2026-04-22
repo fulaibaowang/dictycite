@@ -261,18 +261,20 @@ def polite_sleep(base: float, jitter: float) -> None:
 
 
 def load_gold_questions(path: Path) -> Tuple[Dict[str, Dict[str, Any]], List[int]]:
-    with path.open(encoding="utf-8") as f:
-        data = json.load(f)
-    questions = data.get("questions", [])
     by_id: Dict[str, Dict[str, Any]] = {}
     gids: List[int] = []
-    for q in questions:
-        qid = str(q.get("id", ""))
-        by_id[qid] = q
-        try:
-            gids.append(int(qid))
-        except ValueError:
-            continue
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            by_id[qid] = q
+            try:
+                gids.append(int(qid))
+            except ValueError:
+                continue
     return by_id, gids
 
 
@@ -393,7 +395,7 @@ def main() -> None:
     out_dir = (args.out_dir or (root / "output" / "dicty_gold_build")).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    path_gold = out_dir / "7a_dicty_gold_llm_public.json"
+    path_gold = out_dir / "7a_dicty_gold_llm_public.jsonl"
     path_4a = out_dir / "4a_claim_groups.parquet"
     path_claims = out_dir / "1_curator_claims.parquet"
     path_gene_info = root / "dictybase_files" / "gene_information.txt"

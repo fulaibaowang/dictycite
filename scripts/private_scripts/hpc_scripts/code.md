@@ -52,7 +52,7 @@ python scripts/public/shared_scripts/compare_result_dirs.py \
   --labels "body" "synonyms" "long" "hybrid" \
   --plot both \
   --map-ks 1,5,10,20,30,50,100,200 \
-  --train-json example/dicty_gold_llm_public_train_200.json \
-  --test-batch-jsons example/dicty_gold_llm_public_test_50.json \
+  --train-json example/dicty_gold_llm_public_train_200.jsonl \
+  --test-batch-jsons example/dicty_gold_llm_public_test_50.jsonl \
   --log-x --plots-by-split \
   --output-dir output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/compare_plots
