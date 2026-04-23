@@ -148,7 +148,7 @@ for i in 0 1 2; do
   [ "${RERANK_DISABLE_METRICS:-0}" = "1" ] && RERANK_ARGS+=(--disable-metrics)
   [ "${RERANK_USE_MULTI_GPU:-0}" = "1" ] && RERANK_ARGS+=(--use-multi-gpu)
   [ -n "${RERANK_NUM_GPUS:-}" ] && RERANK_ARGS+=(--num-gpus "$RERANK_NUM_GPUS")
-  python "$PIPELINE_SCRIPT_DIR/rerank/rerank_stage2.py" "${RERANK_ARGS[@]}"
+  python "$PIPELINE_SCRIPT_DIR/rerank/rerank_crossencoder.py" "${RERANK_ARGS[@]}"
 done
 
 echo ""

@@ -47,7 +47,7 @@ python scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_sha
 # Combine rerank sweep:
 #   python scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py --rerank_sweep --workflow_dir output/workflow_baseline_full_sweep/fixed_long_rerank_sweep --log_x --wide
 
-python scripts/public/shared_scripts/compare_result_dirs.py \
+python scripts/public/shared_scripts/analysis/compare_result_dirs.py \
   --dirs output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_body output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_synonyms output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/rerank_long output/workflow_baseline_full_sweep/fixed_long_rerank_sweep/hybrid \
   --labels "body" "synonyms" "long" "hybrid" \
   --plot both \
