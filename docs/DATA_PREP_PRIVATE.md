@@ -2,7 +2,7 @@
 
 This file lists output paths referenced in the data prep workflow.
 
-All versioned pipeline artifacts live under **`output/dicty_gold_build/`** (numbered `N_…` filenames). Batch execution of `datasets_merge_clean` via nbconvert/jupytext may require setting **`DICTYCITE_ROOT`** to the repository root if the Jupyter kernel’s working directory is not the repo.
+All versioned pipeline artifacts live under **`output/dicty_gold_build/`** (numbered `N_…` filenames). Batch execution of `04_datasets_merge_clean` via nbconvert/jupytext may require setting **`DICTYCITE_ROOT`** to the repository root if the Jupyter kernel’s working directory is not the repo.
 
 ## 1) Curator Notes → Claims + dictybase publication_id
 

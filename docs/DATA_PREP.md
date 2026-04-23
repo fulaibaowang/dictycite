@@ -12,28 +12,28 @@ This document describes how the dataset is assembled and cleaned. The goal is a 
 Download curator notes and extract claim sentences with citation anchors.
 
 - Production script: [scripts/public/data_prep/dicty_curator_notes.py](../scripts/public/data_prep/dicty_curator_notes.py)
-- Notebook: [notebooks/curator_notes_download.ipynb](../notebooks/curator_notes_download.ipynb)
+- Notebook: [notebooks/01_curator_notes_download.ipynb](../notebooks/01_curator_notes_download.ipynb)
 
 ## 2) Publication Mapping → PMID
 
 Build the mapping between dictybase publication_id and PMID by looping over all genes and parsing the references tab.
 
 - Production script: [scripts/public/data_prep/dicty_publication.py](../scripts/public/data_prep/dicty_publication.py)
-- Notebook: [notebooks/gene_publication_mapping.ipynb](../notebooks/gene_publication_mapping.ipynb)
+- Notebook: [notebooks/02_gene_publication_mapping.ipynb](../notebooks/02_gene_publication_mapping.ipynb)
 
 ## 3) EPMC/PubMed Fetch (title + abstract)
 
 Fetch dicty literature from EPMC and normalize the abstracts.
 
 - Workflow guide: [scripts/public/article_fetching/README.md](../scripts/public/article_fetching/README.md)
-- Exploration notebook: [notebooks/epmc_fetch_exploration.ipynb](../notebooks/epmc_fetch_exploration.ipynb)
+- Exploration notebook: [notebooks/03_epmc_fetch_exploration.ipynb](../notebooks/03_epmc_fetch_exploration.ipynb)
 
 ## 4) Merge + Clean (claims ↔ PMIDs ↔ abstracts)
 
 This step merges curator claims with publication IDs, then joins the PMID mapping and EPMC abstracts.
 It also performs cleaning and de-duplication to produce a clean dataset for downstream use.
 
-- Notebook: [notebooks/datasets_merge_clean.ipynb](../notebooks/datasets_merge_clean.ipynb)
+- Notebook: [notebooks/04_datasets_merge_clean.ipynb](../notebooks/04_datasets_merge_clean.ipynb)
 
 Cleaning summary (high level):
 - Remove very short claims.
@@ -54,7 +54,7 @@ Expansion is tiered by how many genes are detected in the query:
 
 The two variants differ in strictness: **query_expand_synonyms** applies these tiers strictly (fewer added terms). **query_expand_long** is looser (e.g. still adds gene products when expansion is light or minimal), giving variety without excessive noise.
 
-- Notebook: [notebooks/query_expansion_bm25.ipynb](../notebooks/query_expansion_bm25.ipynb) (jupytext: `query_expansion_bm25.py`)
+- Notebook: [notebooks/05_query_expansion_bm25.ipynb](../notebooks/05_query_expansion_bm25.ipynb) (jupytext: `05_query_expansion_bm25.py`)
 - Gene lookup: [dictybase_files/gene_information.txt](../dictybase_files/gene_information.txt) — tab-separated columns **GENE ID**, **Gene Name**, **Synonyms** (comma-separated), **Gene products**. Used only for expansion; ambiguous aliases are skipped.
 - Reproducible JSONL enrichment (YAML + table, same tier rules): [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with example config [scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml). Requires `pip install -r scripts/public/data_prep/requirements-query-expansion.txt`.
 
@@ -64,7 +64,7 @@ Titles and abstracts are not always enough to validate a claim. Some claims need
 To reduce false positives, we run a labeling step to build a higher-quality goldset.
 
 - Production script: [scripts/public/data_prep/dicty_claim_labeler.py](../scripts/public/data_prep/dicty_claim_labeler.py)
-- Notebook: [notebooks/goldset_llm_labeling.ipynb](../notebooks/goldset_llm_labeling.ipynb)
+- Notebook: [notebooks/06_goldset_llm_labeling.ipynb](../notebooks/06_goldset_llm_labeling.ipynb)
 
 Labeling details (summary):
 - Input: `output/dicty_gold_build/5b_gold_query_expand_flat.tsv` (claim + PMID + title/abstract). The labeler uses **query_expand** (long variant: synonyms + gene products) as the claim text when present, otherwise **query**.
@@ -79,7 +79,7 @@ Labeling details (summary):
 We join the goldset with LLM labels and publish the labeled goldset JSON.
 Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and `docs` (or legacy `query_expand` for backward compat).
 
-- Notebook: [notebooks/final_public_export.ipynb](../notebooks/final_public_export.ipynb)
+- Notebook: [notebooks/07_final_public_export.ipynb](../notebooks/07_final_public_export.ipynb)
 - Outputs:
 	- `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
 	- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`

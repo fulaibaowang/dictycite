@@ -131,7 +131,7 @@ flowchart TD
         S1_in1["dictybase_files/DDB_G-curation_status.txt"]
         S1_api["dictyBase API /gene/GENE_ID/gene/summary.json"]
         S1_script["scripts/public/data_prep/dicty_curator_notes.py"]
-        S1_nb["notebooks/curator_notes_download.ipynb"]
+        S1_nb["notebooks/01_curator_notes_download.ipynb"]
         S1_out2["output/dicty_gold_build/1_curator_claims.parquet"]
         S1_in1 --> S1_script
         S1_api --> S1_script
@@ -141,7 +141,7 @@ flowchart TD
     subgraph step2 ["Step 2: Publication ID to PMID"]
         S2_api["dictyBase API /gene/GENE_ID/references.json"]
         S2_script["scripts/public/data_prep/dicty_publication.py"]
-        S2_nb["notebooks/gene_publication_mapping.ipynb"]
+        S2_nb["notebooks/02_gene_publication_mapping.ipynb"]
         S2_out["output/dicty_gold_build/2_publication_id_pmid.csv"]
         S2_api --> S2_script
         S2_script --> S2_out
@@ -151,7 +151,7 @@ flowchart TD
         S3_api["Europe PMC REST API"]
         S3_fetch["scripts/public/article_fetching/fetch.py"]
         S3_jsons["article_fetching/output/all_cleaned/*.json"]
-        S3_nb["notebooks/epmc_fetch_exploration.ipynb"]
+        S3_nb["notebooks/03_epmc_fetch_exploration.ipynb"]
         S3_out["output/dicty_gold_build/3_articles_cleaned_abstract.parquet"]
         S3_api --> S3_fetch
         S3_fetch --> S3_jsons
@@ -160,27 +160,27 @@ flowchart TD
     end
 
     subgraph step4 ["Step 4: Merge + Clean + Deduplicate"]
-        S4_nb["notebooks/datasets_merge_clean.ipynb"]
+        S4_nb["notebooks/04_datasets_merge_clean.ipynb"]
         S4_int4["output/dicty_gold_build/4a_claim_groups.parquet"]
         S4_out["output/dicty_gold_build/4b_golden_grouped.parquet"]
     end
 
     subgraph step5 ["Step 5: Query Expansion"]
         S5_gene["dictybase_files/gene_information.txt"]
-        S5_nb["notebooks/query_expansion_bm25.ipynb"]
+        S5_nb["notebooks/05_query_expansion_bm25.ipynb"]
         S5_out1["output/dicty_gold_build/5a_gold_query_expand.parquet"]
         S5_out2["output/dicty_gold_build/5b_gold_query_expand_flat.tsv"]
     end
 
     subgraph step6 ["Step 6: LLM Labeling"]
         S6_script["scripts/public/data_prep/dicty_claim_labeler.py"]
-        S6_nb["notebooks/goldset_llm_labeling.ipynb"]
+        S6_nb["notebooks/06_goldset_llm_labeling.ipynb"]
         S6_runs["output/dicty_gold_build/6a-c_llm_labels_run{1,2,3}.jsonl"]
         S6_out["output/dicty_gold_build/6d_llm_full_agreement.tsv"]
     end
 
     subgraph step7 ["Step 7: Final Export"]
-        S7_nb["notebooks/final_public_export.ipynb"]
+        S7_nb["notebooks/07_final_public_export.ipynb"]
         S7_pub["output/dicty_gold_build/7a_dicty_gold_llm_public.json"]
         S7_priv["output/dicty_gold_build/7b_dicty_gold_llm_private.json"]
         S7_jsonl["output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl"]
@@ -207,18 +207,18 @@ flowchart TD
 | `output/dicty_gold_build/1_curator_claims.parquet` | `dicty_curator_notes.py` | gene_id, claim_plain, anchors, publication_ids, citation_captions, citation_years, sentence_markers, sentence_plain, cited_sentence_marked | 2,063 |
 | `output/dicty_gold_build/2_publication_id_pmid.csv` | `dicty_publication.py` | publication_id, pmid (Int64) | 4,341 |
 | `scripts/public/article_fetching/output/all_cleaned/*.json` | `fetch.py` | pmid, pmcid, doi, year, title, journal, authors, abstract, text | ~20,447 files |
-| `output/dicty_gold_build/3_articles_cleaned_abstract.parquet` | `epmc_fetch_exploration.ipynb` | pmid, pmcid, doi, year, title, journal, authors, abstract_clean, file | 20,447 |
-| `output/dicty_gold_build/4a_claim_groups.parquet` | `datasets_merge_clean.ipynb` | claim_id, group_claim_id, claim_plain, claim_sim, gene_id, rep_claim_id, canonical_query, is_representative_claim | ~2,000 rows (one per deduplicated claim_id) |
-| `output/dicty_gold_build/4b_golden_grouped.parquet` | `datasets_merge_clean.ipynb` | group_claim_id, rep_claim_id, query, n_variants, n_citations, query_n_words, years, docs (struct list) | ~1,705 |
-| `output/dicty_gold_build/5a_gold_query_expand.parquet` | `query_expansion_bm25.ipynb` | group_claim_id, query, query_expand_synonyms, query_expand_long, query_expand, docs | ~1,705 |
-| `output/dicty_gold_build/5b_gold_query_expand_flat.tsv` | `query_expansion_bm25.ipynb` | group_claim_id, query, query_expand_synonyms, query_expand_long, query_expand, pmid, title, abstract_clean, year | ~2,100 |
+| `output/dicty_gold_build/3_articles_cleaned_abstract.parquet` | `03_epmc_fetch_exploration.ipynb` | pmid, pmcid, doi, year, title, journal, authors, abstract_clean, file | 20,447 |
+| `output/dicty_gold_build/4a_claim_groups.parquet` | `04_datasets_merge_clean.ipynb` | claim_id, group_claim_id, claim_plain, claim_sim, gene_id, rep_claim_id, canonical_query, is_representative_claim | ~2,000 rows (one per deduplicated claim_id) |
+| `output/dicty_gold_build/4b_golden_grouped.parquet` | `04_datasets_merge_clean.ipynb` | group_claim_id, rep_claim_id, query, n_variants, n_citations, query_n_words, years, docs (struct list) | ~1,705 |
+| `output/dicty_gold_build/5a_gold_query_expand.parquet` | `05_query_expansion_bm25.ipynb` | group_claim_id, query, query_expand_synonyms, query_expand_long, query_expand, docs | ~1,705 |
+| `output/dicty_gold_build/5b_gold_query_expand_flat.tsv` | `05_query_expansion_bm25.ipynb` | group_claim_id, query, query_expand_synonyms, query_expand_long, query_expand, pmid, title, abstract_clean, year | ~2,100 |
 | `output/dicty_gold_build/6a_llm_labels_run1.jsonl` | `dicty_claim_labeler.py` (run 1) | group_claim_id, pmid, doc_match, evidence_level, reason | ~2,100 |
 | `output/dicty_gold_build/6b_llm_labels_run2.jsonl` | `dicty_claim_labeler.py` (run 2) | (same) | ~2,100 |
 | `output/dicty_gold_build/6c_llm_labels_run3.jsonl` | `dicty_claim_labeler.py` (run 3) | (same) | ~2,100 |
-| `output/dicty_gold_build/6d_llm_full_agreement.tsv` | `goldset_llm_labeling.ipynb` | group_claim_id, pmid, doc_match, evidence_level | 2,028 |
-| `output/dicty_gold_build/7b_dicty_gold_llm_private.json` | `final_public_export.ipynb` | (full payload including internal fields) | 1,656 questions |
-| `output/dicty_gold_build/7a_dicty_gold_llm_public.json` | `final_public_export.ipynb` | id, body, body_expansion_synonyms, body_expansion_long, documents, docs | 1,656 questions, 2,028 docs |
-| `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl` | `final_public_export.ipynb` | pmid, title, abstract (= abstract_clean), + metadata | 20,447 |
+| `output/dicty_gold_build/6d_llm_full_agreement.tsv` | `06_goldset_llm_labeling.ipynb` | group_claim_id, pmid, doc_match, evidence_level | 2,028 |
+| `output/dicty_gold_build/7b_dicty_gold_llm_private.json` | `07_final_public_export.ipynb` | (full payload including internal fields) | 1,656 questions |
+| `output/dicty_gold_build/7a_dicty_gold_llm_public.json` | `07_final_public_export.ipynb` | id, body, body_expansion_synonyms, body_expansion_long, documents, docs | 1,656 questions, 2,028 docs |
+| `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl` | `07_final_public_export.ipynb` | pmid, title, abstract (= abstract_clean), + metadata | 20,447 |
 
 ## Step 1: Curator Note Extraction (detailed)
 
@@ -229,7 +229,7 @@ flowchart TD
 
 ### Parsing logic
 
-Each token is either a `{"text": "..."}` fragment or a `{"caption": "...", "url": "/publication/####"}` citation link. The parser (`extract_publication_claims_from_tokens` in `curator_notes_download.ipynb`):
+Each token is either a `{"text": "..."}` fragment or a `{"caption": "...", "url": "/publication/####"}` citation link. The parser (`extract_publication_claims_from_tokens` in `01_curator_notes_download.ipynb`):
 
 1. Concatenates tokens into an HTML-with-markers string, replacing citation links with `[[PUB:####]]` markers.
 2. Converts `<br>` tags to sentence boundaries (`. `), then strips remaining HTML via BeautifulSoup.
@@ -268,7 +268,7 @@ DictyBase internal publication IDs (integers, e.g. `19729`) do not correspond to
 ### Implementation
 
 - **Production script**: `scripts/public/data_prep/dicty_publication.py`
-- **Exploration notebook**: `notebooks/gene_publication_mapping.ipynb`
+- **Exploration notebook**: `notebooks/02_gene_publication_mapping.ipynb`
 - Two runs were concatenated (`2_gene_publication_pmid.parquet` + a rerun shard for failed rows) to handle transient server failures.
 - Filtered to non-null publication_id, deduplicated.
 
@@ -295,7 +295,7 @@ DictyBase internal publication IDs (integers, e.g. `19729`) do not correspond to
 
 ### Abstract cleaning
 
-Implemented in `notebooks/epmc_fetch_exploration.ipynb`. For each article JSON:
+Implemented in `notebooks/03_epmc_fetch_exploration.ipynb`. For each article JSON:
 
 1. Skip if abstract is null or empty after stripping.
 2. If abstract is a list, join elements with `\n`.
@@ -325,7 +325,7 @@ PMID normalization (`normalize_pmid_expr`): cast to string, strip whitespace, re
 
 ## Step 4: Merge, Clean, and Deduplicate (detailed)
 
-All operations in `notebooks/datasets_merge_clean.ipynb` using Polars.
+All operations in `notebooks/04_datasets_merge_clean.ipynb` using Polars.
 
 ### 4a. Load and select columns
 
@@ -476,7 +476,7 @@ claim_sim = claim_plain
 
 ## Step 5: Query Expansion (detailed)
 
-Implemented in `notebooks/query_expansion_bm25.ipynb`.
+Implemented in `notebooks/05_query_expansion_bm25.ipynb`.
 
 ### Gene information source
 
@@ -566,7 +566,7 @@ Three independent runs: `run1.jsonl`, `run2.jsonl`, `run3.jsonl`. The input `gol
 
 ### Agreement computation
 
-Implemented in `notebooks/goldset_llm_labeling.ipynb`.
+Implemented in `notebooks/06_goldset_llm_labeling.ipynb`.
 
 1. Merge three runs on `(group_claim_id, pmid)` via outer join. Total overlap: 2,119 pairs (matches the flat TSV row count).
 2. **Doc-match disagreement** (`doc_match_disagree`): pairwise check across all three runs.
@@ -614,7 +614,7 @@ Implemented in `notebooks/goldset_llm_labeling.ipynb`.
 
 ## Step 7: Final Public Export (detailed)
 
-Implemented in `notebooks/final_public_export.ipynb`.
+Implemented in `notebooks/07_final_public_export.ipynb`.
 
 ### Inputs
 
