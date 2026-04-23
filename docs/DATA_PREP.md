@@ -54,8 +54,9 @@ Expansion is tiered by how many genes are detected in the query:
 
 The two variants differ in strictness: **query_expand_synonyms** applies these tiers strictly (fewer added terms). **query_expand_long** is looser (e.g. still adds gene products when expansion is light or minimal), giving variety without excessive noise.
 
-- Notebook: [notebooks/query_expansion_and_test.ipynb](../notebooks/query_expansion_and_test.ipynb)
+- Notebook: [notebooks/query_expansion_bm25.ipynb](../notebooks/query_expansion_bm25.ipynb) (jupytext: `query_expansion_bm25.py`)
 - Gene lookup: [dictybase_files/gene_information.txt](../dictybase_files/gene_information.txt) — tab-separated columns **GENE ID**, **Gene Name**, **Synonyms** (comma-separated), **Gene products**. Used only for expansion; ambiguous aliases are skipped.
+- Reproducible JSONL enrichment (YAML + table, same tier rules): [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with example config [scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml). Requires `pip install -r scripts/public/data_prep/requirements-query-expansion.txt`.
 
 ## 5) Goldset Labeling (LLM review)
 
@@ -89,6 +90,8 @@ Schema (high level):
 - `questions[].docs[]` includes `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
 
 Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `body` or `body_expansion_synonyms` for rerank).
+
+Example train/test splits under `example/` (`dicty_gold_llm_public_train_200.jsonl`, `dicty_gold_llm_public_test_50.jsonl`) are built from `7a_dicty_gold_llm_public.jsonl` with [scripts/public/data_prep/make_goldset_subset.py](../scripts/public/data_prep/make_goldset_subset.py). By default they **omit** `query_text_expansion_*` fields; see [example/dicty_gold_llm_public_subset_stats.json](../example/dicty_gold_llm_public_subset_stats.json) for seeds and parameters. Re-add expansion with `apply_query_expansion.py` (section 4.5) when you need those fields (for example, configs that set `BM25_QUERY_FIELD=query_text_expansion_long`). You can write expanded peers next to them as `example/dicty_gold_llm_public_train_200_expanded.jsonl` and `example/dicty_gold_llm_public_test_50_expanded.jsonl` (listed in `.gitignore`) for local checks or `query_expansion/test_smoke.py`.
 
 EPMC JSONL:
 - One JSON object per line from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).

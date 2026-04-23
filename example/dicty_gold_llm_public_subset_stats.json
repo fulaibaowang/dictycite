@@ -1,5 +1,7 @@
 {
+  "script": "scripts/public/data_prep/make_goldset_subset.py",
   "input": "output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl",
+  "strip_expansion_keys": true,
   "seed": 42,
   "train_size": 200,
   "test_size": 50,
@@ -29,5 +31,6 @@
   "outputs": {
     "train": "example/dicty_gold_llm_public_train_200.jsonl",
     "test": "example/dicty_gold_llm_public_test_50.jsonl"
-  }
+  },
+  "expansion_note": "Subset JSONL has no query_text_expansion_* fields. Re-apply expansion with scripts/public/data_prep/apply_query_expansion.py and scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml (see docs/DATA_PREP.md section 4.5). Optional local regression copies: example/dicty_gold_llm_public_train_200_expanded.jsonl and example/dicty_gold_llm_public_test_50_expanded.jsonl (gitignored)."
 }

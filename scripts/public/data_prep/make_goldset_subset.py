@@ -2,9 +2,14 @@
 """
 Create stratified train/test subsets from dicty_gold_llm_public.jsonl.
 
-Input/output use canonical pipeline schema (query_id, query_text, query_text_expansion_synonyms,
-query_text_expansion_long, documents) so scripts/public/shared_scripts/retrieval_eval/common.py
-can load the subsets. All other metadata (docs, pmids, ...) is preserved.
+By default, **query expansion fields are dropped** from each record so example subsets are
+reproducible bases for `apply_query_expansion.py` (provenance: this script + `subset_stats.json`).
+Each line keeps query_id, query_text, documents, docs, and any other keys except the expansion
+pair below. Use ``--no-strip-expansion-keys`` to preserve ``query_text_expansion_*`` from the
+input (e.g. when copying full public gold into a smaller JSONL).
+
+Input may include query_text_expansion_synonyms / query_text_expansion_long; retrieval helpers
+in scripts/public/shared_scripts/retrieval_eval/common.py tolerate their absence.
 
 Default behavior:
 - Treat each line in the input JSONL as one query.
@@ -22,6 +27,14 @@ import math
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+
+_EXPANSION_KEYS = ("query_text_expansion_synonyms", "query_text_expansion_long")
+
+
+def strip_expansion_keys(question: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a shallow copy without structured query expansion fields."""
+    out = {k: v for k, v in question.items() if k not in _EXPANSION_KEYS}
+    return out
 
 
 def load_questions(path: Path) -> List[Dict[str, Any]]:
@@ -203,6 +216,13 @@ def main() -> None:
         type=Path,
         default=Path("example/dicty_gold_llm_public_subset_stats.json"),
     )
+    parser.add_argument(
+        "--strip-expansion-keys",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Remove query_text_expansion_synonyms / query_text_expansion_long from each record "
+        "(default: true).",
+    )
 
     args = parser.parse_args()
 
@@ -229,11 +249,17 @@ def main() -> None:
         min_minority_fraction=args.min_minority_fraction,
     )
 
+    if args.strip_expansion_keys:
+        train_items = [strip_expansion_keys(q) for q in train_items]
+        test_items = [strip_expansion_keys(q) for q in test_items]
+
     write_jsonl(args.train_out, train_items)
     write_jsonl(args.test_out, test_items)
 
-    stats = {
+    stats: Dict[str, Any] = {
+        "script": "scripts/public/data_prep/make_goldset_subset.py",
         "input": str(args.input),
+        "strip_expansion_keys": args.strip_expansion_keys,
         "seed": args.seed,
         "train_size": args.train_size,
         "test_size": args.test_size,
@@ -250,6 +276,15 @@ def main() -> None:
             "test": str(args.test_out),
         },
     }
+    if args.strip_expansion_keys:
+        stats["expansion_note"] = (
+            "Subset JSONL has no query_text_expansion_* fields. Re-apply expansion with "
+            "scripts/public/data_prep/apply_query_expansion.py and "
+            "scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml "
+            "(see docs/DATA_PREP.md section 4.5). Optional local regression copies: "
+            "example/dicty_gold_llm_public_train_200_expanded.jsonl and "
+            "example/dicty_gold_llm_public_test_50_expanded.jsonl (gitignored)."
+        )
 
     args.stats_out.parent.mkdir(parents=True, exist_ok=True)
     args.stats_out.write_text(json.dumps(stats, indent=2, ensure_ascii=True), encoding="utf-8")

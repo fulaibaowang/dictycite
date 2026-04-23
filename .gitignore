@@ -17,6 +17,9 @@ scripts/public/article_fetching/output/
 NCBI_API_KEY
 dictybase_files/dicty21/dicty21.Data/
 tmp/
+# Expanded example splits (local regression refs; regenerate with apply_query_expansion.py)
+example/dicty_gold_llm_public_train_200_expanded.jsonl
+example/dicty_gold_llm_public_test_50_expanded.jsonl
 llama_API_KEY
 .jupyter/
 .vscode/

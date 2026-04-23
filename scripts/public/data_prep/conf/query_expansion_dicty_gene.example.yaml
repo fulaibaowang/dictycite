@@ -1,0 +1,79 @@
+# Dictyostelium gene table: matches notebooks/query_expansion_bm25.py defaults when used with
+# dictybase_files/gene_information.txt and the blocklist below (notebook GENERIC_ALIAS_BLOCKLIST).
+
+entity_id_col: "GENE ID"
+
+table:
+  separator: "\t"
+
+query:
+  read_field: "query_text"
+
+expansion_outputs:
+  synonyms_only: "query_text_expansion_synonyms"
+  long: "query_text_expansion_long"
+
+# Columns whose cell values are split on commas into separate tokens.
+comma_split_columns:
+  - "Synonyms"
+
+# Whole-cell product strings (not comma-split); appended in long variant like the notebook.
+product_columns:
+  - "Gene products"
+
+ddb_id_pattern: "\\bDDB_G\\d+\\b"
+
+detect_from:
+  - "GENE ID"
+  - "Gene Name"
+  - "Synonyms"
+
+expand_variants:
+  synonyms_only:
+    expand_with:
+      - "Gene Name"
+      - "Synonyms"
+    exclude_output:
+      - "GENE ID"
+  long:
+    expand_with:
+      - "Gene Name"
+      - "Synonyms"
+      - "Gene products"
+    exclude_output:
+      - "GENE ID"
+
+filters:
+  min_alias_len: 4
+  max_aliases_per_entity: 3
+  auto_block_if_seen_in_n_entities: 5
+  blocklist:
+    - trna
+    - rrna
+    - rna
+    - dna
+    - mrna
+    - atp
+    - gtp
+    - gdp
+    - nad
+    - nadh
+    - nadp
+    - nadph
+    - fadh
+    - coa
+    - gef
+    - gap
+    - kinase
+    - phosphatase
+    - receptor
+    - transporter
+    - aldh
+    - pks
+    - sod
+    - plb
+    - rnr
+    - pp2c
+    - putative
+    - mitochondrial
+    - hypothetical protein
