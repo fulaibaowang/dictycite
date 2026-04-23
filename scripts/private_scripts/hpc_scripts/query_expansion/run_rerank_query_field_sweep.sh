@@ -140,8 +140,8 @@ for i in 0 1 2; do
     --ks-recall "${RERANK_KS_RECALL:-$RECALL_KS}"
     --query-field "$QF_FULL"
   )
-  [ -n "${TRAIN_JSON:-}" ] && RERANK_ARGS+=(--train-json "$TRAIN_JSON")
-  [ -n "${TEST_BATCH_JSONS:-}" ] && RERANK_ARGS+=(--test_batch_jsons $TEST_BATCH_JSONS)
+  [ -n "${TRAIN_JSON:-}" ] && RERANK_ARGS+=(--train-jsonl "$TRAIN_JSON")
+  [ -n "${TEST_BATCH_JSONS:-}" ] && RERANK_ARGS+=(--test-batch-jsonls $TEST_BATCH_JSONS)
   [ -n "${RERANK_MODEL:-}" ] && RERANK_ARGS+=(--model "$RERANK_MODEL")
   [ -n "${RERANK_MODEL_DEVICE:-}" ] && RERANK_ARGS+=(--model-device "$RERANK_MODEL_DEVICE")
   [ -n "${RERANK_MODEL_BATCH:-}" ] && RERANK_ARGS+=(--model-batch "$RERANK_MODEL_BATCH")
