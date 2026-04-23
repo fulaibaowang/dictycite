@@ -1,0 +1,88 @@
+#!/bin/bash
+#SBATCH -J dicty_qfield_sweep
+#SBATCH -p gpu
+#SBATCH --time=48:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+#SBATCH --gres=gpu:1
+#
+# VEGA: 3×3 BM25 × Dense query-field sweep (same logic as query_expansion/sbatch_query_field_sweep.sh).
+# Runs run_query_field_sweep.sh with vega config; stops at hybrid (--no-rerank). Nine subdirs under
+# ${WORKFLOW_SWEEP_OUTPUT_DIR}/query_field_sweep/.
+#
+# Adjust PIPELINE_CONFIG or time limit if needed.
+
+set -euo pipefail
+
+cd ~/dictycite
+mkdir -p logs
+
+CONTAINER_IMG="/ceph/hpc/data/s25t12-03-users/apptainer/bioasq_08.03.26b200.sif"
+WORKDIR="${PWD}"
+
+PUBMED_HOST="/ceph/hpc/data/s25t12-03-users/pubmed"
+YUN_HOST="/ceph/hpc/data/s25t12-03-users/"
+HOME_HOST="/ceph/hpc/home/wangy"
+
+PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/vega/config_vega_query_field_sweep.env"
+
+echo "Starting job ${SLURM_JOB_ID} on $(hostname) at $(date)"
+echo "Query-field sweep (9 combos, no rerank) with config: ${PIPELINE_CONFIG}"
+echo "Container image: ${CONTAINER_IMG}"
+
+NUM_GPUS="${SLURM_GPUS_PER_TASK:-${SLURM_GPUS_ON_NODE:-0}}"
+export NUM_GPUS
+echo "Detected NUM_GPUS=${NUM_GPUS}"
+
+module purge
+module load apptainer 2>/dev/null || module load singularity 2>/dev/null || true
+
+APPTAINER_GPU_ARGS=()
+if [[ "${NUM_GPUS}" -gt 0 ]]; then
+  APPTAINER_GPU_ARGS+=(--nv)
+else
+  echo "No GPUs allocated; running container without --nv"
+fi
+
+export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${SCRATCH:-${TMPDIR:-/tmp}}/apptainer-cache}"
+mkdir -p "${APPTAINER_CACHEDIR}"
+
+srun --mpi=none singularity exec \
+  --cleanenv \
+  "${APPTAINER_GPU_ARGS[@]}" \
+  -B "${WORKDIR}:/work" \
+  -B "${PUBMED_HOST}:/pubmed" \
+  -B "${YUN_HOST}:/yun" \
+  -B "${HOME_HOST}:/home/wangy" \
+  --pwd /work \
+  "${CONTAINER_IMG}" \
+  bash -lc "
+    set -euo pipefail
+
+    export HF_HOME='/yun/_hf_cache'
+    export HF_HUB_CACHE=\"\$HF_HOME/hub\"
+    export SENTENCE_TRANSFORMERS_HOME=\"\$HF_HOME/sentence_transformers\"
+    unset TRANSFORMERS_CACHE 2>/dev/null || true
+    mkdir -p \"\$HF_HOME\" \"\$HF_HUB_CACHE\" \"\$HF_HOME/transformers\" \"\$SENTENCE_TRANSFORMERS_HOME\"
+    echo \"[cache] HF_HOME=\$HF_HOME\"
+
+    export OMP_NUM_THREADS=8
+    export PYTHONUNBUFFERED=1
+    export TQDM_DISABLE=1
+
+    echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
+    nvidia-smi -L || true
+
+    source '${PIPELINE_CONFIG}'
+    mkdir -p \"\${WORKFLOW_SWEEP_OUTPUT_DIR}\"
+    cp '${PIPELINE_CONFIG}' \"\${WORKFLOW_SWEEP_OUTPUT_DIR}/\"
+
+    echo \"[run] 3×3 query-field sweep (BM25 × Dense, no rerank; BM25_DISABLE_RM3=\${BM25_DISABLE_RM3:-0})\"
+    ./scripts/private_scripts/hpc_scripts/query_expansion/run_query_field_sweep.sh --config '${PIPELINE_CONFIG}'
+
+    echo \"[done] Query-field sweep completed\"
+  "
+
+echo "Finished job ${SLURM_JOB_ID} at $(date)"

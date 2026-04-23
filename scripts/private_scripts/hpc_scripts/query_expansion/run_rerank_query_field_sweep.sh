@@ -8,7 +8,7 @@
 #   From repo root: ./scripts/private_scripts/hpc_scripts/query_expansion/run_rerank_query_field_sweep.sh --config scripts/private_scripts/hpc_scripts/config.env
 #
 # Output layout: under BASE_OUT (fixed_long_rerank_sweep/ when WORKFLOW_SWEEP_OUTPUT_DIR is set):
-#   .../fixed_long_rerank_sweep/bm25/, dense/, hybrid/, rerank_body/, rerank_synonyms/, rerank_long/
+#   .../fixed_long_rerank_sweep/retrieval/{bm25,dense,fusion}/, rerank_body/, rerank_synonyms/, rerank_long/
 # When WORKFLOW_SWEEP_OUTPUT_DIR is set (e.g. by sbatch), BASE_OUT = .../fixed_long_rerank_sweep (no overlap with query_field_sweep).
 #
 set -e
@@ -74,7 +74,7 @@ mkdir -p "$WORKFLOW_OUTPUT_DIR"
 
 if [ -z "${DOCS_JSONL:-}" ]; then
   echo "DOCS_JSONL not set; skipping reranker sweep. Set DOCS_JSONL in config to run reranker."
-  echo "Done. Outputs: $WORKFLOW_OUTPUT_DIR (bm25/, dense/, hybrid/)"
+  echo "Done. Outputs: $WORKFLOW_OUTPUT_DIR (retrieval/{bm25,dense,fusion}/)"
   exit 0
 fi
 
@@ -88,7 +88,8 @@ if [ -n "$CONFIG_FILE" ]; then
   export WORKFLOW_OUTPUT_DIR="$BASE_OUT"
 fi
 
-HYBRID_OUT="$WORKFLOW_OUTPUT_DIR/hybrid"
+# Must match run_retrieval_rerank_pipeline.sh: retrieval/fusion (not a top-level "hybrid/" dir).
+HYBRID_OUT="$WORKFLOW_OUTPUT_DIR/retrieval/fusion"
 TOP_K="${TOP_K:-5000}"
 RECALL_KS="${RECALL_KS:-50,100,200,300,400,500,1000,2000,5000}"
 HYBRID_CAP="${HYBRID_CAP:-$TOP_K}"
@@ -152,4 +153,4 @@ for i in 0 1 2; do
 done
 
 echo ""
-echo "Done. Outputs: $WORKFLOW_OUTPUT_DIR (bm25/, dense/, hybrid/, rerank_body/, rerank_synonyms/, rerank_long/)"
+echo "Done. Outputs: $WORKFLOW_OUTPUT_DIR (retrieval/{bm25,dense,fusion}/, rerank_{body,synonyms,long}/)"
