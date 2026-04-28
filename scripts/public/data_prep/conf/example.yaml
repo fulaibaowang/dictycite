@@ -1,0 +1,106 @@
+query:
+  read_field: query_text
+
+table:
+  separator: "\t"
+  entity_key: "GENE ID"   # row identity / canonical row key
+
+columns:
+  gene_id:
+    source: "GENE ID"
+    detect:
+      enabled: true
+      regex:
+        - "\\bDDB_G\\d+\\b"
+    expand:
+      enabled: false
+    normalize:
+      case: upper
+
+  gene_name:
+    source: "Gene Name"
+    detect:
+      enabled: true
+    expand:
+      enabled: true
+    split: null
+    normalize:
+      case: keep
+    filters:
+      min_len: 1
+      blocklist: []
+      max_entity_freq: null
+      drop_ambiguous: false
+
+  synonyms:
+    source: "Synonyms"
+    detect:
+      enabled: true
+    expand:
+      enabled: true
+    split: ","
+    normalize:
+      case: keep
+      strip: true
+    filters:
+      min_len: 4
+      blocklist:
+        - kinase
+        - receptor
+        - transporter
+      max_entity_freq: 5
+      drop_ambiguous: true
+      max_terms_per_entity: 2
+
+  gene_products:
+    source: "Gene products"
+    detect:
+      enabled: false
+    expand:
+      enabled: true
+    split: ","
+    normalize:
+      case: keep
+      strip: true
+    filters:
+      min_len: 4
+      blocklist: []
+      max_entity_freq: null
+      drop_ambiguous: false
+      max_terms_per_entity: 1
+
+detection:
+  max_detected_entities: 5
+  resolve_mode: unique_only   # or first / all
+
+expansion:
+  mode: structured
+  join_within_entity: ", "
+  join_between_entities: " ||| "
+  show_trigger: true          # e.g. "MLCK: mlkA, myosin light chain kinase A"
+
+variants:
+  synonym:
+    include_columns:
+      - gene_name
+      - synonyms
+    output_field: query_expansion_Synonym
+
+  synonym_product:
+    include_columns:
+      - gene_name
+      - synonyms
+      - gene_products
+    output_field: query_expansion_Synonym_Products
+
+  strict_synonym:
+    include_columns:
+      - gene_name
+      - synonyms
+    output_field: query_expansion_Synonym_Strict
+    overrides:
+      synonyms:
+        filters:
+          min_len: 5
+          max_entity_freq: 3
+          max_terms_per_entity: 1
