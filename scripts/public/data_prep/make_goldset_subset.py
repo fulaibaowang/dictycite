@@ -28,7 +28,7 @@ import random
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-_EXPANSION_KEYS = ("query_text_expansion_synonyms", "query_text_expansion_long")
+_EXPANSION_KEYS = ("query_text_expansion_synonyms", "query_text_synonym_products")
 
 
 def strip_expansion_keys(question: Dict[str, Any]) -> Dict[str, Any]:
@@ -224,7 +224,7 @@ def main() -> None:
         "--strip-expansion-keys",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Remove query_text_expansion_synonyms / query_text_expansion_long from each record "
+        help="Remove query_text_expansion_synonyms / query_text_synonym_products from each record "
         "(default: true).",
     )
 

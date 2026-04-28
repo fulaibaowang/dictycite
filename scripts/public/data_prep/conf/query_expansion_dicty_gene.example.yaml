@@ -11,7 +11,7 @@ query:
 
 expansion_outputs:
   synonyms_only: "query_text_expansion_synonyms"
-  long: "query_text_expansion_long"
+  long: "query_text_synonym_products"
 
 # Columns whose cell values are split on commas into separate tokens.
 comma_split_columns:

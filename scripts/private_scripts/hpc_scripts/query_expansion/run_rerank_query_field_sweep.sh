@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Run retrieval once with BM25 and Dense fixed to query_text_expansion_long, then run the
-# reranker 3 times with query-field query_text, query_text_expansion_synonyms, query_text_expansion_long.
+# Run retrieval once with BM25 and Dense fixed to query_text_synonym_products, then run the
+# reranker 3 times with query-field query_text, query_text_expansion_synonyms, query_text_synonym_products.
 # Requires DOCS_JSONL in config (reranker needs it).
 #
 # Usage:
@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
       ;;
     -h|--help)
       echo "Usage: $0 [--config|-c <config.env>]"
-      echo "  Runs retrieval once (BM25+Dense+Hybrid with query_text_expansion_long), then reranker 3 times (query_text, synonyms, long)."
+      echo "  Runs retrieval once (BM25+Dense+Hybrid with query_text_synonym_products), then reranker 3 times (query_text, synonyms, synonym_products)."
       echo "  -c, --config PATH   Source PATH before running (required unless already sourced)."
       exit 0
       ;;
@@ -49,7 +49,7 @@ fi
 
 QF_BODY="query_text"
 QF_SYNONYMS="query_text_expansion_synonyms"
-QF_LONG="query_text_expansion_long"
+QF_SYNONYM_PRODUCTS="query_text_synonym_products"
 
 # ----- 1) Run retrieval once (BM25 + Dense + Hybrid, both use long) -----
 if [ -n "$CONFIG_FILE" ]; then
@@ -68,9 +68,9 @@ fi
 export WORKFLOW_OUTPUT_DIR="$BASE_OUT"
 
 echo ""
-echo "========== Retrieval (BM25=long, Dense=long) -> $WORKFLOW_OUTPUT_DIR =========="
+echo "========== Retrieval (BM25=synonym_products, Dense=synonym_products) -> $WORKFLOW_OUTPUT_DIR =========="
 mkdir -p "$WORKFLOW_OUTPUT_DIR"
-"$PIPELINE" --no-rerank --bm25-query-field "$QF_LONG" --dense-query-field "$QF_LONG"
+"$PIPELINE" --no-rerank --bm25-query-field "$QF_SYNONYM_PRODUCTS" --dense-query-field "$QF_SYNONYM_PRODUCTS"
 
 if [ -z "${DOCS_JSONL:-}" ]; then
   echo "DOCS_JSONL not set; skipping reranker sweep. Set DOCS_JSONL in config to run reranker."
@@ -118,7 +118,7 @@ fi
 
 export PYTHONPATH="$PIPELINE_SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
-declare -a RERANK_QF_FULL=("$QF_BODY" "$QF_SYNONYMS" "$QF_LONG")
+declare -a RERANK_QF_FULL=("$QF_BODY" "$QF_SYNONYMS" "$QF_SYNONYM_PRODUCTS")
 declare -a RERANK_QF_SHORT=("body" "synonyms" "long")
 
 for i in 0 1 2; do

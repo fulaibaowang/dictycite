@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Run BM25 + Dense + Hybrid for all 3×3 query-field combinations (query_text, query_text_expansion_synonyms, query_text_expansion_long).
+# Run BM25 + Dense + Hybrid for all 3×3 query-field combinations (query_text, query_text_expansion_synonyms, query_text_synonym_products).
 # Stops at hybrid; no reranker. Each combination gets its own WORKFLOW_OUTPUT_DIR subdir.
 #
 # Usage:
@@ -50,16 +50,16 @@ fi
 # Query-field options (full values for --query-field)
 QF_BODY="query_text"
 QF_SYNONYMS="query_text_expansion_synonyms"
-QF_LONG="query_text_expansion_long"
+QF_SYNONYM_PRODUCTS="query_text_synonym_products"
 
-# Short names for directory naming
+# Short names for directory naming (third slot still tagged "long" in paths for continuity)
 declare -A QF_SHORT
 QF_SHORT[$QF_BODY]=body
 QF_SHORT[$QF_SYNONYMS]=synonyms
-QF_SHORT[$QF_LONG]=long
+QF_SHORT[$QF_SYNONYM_PRODUCTS]=long
 
-BM25_OPTS=("$QF_BODY" "$QF_SYNONYMS" "$QF_LONG")
-DENSE_OPTS=("$QF_BODY" "$QF_SYNONYMS" "$QF_LONG")
+BM25_OPTS=("$QF_BODY" "$QF_SYNONYMS" "$QF_SYNONYM_PRODUCTS")
+DENSE_OPTS=("$QF_BODY" "$QF_SYNONYMS" "$QF_SYNONYM_PRODUCTS")
 
 COMBO=0
 TOTAL=9

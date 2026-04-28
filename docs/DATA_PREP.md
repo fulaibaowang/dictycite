@@ -125,15 +125,14 @@ query_gene_expansion object — in-text gene detection and benchmark labels (see
 2. That gene has non-empty synonyms **and** gene products in DictyBase.
 3. Both expansion variants produce a non-empty suffix (i.e. the expansion actually adds new terms not already in the query).
 
-7d drops the `genes` top-level field (redundant with `query_gene_expansion.detected_genes`) and extends `query_gene_expansion` with:
+7d drops the `genes` top-level field (redundant with `query_gene_expansion.detected_genes`), adds `detected_genes` under `query_gene_expansion`, and adds **top-level** retrieval fields (same strings the pipeline uses with `--query-field`):
 
 | Field | Meaning |
 |---|---|
-| `detected_genes` | Full gene records for detected genes |
-| `expansion_synonym` | Full expanded query (query + synonym suffix) |
-| `expansion_synonym_products` | Full expanded query (query + synonym + product suffix) |
+| `query_text_expansion_synonyms` | Full expanded query (synonyms-only variant) |
+| `query_text_synonym_products` | Full expanded query (synonyms + gene products variant) |
 
-Both expansion fields always have a non-empty suffix for every 7d record — usable for benchmarking either variant.
+Both expansion strings always have a non-empty suffix for every 7d record — usable for benchmarking either variant.
 
 ### Example subsets
 

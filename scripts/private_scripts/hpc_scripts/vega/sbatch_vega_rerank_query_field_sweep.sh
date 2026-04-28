@@ -10,8 +10,8 @@
 #
 # VEGA: rerank query-field sweep (same logic as query_expansion/sbatch_rerank_sweep.sh).
 # Runs twice: gold benchmark 7d then 7e (7d minus evidence_level=needs_fulltext).
-# 1) Retrieval once per benchmark: BM25 + Dense both query_text_expansion_long, hybrid fusion.
-# 2) Cross-encoder rerank three times: query_text, query_text_expansion_synonyms, query_text_expansion_long
+# 1) Retrieval once per benchmark: BM25 + Dense both query_text_synonym_products, hybrid fusion.
+# 2) Cross-encoder rerank three times: query_text, query_text_expansion_synonyms, query_text_synonym_products
 #    (same fusion run TSVs each time; only rerank query text changes).
 #
 # Requires DOCS_JSONL, indexes, INPUT_JSONL in each config (config_vega_rerank_query_field_sweep_7d.env / _7e.env).

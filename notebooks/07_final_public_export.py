@@ -17,7 +17,7 @@
 #
 # This notebook builds:
 # - Labeled goldset JSON (7a/7b): queries, docs, in-text gene labels (`has_detectable_gene`, `n_detected_genes`, `query_expansion_benchmark` from Gene Name+Synonym+DDB id detection; see `query_expansion_dicty_gene_in_text_detection.yaml`).
-# - 7d benchmark JSONL/JSON: only `query_expansion_benchmark=yes` rows, plus `query_expansion_Synonym` and `query_expansion_Synonym_Products` from the full `query_expansion_dicty_gene.example.yaml` + `expand_query_structured` (not the same as detection-only alias map).
+# - 7d benchmark JSONL/JSON: only `query_expansion_benchmark=yes` rows; top-level `query_text_expansion_synonyms` and `query_text_synonym_products` from `query_expansion_dicty_gene.example.yaml` + `expand_query_structured` (not the same as detection-only alias map).
 # - EPMC documents JSONL (7c).
 #
 # Inputs:
@@ -326,7 +326,10 @@ with open(OUT_JSON_PRIVATE, "w", encoding="utf-8") as f:
     json.dump({"questions": questions}, f, ensure_ascii=False, indent=2)
 print(f"Saved (private JSON): {OUT_JSON_PRIVATE}")
 
-# 7d: only query_expansion_benchmark=yes; add full structured expansion (example.yaml)
+# 7d: only query_expansion_benchmark=yes; add full structured expansion (example.yaml).
+# Expose synonyms and synonym+products at the top level — required by retrieval
+# --query-field / BM25_QUERY_FIELD / DENSE_QUERY_FIELD (see run_query_field_sweep.sh). Nested
+# expansion_synonym keys are not used by the pipeline and are omitted to avoid duplicate strings.
 def _add_expansion_fields(
     q_pub: Dict[str, Any],
     expand_index,
@@ -343,9 +346,9 @@ def _add_expansion_fields(
         gene_lookup.get(gid, {"gene_id": gid, "gene_name": "", "synonyms": "", "gene_products": ""})
         for gid in detected_ids
     ]
-    qge["expansion_synonym"] = syn
-    qge["expansion_synonym_products"] = long_q
     out["query_gene_expansion"] = qge
+    out["query_text_expansion_synonyms"] = syn
+    out["query_text_synonym_products"] = long_q
     return out
 
 
@@ -356,9 +359,10 @@ benchmark_7d_candidates = [
 ]
 def _both_expansions_nonempty(r: Dict[str, Any]) -> bool:
     qt = r.get("query_text", "")
-    qge = r.get("query_gene_expansion", {})
-    syn_suffix = qge.get("expansion_synonym", "")[len(qt):]
-    long_suffix = qge.get("expansion_synonym_products", "")[len(qt):]
+    syn = str(r.get("query_text_expansion_synonyms") or "")
+    long_q = str(r.get("query_text_synonym_products") or "")
+    syn_suffix = syn[len(qt):]
+    long_suffix = long_q[len(qt):]
     return bool(syn_suffix.strip()) and bool(long_suffix.strip())
 
 
