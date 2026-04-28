@@ -15,18 +15,16 @@ table:
 entity_id_col: "EntityID"   # column that uniquely identifies each entity
 
 # Columns scanned to build the alias lookup for in-text entity detection.
+# Any column in expand_variants[*].expand_with that is NOT listed here is
+# treated as a description field: appended whole to the expansion string,
+# never comma-split, and never used for detection.
 detect_from:
   - "Name"
   - "Aliases"
 
-# Columns whose values are comma-separated lists of aliases.
+# Columns whose values are comma-separated lists of aliases (used in detect_from).
 comma_split_cols:
   - "Aliases"
-
-# Columns with free-text descriptions (not comma-split).
-# Appended whole in expansion variants that include them.
-product_cols:
-  - "Description"
 
 # Optional: regex to detect bare entity IDs directly in query text.
 # Leave empty or omit if your entity IDs don't appear literally in queries.

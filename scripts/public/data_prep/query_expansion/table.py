@@ -91,13 +91,13 @@ class EntityIndex:
 def _primary_gene_name_token(
     row: Dict[str, Any],
     spec: ExpandVariantSpec,
-    cfg: ExpansionConfig,
     comma_split: Set[str],
+    detect_from: Set[str],
 ) -> Optional[str]:
-    """First non-product expand_with column: first token (matches notebook gname_out)."""
+    """First detection-eligible expand_with column: first token (matches notebook gname_out)."""
     exclude = set(spec.exclude_from_output)
     for col in spec.expand_with:
-        if col in cfg.product_cols or col in exclude:
+        if col not in detect_from or col in exclude:
             continue
         if col not in row:
             continue
@@ -115,23 +115,30 @@ def _primary_gene_name_token(
 def _build_expansion_list_for_row(
     row: Dict[str, Any],
     spec: ExpandVariantSpec,
-    cfg: ExpansionConfig,
     comma_split: Set[str],
     blocklist: Set[str],
     alias_gene_count: Dict[str, int],
+    detect_from: Set[str],
+    min_alias_len: int,
+    max_aliases: int,
+    freq_cap: int,
 ) -> List[str]:
     """
     Ordered expansion aliases per entity, capped.
+
+    Only columns that are in detect_from contribute alias tokens (comma-split,
+    filtered). Columns in expand_with but not detect_from are expansion-only
+    (whole string, handled separately as product strings).
 
     Like notebooks/query_expansion_bm25.py: the primary gene name is always kept
     first (no min-length / frequency filters); remaining tokens are filtered.
     """
     exclude = set(spec.exclude_from_output)
-    primary = _primary_gene_name_token(row, spec, cfg, comma_split)
+    primary = _primary_gene_name_token(row, spec, comma_split, detect_from)
 
     raw: List[str] = []
     for col in spec.expand_with:
-        if col in cfg.product_cols:
+        if col not in detect_from:
             continue
         if col in exclude:
             continue
@@ -142,8 +149,7 @@ def _build_expansion_list_for_row(
 
     out: List[str] = []
     if primary:
-        pl_lower = primary.lower()
-        if not pl_lower.startswith("ddb_g"):
+        if not primary.lower().startswith("ddb_g"):
             out.append(primary)
 
     for a in raw:
@@ -155,19 +161,21 @@ def _build_expansion_list_for_row(
         if not _is_good_alias(
             a,
             blocklist=blocklist,
-            min_len=cfg.filters.min_alias_len,
+            min_len=min_alias_len,
             alias_gene_count=alias_gene_count,
-            freq_cap=cfg.filters.auto_block_if_seen_in_n_entities,
+            freq_cap=freq_cap,
         ):
             continue
         out.append(a)
-        if len(out) >= cfg.filters.max_aliases_per_entity:
+        if len(out) >= max_aliases:
             break
     return out
 
 
-def _product_for_row(row: Dict[str, Any], cfg: ExpansionConfig) -> Optional[str]:
-    for col in cfg.product_cols:
+def _product_for_row(row: Dict[str, Any], product_like_cols: List[str]) -> Optional[str]:
+    """Return concatenated values of expansion-only columns (not in detect_from)."""
+    parts: List[str] = []
+    for col in product_like_cols:
         if col not in row:
             continue
         v = row.get(col)
@@ -175,8 +183,8 @@ def _product_for_row(row: Dict[str, Any], cfg: ExpansionConfig) -> Optional[str]
             continue
         s = str(v).strip()
         if s and s.upper() != "NA":
-            return s
-    return None
+            parts.append(s)
+    return ", ".join(parts) if parts else None
 
 
 def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
@@ -197,8 +205,21 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 raise ValueError(f"table {table_path}: missing column {c!r} (expand_with)")
 
     comma_split = set(cfg.comma_split_cols)
+    detect_from = set(cfg.detect_from)
     blocklist = set(cfg.filters.blocklist)
+    min_alias_len = cfg.filters.min_alias_len
+    max_aliases = cfg.filters.max_aliases_per_entity
+    freq_cap = cfg.filters.auto_block_if_seen_in_n_entities
     rows = df.to_dicts()
+
+    # Columns in any variant's expand_with that are NOT in detect_from are
+    # expansion-only (whole-string, not alias-filtered, not used for detection).
+    all_product_like: List[str] = list(dict.fromkeys(
+        col
+        for spec in cfg.expand_variants.values()
+        for col in spec.expand_with
+        if col not in detect_from
+    ))
 
     # Pass 1: alias -> number of distinct entities (frequency), same as notebook
     alias_gene_count: Dict[str, int] = {}
@@ -236,10 +257,11 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 continue
             gid_u = gid.upper()
             gmap[gid_u] = _build_expansion_list_for_row(
-                row, spec, cfg, comma_split, blocklist, alias_gene_count
+                row, spec, comma_split, blocklist, alias_gene_count,
+                detect_from, min_alias_len, max_aliases, freq_cap,
             )
         variant_gene_to_aliases[vk] = gmap
-        include_prod = any(c in cfg.product_cols for c in spec.expand_with)
+        include_prod = any(c not in detect_from for c in spec.expand_with)
         variant_include_product[vk] = include_prod
         if spec.structured_strict is not None:
             variant_structured_strict[vk] = spec.structured_strict
@@ -254,7 +276,7 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
         gid = str(gid).strip()
         if not gid or gid.upper() == "NA":
             continue
-        gene_to_product[gid.upper()] = _product_for_row(row, cfg)
+        gene_to_product[gid.upper()] = _product_for_row(row, all_product_like)
 
     # alias_to_gene: register tokens from union of all variants' expansion lists
     alias_to_gene: Dict[str, str] = {}

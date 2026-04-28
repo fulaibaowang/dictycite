@@ -43,7 +43,6 @@ class ExpansionConfig:
     table: TableConfig = field(default_factory=TableConfig)
     query: QueryConfig = field(default_factory=QueryConfig)
     comma_split_cols: List[str] = field(default_factory=list)
-    product_cols: List[str] = field(default_factory=list)
     entity_id_pattern: str = ""
 
     @classmethod
@@ -93,7 +92,6 @@ class ExpansionConfig:
             table=TableConfig(separator=str(t_raw.get("separator", "\t"))),
             query=QueryConfig(read_field=str(q_raw.get("read_field", "query_text"))),
             comma_split_cols=[str(x) for x in (raw.get("comma_split_cols") or [])],
-            product_cols=[str(x) for x in (raw.get("product_cols") or [])],
             entity_id_pattern=str(raw.get("entity_id_pattern") or ""),
         )
 

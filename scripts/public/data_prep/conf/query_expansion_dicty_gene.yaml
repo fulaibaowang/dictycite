@@ -15,9 +15,6 @@ detect_from:
 comma_split_cols:
   - "Synonyms"
 
-product_cols:
-  - "Gene products"
-
 entity_id_pattern: "\\bDDB_G\\d+\\b"
 
 query:
