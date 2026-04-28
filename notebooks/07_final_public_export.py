@@ -20,20 +20,27 @@
 # - EPMC documents JSONL (title/abstract store).
 #
 # Inputs:
-# - output/dicty_gold_build/5a_gold_query_expand.parquet (columns: query, query_expand_synonyms, query_expand_long, docs; or query, query_expand, docs for backward compat)
+# - output/dicty_gold_build/5a_gold_query_expand.parquet (columns: query, docs)
+# - output/dicty_gold_build/4a_claim_groups.parquet (rep claim + gene_id per group_claim_id)
+# - dictybase_files/gene_information.txt (gene name, synonyms, products for each DDB_G id)
 # - output/dicty_gold_build/6d_llm_full_agreement.tsv
 # - output/dicty_gold_build/3_articles_cleaned_abstract.parquet
 #
-# Output JSONL fields per question: query_id, query_text, query_text_expansion_synonyms, query_text_expansion_long, documents, docs.
+# Output JSONL per question: 7a has query_id, query_text, genes, documents, docs (gene DDB_G ids live under genes[].gene_id).
+# 7b private also: rep_claim_id, gene_id (CSV), group_claim_id, query, claim_ids, pmids.
 #
 # Outputs:
-# - output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl (full payload, all fields)
-# - output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl (canonical pipeline keys)
+# - output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl / .json (full payload, all fields)
+# - output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl / .json (canonical pipeline keys)
 # - output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
 
 # %%
+from __future__ import annotations
+
 from pathlib import Path
 import json
+from typing import Any, Dict, List
+
 import polars as pl
 
 
@@ -42,10 +49,14 @@ import polars as pl
 
 # %%
 GOLD_PATH = Path("../output/dicty_gold_build/5a_gold_query_expand.parquet")
+CLAIM_GROUPS_PATH = Path("../output/dicty_gold_build/4a_claim_groups.parquet")
+GENE_INFO_PATH = Path("../dictybase_files/gene_information.txt")
 LABELS_PATH = Path("../output/dicty_gold_build/6d_llm_full_agreement.tsv")
 DOCS_PATH = Path("../output/dicty_gold_build/3_articles_cleaned_abstract.parquet")
 OUT_JSONL = Path("../output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl")
+OUT_JSON = Path("../output/dicty_gold_build/7a_dicty_gold_llm_public.json")
 OUT_JSONL_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl")
+OUT_JSON_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.json")
 DOCS_JSONL_OUT = Path("../output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl")
 
 def load_labels(path: Path) -> pl.DataFrame:
@@ -64,6 +75,101 @@ def load_labels(path: Path) -> pl.DataFrame:
         pl.col("pmid").cast(pl.Utf8),
     ])
 
+
+def load_gene_lookup(path: Path) -> Dict[str, Dict[str, str]]:
+    """gene_id (DDB_G...) -> name, synonyms, products from dictyBase gene_information."""
+    df = pl.read_csv(path, separator="\t", infer_schema_length=20_000)
+    df = df.rename(
+        {
+            "GENE ID": "gene_id",
+            "Gene Name": "gene_name",
+            "Synonyms": "synonyms",
+            "Gene products": "gene_products",
+        }
+    )
+    out: Dict[str, Dict[str, str]] = {}
+    for row in df.iter_rows(named=True):
+        gid = str(row.get("gene_id") or "").strip()
+        if not gid:
+            continue
+        out[gid] = {
+            "gene_id": gid,
+            "gene_name": str(row.get("gene_name") or "").strip(),
+            "synonyms": str(row.get("synonyms") or "").strip(),
+            "gene_products": str(row.get("gene_products") or "").strip(),
+        }
+    return out
+
+
+def genes_for_gene_id_csv(gene_csv: str, lookup: Dict[str, Dict[str, str]]) -> List[Dict[str, str]]:
+    seen: set[str] = set()
+    records: List[Dict[str, str]] = []
+    for part in str(gene_csv or "").split(","):
+        gid = part.strip()
+        if not gid or gid in seen:
+            continue
+        seen.add(gid)
+        rec = lookup.get(gid)
+        if rec is not None:
+            records.append(dict(rec))
+        else:
+            records.append(
+                {
+                    "gene_id": gid,
+                    "gene_name": "",
+                    "synonyms": "",
+                    "gene_products": "",
+                }
+            )
+    return records
+
+
+def build_claim_group_metadata(claim_path: Path) -> Dict[str, Any]:
+    """
+    group_claim_id str -> {rep_claim_id, gene_id, claim_ids}
+    """
+    df = pl.read_parquet(claim_path)
+    rep = (
+        df.filter(pl.col("is_representative_claim"))
+        .select(
+            [
+                pl.col("group_claim_id").cast(pl.Utf8),
+                pl.col("rep_claim_id"),
+                pl.col("gene_id").cast(pl.Utf8),
+            ]
+        )
+        .unique(subset=["group_claim_id"], keep="first")
+    )
+    by_group: Dict[str, Any] = {
+        r["group_claim_id"]: {
+            "rep_claim_id": int(r["rep_claim_id"]),
+            "gene_id": str(r.get("gene_id") or "").strip(),
+        }
+        for r in rep.to_dicts()
+    }
+    claims = df.group_by(pl.col("group_claim_id").cast(pl.Utf8)).agg(
+        pl.col("claim_id").unique().sort().alias("claim_ids")
+    )
+    for r in claims.to_dicts():
+        g = str(r["group_claim_id"])
+        ids = r.get("claim_ids") or []
+        claim_list = [int(c) for c in ids] if isinstance(ids, list) else []
+        if g in by_group:
+            by_group[g]["claim_ids"] = claim_list
+        else:
+            by_group[g] = {
+                "rep_claim_id": None,
+                "gene_id": "",
+                "claim_ids": claim_list,
+            }
+    for g, v in by_group.items():
+        v.setdefault("claim_ids", [])
+    return by_group
+
+
+GENE_LOOKUP = load_gene_lookup(GENE_INFO_PATH)
+CLAIM_BY_GROUP = build_claim_group_metadata(CLAIM_GROUPS_PATH)
+
 gold = pl.read_parquet(GOLD_PATH)
 labels = load_labels(LABELS_PATH).unique(subset=["group_claim_id", "pmid"])
 
@@ -79,19 +185,8 @@ gold.head(2)
 if "docs" not in gold.columns:
     raise ValueError("Expected 'docs' column in gold_with_query_expand.parquet")
 
-# Prefer query_expand_synonyms / query_expand_long; fallback to query_expand for backward compat
-select_cols = ["group_claim_id", "query", "docs"]
-if "query_expand_synonyms" in gold.columns and "query_expand_long" in gold.columns:
-    select_cols.extend(["query_expand_synonyms", "query_expand_long"])
-else:
-    gold = gold.with_columns([
-        pl.col("query_expand").alias("query_expand_synonyms"),
-        pl.col("query_expand").alias("query_expand_long"),
-    ])
-    select_cols.extend(["query_expand_synonyms", "query_expand_long"])
-
 gold_long = (
-    gold.select(select_cols)
+    gold.select(["group_claim_id", "query", "docs"])
     .explode("docs")
     .with_columns([
         pl.col("docs").struct.field("publication_id").alias("publication_id"),
@@ -113,8 +208,6 @@ labeled = gold_long.join(labels, on=["group_claim_id", "pmid"], how="inner")
 
 grouped = labeled.group_by("group_claim_id").agg([
     pl.first("query").alias("query"),
-    pl.first("query_expand_synonyms").alias("query_expand_synonyms"),
-    pl.first("query_expand_long").alias("query_expand_long"),
     pl.struct([
         "publication_id",
         "pmid",
@@ -136,11 +229,17 @@ for q in questions:
     pmids = [d.get("pmid") for d in q.get("docs", []) if d.get("pmid")]
     q["pmids"] = pmids
     # Canonical pipeline keys
-    q["query_id"] = str(q.get("group_claim_id", ""))
+    gcid = str(q.get("group_claim_id", ""))
+    q["query_id"] = gcid
     q["query_text"] = (q.get("query") or "").strip()
-    q["query_text_expansion_synonyms"] = (q.get("query_expand_synonyms") or "").strip()
-    q["query_text_expansion_long"] = (q.get("query_expand_long") or "").strip()
     q["documents"] = [PUBMED_URL_PREFIX + str(p) for p in pmids if p]
+    meta = CLAIM_BY_GROUP.get(gcid, {})
+    rep_cid = meta.get("rep_claim_id")
+    q["rep_claim_id"] = int(rep_cid) if rep_cid is not None else None
+    gcsv = str(meta.get("gene_id") or "")
+    q["gene_id"] = gcsv
+    q["genes"] = genes_for_gene_id_csv(gcsv, GENE_LOOKUP)
+    q["claim_ids"] = meta.get("claim_ids", [])
 
 def _write_jsonl(path: Path, records) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -152,13 +251,12 @@ def _write_jsonl(path: Path, records) -> None:
 _write_jsonl(OUT_JSONL_PRIVATE, questions)
 print(f"Saved (private): {OUT_JSONL_PRIVATE}")
 
-# Clean public: query_id, query_text, query_text_expansion_*, documents, docs
-def to_public_question(q):
+# Public: query_id, query_text, genes, documents, docs
+def to_public_question(q: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "query_id": q["query_id"],
         "query_text": q["query_text"],
-        "query_text_expansion_synonyms": q["query_text_expansion_synonyms"],
-        "query_text_expansion_long": q["query_text_expansion_long"],
+        "genes": q.get("genes", []),
         "documents": q["documents"],
         "docs": q.get("docs", []),
     }
@@ -166,6 +264,12 @@ def to_public_question(q):
 questions_public = [to_public_question(q) for q in questions]
 _write_jsonl(OUT_JSONL, questions_public)
 print(f"Saved (public): {OUT_JSONL}")
+with open(OUT_JSON, "w", encoding="utf-8") as f:
+    json.dump({"questions": questions_public}, f, ensure_ascii=False, indent=2)
+print(f"Saved (public JSON): {OUT_JSON}")
+with open(OUT_JSON_PRIVATE, "w", encoding="utf-8") as f:
+    json.dump({"questions": questions}, f, ensure_ascii=False, indent=2)
+print(f"Saved (private JSON): {OUT_JSON_PRIVATE}")
 
 
 # %% [markdown]

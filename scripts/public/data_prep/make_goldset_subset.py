@@ -2,14 +2,14 @@
 """
 Create stratified train/test subsets from dicty_gold_llm_public.jsonl.
 
-By default, **query expansion fields are dropped** from each record so example subsets are
-reproducible bases for `apply_query_expansion.py` (provenance: this script + `subset_stats.json`).
-Each line keeps query_id, query_text, documents, docs, and any other keys except the expansion
-pair below. Use ``--no-strip-expansion-keys`` to preserve ``query_text_expansion_*`` from the
-input (e.g. when copying full public gold into a smaller JSONL).
+By default, **query expansion fields are dropped** when present so example subsets stay small;
+the canonical 7a export has no query_text_expansion_* keys. Each line keeps query_id, query_text,
+genes, documents, docs, and any other non-expansion keys. Use
+``--no-strip-expansion-keys`` to preserve ``query_text_expansion_*`` from a legacy or
+expanded input JSONL.
 
-Input may include query_text_expansion_synonyms / query_text_expansion_long; retrieval helpers
-in scripts/public/shared_scripts/retrieval_eval/common.py tolerate their absence.
+Input may include optional query_text_expansion_* (e.g. after apply_query_expansion); retrieval
+helpers in scripts/public/shared_scripts/retrieval_eval/common.py tolerate their absence.
 
 Default behavior:
 - Treat each line in the input JSONL as one query.
@@ -278,10 +278,10 @@ def main() -> None:
     }
     if args.strip_expansion_keys:
         stats["expansion_note"] = (
-            "Subset JSONL has no query_text_expansion_* fields. Re-apply expansion with "
+            "The canonical 7a export and this subset omit query_text_expansion_*; use query_text and genes[] or re-apply expansion with "
             "scripts/public/data_prep/apply_query_expansion.py and "
             "scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml "
-            "(see docs/DATA_PREP.md section 4.5). Optional local regression copies: "
+            "(see docs/DATA_PREP.md section 4.5). Optional local copies: "
             "example/dicty_gold_llm_public_train_200_expanded.jsonl and "
             "example/dicty_gold_llm_public_test_50_expanded.jsonl (gitignored)."
         )
