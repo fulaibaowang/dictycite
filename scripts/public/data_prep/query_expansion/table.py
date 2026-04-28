@@ -47,8 +47,6 @@ def _is_good_alias(
     sl = s.lower()
     if not s:
         return False
-    if sl.startswith("ddb_g"):
-        return False
     if sl in blocklist:
         return False
     if len(sl) < min_len:
@@ -77,7 +75,6 @@ class EntityIndex:
     cfg: ExpansionConfig
     alias_to_gene: Dict[str, str]
     ambig_alias: Set[str]
-    ddb_re: Optional[re.Pattern]
     token_re: re.Pattern
     variant_gene_to_aliases: Dict[str, Dict[str, List[str]]]
     variant_include_product: Dict[str, bool]
@@ -106,8 +103,6 @@ def _primary_gene_name_token(
             ts = t.strip()
             if not ts or ts.upper() == "NA":
                 continue
-            if ts.lower().startswith("ddb_g"):
-                return None
             return ts
     return None
 
@@ -149,13 +144,10 @@ def _build_expansion_list_for_row(
 
     out: List[str] = []
     if primary:
-        if not primary.lower().startswith("ddb_g"):
-            out.append(primary)
+        out.append(primary)
 
     for a in raw:
         al = a.lower()
-        if al.startswith("ddb_g"):
-            continue
         if primary and al == primary.lower():
             continue
         if not _is_good_alias(
@@ -236,8 +228,6 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 if not a:
                     continue
                 al = a.lower()
-                if al.startswith("ddb_g"):
-                    continue
                 if al not in seen_raw:
                     seen_raw.add(al)
                     alias_gene_count[al] = alias_gene_count.get(al, 0) + 1
@@ -306,13 +296,10 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 else:
                     alias_to_gene[a_norm] = gid_u
 
-    ddb_re = re.compile(cfg.entity_id_pattern, re.IGNORECASE) if cfg.entity_id_pattern else None
-
     return EntityIndex(
         cfg=cfg,
         alias_to_gene=alias_to_gene,
         ambig_alias=ambig_alias,
-        ddb_re=ddb_re,
         token_re=TOKEN_RE,
         variant_gene_to_aliases=variant_gene_to_aliases,
         variant_include_product=variant_include_product,

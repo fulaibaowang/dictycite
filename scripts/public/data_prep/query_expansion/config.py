@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -43,7 +42,6 @@ class ExpansionConfig:
     table: TableConfig = field(default_factory=TableConfig)
     query: QueryConfig = field(default_factory=QueryConfig)
     comma_split_cols: List[str] = field(default_factory=list)
-    entity_id_pattern: str = ""
 
     @classmethod
     def from_dict(cls, raw: Dict[str, Any]) -> "ExpansionConfig":
@@ -92,18 +90,12 @@ class ExpansionConfig:
             table=TableConfig(separator=str(t_raw.get("separator", "\t"))),
             query=QueryConfig(read_field=str(q_raw.get("read_field", "query_text"))),
             comma_split_cols=[str(x) for x in (raw.get("comma_split_cols") or [])],
-            entity_id_pattern=str(raw.get("entity_id_pattern") or ""),
         )
 
     def validate(self) -> None:
         for vk, spec in self.expand_variants.items():
             if not spec.output_field:
                 raise ValueError(f"expand_variants.{vk}: output_field must be non-empty")
-        if self.entity_id_pattern:
-            try:
-                re.compile(self.entity_id_pattern)
-            except re.error as e:
-                raise ValueError(f"entity_id_pattern is not a valid regex: {e}") from e
 
 
 def load_expansion_config(path: Path) -> ExpansionConfig:

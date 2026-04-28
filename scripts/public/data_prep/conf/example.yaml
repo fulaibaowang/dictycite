@@ -26,10 +26,6 @@ detect_from:
 comma_split_cols:
   - "Aliases"
 
-# Optional: regex to detect bare entity IDs directly in query text.
-# Leave empty or omit if your entity IDs don't appear literally in queries.
-entity_id_pattern: ""
-
 # --- Query field ---
 query:
   read_field: "query"       # field in the input JSONL that holds the query string

@@ -15,8 +15,6 @@ detect_from:
 comma_split_cols:
   - "Synonyms"
 
-entity_id_pattern: "\\bDDB_G\\d+\\b"
-
 query:
   read_field: "query_text"
 
