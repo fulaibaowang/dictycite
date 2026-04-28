@@ -66,6 +66,8 @@ OUT_JSON_PRIVATE = Path("../output/dicty_gold_build/7b_dicty_gold_llm_private.js
 DOCS_JSONL_OUT = Path("../output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl")
 OUT_7D_JSONL = Path("../output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl")
 OUT_7D_JSON = Path("../output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.json")
+OUT_7E_JSONL = Path("../output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.jsonl")
+OUT_7E_JSON = Path("../output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.json")
 _DET_CONFIG = _DATA_PREP / "conf" / "query_expansion_dicty_gene_in_text_detection.yaml"
 _EXPAND_CONFIG = _DATA_PREP / "conf" / "query_expansion_dicty_gene.example.yaml"
 DETECTION_INDEX = build_entity_index(GENE_INFO_PATH, load_expansion_config(_DET_CONFIG))
@@ -376,6 +378,23 @@ print(f"Saved (7d benchmark): {OUT_7D_JSONL}  (n={len(benchmark_7d)})")
 with open(OUT_7D_JSON, "w", encoding="utf-8") as f:
     json.dump({"questions": benchmark_7d}, f, ensure_ascii=False, indent=2)
 print(f"Saved (7d JSON): {OUT_7D_JSON}")
+
+# 7e: same as 7d but drop queries that include any doc with evidence_level=needs_fulltext (abstract-eval subset)
+def _no_needs_fulltext_doc(q: Dict[str, Any]) -> bool:
+    for d in q.get("docs") or []:
+        if (d.get("evidence_level") or "").strip() == "needs_fulltext":
+            return False
+    return True
+
+
+benchmark_7e = [q for q in benchmark_7d if _no_needs_fulltext_doc(q)]
+n_7e_dropped = len(benchmark_7d) - len(benchmark_7e)
+print(f"7e filter: kept {len(benchmark_7e)}, dropped {n_7e_dropped} (any doc needs_fulltext)")
+_write_jsonl(OUT_7E_JSONL, benchmark_7e)
+print(f"Saved (7e benchmark): {OUT_7E_JSONL}  (n={len(benchmark_7e)})")
+with open(OUT_7E_JSON, "w", encoding="utf-8") as f:
+    json.dump({"questions": benchmark_7e}, f, ensure_ascii=False, indent=2)
+print(f"Saved (7e JSON): {OUT_7E_JSON}")
 
 
 # %% [markdown]

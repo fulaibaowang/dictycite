@@ -9,12 +9,13 @@
 #SBATCH --gres=gpu:1
 #
 # VEGA: rerank query-field sweep (same logic as query_expansion/sbatch_rerank_sweep.sh).
-# 1) Retrieval once: BM25 + Dense both query_text_expansion_long, hybrid fusion.
+# Runs twice: gold benchmark 7d then 7e (7d minus evidence_level=needs_fulltext).
+# 1) Retrieval once per benchmark: BM25 + Dense both query_text_expansion_long, hybrid fusion.
 # 2) Cross-encoder rerank three times: query_text, query_text_expansion_synonyms, query_text_expansion_long
 #    (same fusion run TSVs each time; only rerank query text changes).
 #
-# Requires DOCS_JSONL, indexes, TRAIN_JSON, TEST_BATCH_JSONS in PIPELINE_CONFIG (e.g. config_full_query_expansion.env).
-# Outputs: ${WORKFLOW_SWEEP_OUTPUT_DIR}/fixed_long_rerank_sweep/retrieval/{bm25,dense,fusion}/, rerank_{body,synonyms,long}/
+# Requires DOCS_JSONL, indexes, INPUT_JSONL in each config (config_vega_rerank_query_field_sweep_7d.env / _7e.env).
+# Outputs per run: ${WORKFLOW_SWEEP_OUTPUT_DIR}/fixed_long_rerank_sweep/retrieval/{bm25,dense,fusion}/, rerank_{body,synonyms,long}/
 
 set -euo pipefail
 
@@ -28,10 +29,14 @@ PUBMED_HOST="/ceph/hpc/data/s25t12-03-users/pubmed"
 YUN_HOST="/ceph/hpc/data/s25t12-03-users/"
 HOME_HOST="/ceph/hpc/home/wangy"
 
-PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/vega/config_full_query_expansion.env"
+SWEEP_CONFIGS=(
+  scripts/private_scripts/hpc_scripts/vega/config_vega_rerank_query_field_sweep_7d.env
+  scripts/private_scripts/hpc_scripts/vega/config_vega_rerank_query_field_sweep_7e.env
+)
 
 echo "Starting job ${SLURM_JOB_ID} on $(hostname) at $(date)"
-echo "Rerank query-field sweep with config: ${PIPELINE_CONFIG}"
+echo "Rerank query-field sweep (7d + 7e)"
+printf '  %s\n' "${SWEEP_CONFIGS[@]}"
 echo "Container image: ${CONTAINER_IMG}"
 
 NUM_GPUS="${SLURM_GPUS_PER_TASK:-${SLURM_GPUS_ON_NODE:-0}}"
@@ -77,15 +82,22 @@ srun --mpi=none singularity exec \
     echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
     nvidia-smi -L || true
 
-    source '${PIPELINE_CONFIG}'
-    export WORKFLOW_SWEEP_OUTPUT_DIR=\"\${WORKFLOW_SWEEP_OUTPUT_DIR:-/home/wangy/dictycite_output/workflow_fixed_long_rerank_sweep}\"
-    mkdir -p \"\$WORKFLOW_SWEEP_OUTPUT_DIR\"
-    cp '${PIPELINE_CONFIG}' \"\$WORKFLOW_SWEEP_OUTPUT_DIR/\"
+    for PIPELINE_CONFIG in \\
+      scripts/private_scripts/hpc_scripts/vega/config_vega_rerank_query_field_sweep_7d.env \\
+      scripts/private_scripts/hpc_scripts/vega/config_vega_rerank_query_field_sweep_7e.env; do
+      echo \"[sweep] Using config: \$PIPELINE_CONFIG\"
+      set -a
+      # shellcheck source=/dev/null
+      source \"\$PIPELINE_CONFIG\"
+      set +a
+      export WORKFLOW_SWEEP_OUTPUT_DIR=\"\${WORKFLOW_SWEEP_OUTPUT_DIR:-/home/wangy/dictycite_output/workflow_fixed_long_rerank_sweep}\"
+      mkdir -p \"\$WORKFLOW_SWEEP_OUTPUT_DIR\"
+      cp \"\$PIPELINE_CONFIG\" \"\$WORKFLOW_SWEEP_OUTPUT_DIR/\"
+      echo \"[run] Rerank query-field sweep (retrieval long/long + rerank body/synonyms/long) -> \$WORKFLOW_SWEEP_OUTPUT_DIR\"
+      ./scripts/private_scripts/hpc_scripts/query_expansion/run_rerank_query_field_sweep.sh --config \"\$PIPELINE_CONFIG\"
+    done
 
-    echo \"[run] Rerank query-field sweep (retrieval long/long + rerank body/synonyms/long)\"
-    ./scripts/private_scripts/hpc_scripts/query_expansion/run_rerank_query_field_sweep.sh --config '${PIPELINE_CONFIG}'
-
-    echo \"[done] Rerank query-field sweep completed\"
+    echo \"[done] Rerank query-field sweeps (7d + 7e) completed\"
   "
 
 echo "Finished job ${SLURM_JOB_ID} at $(date)"
