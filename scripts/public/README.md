@@ -1,27 +1,14 @@
-# Public scripts
+# scripts/public
 
-Scripts in this directory support the retrieval pipeline and analysis. The main pipeline (BM25 → Dense → Hybrid → Reranker) and its configuration are documented in **[shared_scripts/README.md](shared_scripts/README.md)**.
+| Subdirectory / file | What it is |
+|---|---|
+| [`data_prep/`](data_prep/README.md) | Build the gold dataset (curator notes → publication map → LLM labels → public export) |
+| [`article_fetching/`](article_fetching/README.md) | Fetch article metadata + full text from Europe PMC / NCBI |
+| [`shared_scripts/`](shared_scripts/README.md) | Generic BM25 + dense + reranker retrieval pipeline (git subtree) |
+| `plot_by_evidence_level.py` | Stratified recall / MAP plots by `evidence_level` from gold JSON |
 
-## Analysis and comparison scripts
+The notebooks in `notebooks/` (`01_*` … `07_*`) are the interactive counterparts of `data_prep/`; either entry point produces the same artifacts.
 
-### combine_query_field_sweep_results.py
+## plot_by_evidence_level.py
 
-Combines metrics from a 3×3 query-field sweep (BM25 × Dense, optional Hybrid). Reads `bm25_*_dense_*/{bm25,dense}/metrics.csv` and optionally `hybrid/results_all.csv`, adds combo and query-field labels, writes one combined CSV with train/test preserved, and plots recall curves (one figure per batch).
-
-**Usage:**
-
-```bash
-python scripts/public/combine_query_field_sweep_results.py
-python scripts/public/combine_query_field_sweep_results.py --workflow_dir output/workflow_hpc_test --no_plot
-python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense   # default
-python scripts/public/combine_query_field_sweep_results.py --plot hybrid
-python scripts/public/combine_query_field_sweep_results.py --plot bm25 dense hybrid
-python scripts/public/combine_query_field_sweep_results.py --log_x   # log-scale x-axis (K)
-```
-
-### plot_by_evidence_level.py
-
-Generates pipeline-style plots stratified by **evidence_level** from the gold JSON: (1) hybrid recall curve with one subplot per evidence level; (2) rerank recall figure by evidence level; (3) rerank MAP@10 figure by evidence level. Saves to `workflow_dir/hybrid/figures/` and `workflow_dir/rerank/figures/` (or `--rerank-dir`).
-
-**Usage:** Run from repo root with paths to the workflow output and gold JSON(s). See script docstring and `--help` for required arguments.
-
+Generates three figures from a workflow output directory and gold JSON: hybrid recall curve, rerank recall, and rerank MAP@10 — each with one subplot per `evidence_level`. Saves under `workflow_dir/{hybrid,rerank}/figures/`. Run with `--help` for arguments.
