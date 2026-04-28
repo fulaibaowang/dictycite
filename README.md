@@ -11,8 +11,10 @@ It keeps scripts, notebooks, and outputs.
 ## Dataset Summary (short)
 
 - Public release:
-	- `output/dicty_gold_build/7a_dicty_gold_llm_public.json` (1,656 queries, 2,028 pairs, 1,289 PMIDs)
+	- `output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl` (1,656 queries, 2,028 pairs, 1,289 PMIDs)
+	- `output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl` (full payload with internal fields)
 	- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl` (20,447 EPMC records)
+	- `output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl` (563 queries with both expansion variants)
 
 ## Docs
 

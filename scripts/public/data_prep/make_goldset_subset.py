@@ -32,7 +32,11 @@ _EXPANSION_KEYS = ("query_text_expansion_synonyms", "query_text_expansion_long")
 
 
 def strip_expansion_keys(question: Dict[str, Any]) -> Dict[str, Any]:
-    """Return a shallow copy without structured query expansion fields."""
+    """Return a shallow copy without legacy structured query expansion fields.
+
+    query_gene_expansion is intentionally kept — it carries query_expansion_benchmark
+    and detected_gene_ids which are part of the canonical 7a schema.
+    """
     out = {k: v for k, v in question.items() if k not in _EXPANSION_KEYS}
     return out
 

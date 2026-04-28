@@ -42,6 +42,10 @@ Cleaning summary (high level):
 - Cluster near-duplicate claims using TF-IDF similarity and group them.
 - Produce a grouped gold dataset for review.
 
+Output `4a_claim_groups.parquet` includes two gene-detection columns added by running in-text detection on each group's `canonical_query`:
+- `detected_gene_ids` — comma-joined gene IDs found in the query text (empty if none detected).
+- `corrected_gene_id` — the single detected gene ID when exactly one gene is found; empty when 0 or 2+ are detected. Provides a text-based correction to the DictyBase-annotated `gene_id` when they differ.
+
 ## 4.5) Query Expansion (for goldset)
 
 We build a query-expanded goldset that appends structured gene aliases/products to the original claim.
@@ -77,29 +81,76 @@ Labeling details (summary):
 ## 6) Final Public Export (JSON)
 
 We join the goldset with LLM labels and publish the labeled goldset JSON.
-Expects parquet with `query`, `query_expand_synonyms`, `query_expand_long`, and `docs` (or legacy `query_expand` for backward compat).
 
 - Notebook: [notebooks/07_final_public_export.ipynb](../notebooks/07_final_public_export.ipynb)
 - Outputs:
-	- `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
-	- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`
+	- `output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl` / `.json` — full public goldset (1,656 queries)
+	- `output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl` / `.json` — full payload including internal fields
+	- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl` — EPMC article records
+	- `output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl` / `.json` — query expansion benchmark subset (563 queries)
 
-Schema (high level):
+### 7a schema
 
-- `questions[].id`, `body`, `body_expansion_synonyms`, `body_expansion_long`, `documents`, `docs`
-- `questions[].docs[]` includes `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
+Each record has:
 
-Retrieval scripts (BM25, dense, rerank) accept `--query-field` to choose which text to use (e.g. `body_expansion_long` for BM25, `body` or `body_expansion_synonyms` for rerank).
+```
+query_id          string   — group_claim_id
+query_text        string   — canonical claim text (the query)
+genes             list     — detected gene records when n_detected_genes > 0;
+                             DictyBase-annotated gene records otherwise.
+                             Each entry: {gene_id, gene_name, synonyms, gene_products}
+documents         list     — PubMed URLs for cited PMIDs
+docs              list     — labeled claim–document pairs
+query_gene_expansion object — in-text gene detection and benchmark labels (see below)
+```
 
-Example train/test splits under `example/` (`dicty_gold_llm_public_train_200.jsonl`, `dicty_gold_llm_public_test_50.jsonl`) are built from `7a_dicty_gold_llm_public.jsonl` with [scripts/public/data_prep/make_goldset_subset.py](../scripts/public/data_prep/make_goldset_subset.py). By default they **omit** `query_text_expansion_*` fields; see [example/dicty_gold_llm_public_subset_stats.json](../example/dicty_gold_llm_public_subset_stats.json) for seeds and parameters. Re-add expansion with `apply_query_expansion.py` (section 4.5) when you need those fields (for example, configs that set `BM25_QUERY_FIELD=query_text_expansion_long`). You can write expanded peers next to them as `example/dicty_gold_llm_public_train_200_expanded.jsonl` and `example/dicty_gold_llm_public_test_50_expanded.jsonl` (listed in `.gitignore`) for local checks or `query_expansion/test_smoke.py`.
+`docs[]` fields: `pmid`, `title`, `abstract_clean`, `year`, `anchor_pos`, `citation_captions`, `doc_match`, `evidence_level`, `reason`
 
-EPMC JSONL:
-- One JSON object per line from `articles_all_cleaned_abstract.parquet` (pmid/title/abstract metadata). Exported with key **`abstract`** (value is the cleaned abstract text).
+`query_gene_expansion` fields:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `has_detectable_gene` | yes / no | At least one gene found in query text |
+| `n_detected_genes` | int | Number of genes detected |
+| `detected_gene_ids` | list | Sorted gene IDs found in query text |
+| `detected_gene_expandable` | yes / no | n_det==1 AND that gene has synonyms + products in DB |
+| `query_expansion_benchmark` | yes / no | Record is in 7d (see below) |
+
+`genes` uses text-detected records (from `detected_gene_ids`) when any gene is detectable, so it reflects what the query is actually about. The DictyBase curatorial annotation is only kept when nothing is detectable.
+
+### 7d schema
+
+7d is a strict subset of 7a: every record with `query_expansion_benchmark = "yes"` in 7a appears in 7d. A record qualifies when:
+1. Exactly one gene is detected in the query text.
+2. That gene has non-empty synonyms **and** gene products in DictyBase.
+3. Both expansion variants produce a non-empty suffix (i.e. the expansion actually adds new terms not already in the query).
+
+7d drops the `genes` top-level field (redundant with `query_gene_expansion.detected_genes`) and extends `query_gene_expansion` with:
+
+| Field | Meaning |
+|---|---|
+| `detected_genes` | Full gene records for detected genes |
+| `expansion_synonym` | Full expanded query (query + synonym suffix) |
+| `expansion_synonym_products` | Full expanded query (query + synonym + product suffix) |
+
+Both expansion fields always have a non-empty suffix for every 7d record — usable for benchmarking either variant.
+
+### Example subsets
+
+`example/dicty_gold_llm_public_train_200.jsonl` and `example/dicty_gold_llm_public_test_50.jsonl` are stratified samples of 7a built with [scripts/public/data_prep/make_goldset_subset.py](../scripts/public/data_prep/make_goldset_subset.py). They include `query_gene_expansion` (with `query_expansion_benchmark`) but omit legacy `query_text_expansion_*` fields. See [example/dicty_gold_llm_public_subset_stats.json](../example/dicty_gold_llm_public_subset_stats.json) for seeds and parameters.
+
+To re-apply expansion to an existing JSONL, use [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with config [scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml).
+
+### EPMC JSONL (7c)
+
+One JSON object per line from the cleaned EPMC abstracts. Key `abstract` holds the cleaned abstract text.
 
 ## Outputs
 
-- `output/dicty_gold_build/7a_dicty_gold_llm_public.json`
+- `output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl` / `.json`
+- `output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl` / `.json`
 - `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl`
+- `output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl` / `.json`
 
 ## Summary (short)
 

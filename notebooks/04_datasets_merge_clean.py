@@ -21,7 +21,14 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 import json
 import os
+import sys
 from pathlib import Path
+
+try:
+    display  # noqa: F821  — available in Jupyter
+except NameError:
+    def display(x):  # fallback for plain python execution
+        print(x)
 
 
 def _repo_root() -> Path:
@@ -988,6 +995,41 @@ claim_groups_detail = (
         (pl.col("claim_id") == pl.col("rep_claim_id")).alias("is_representative_claim"),
     )
 )
+
+# %%
+# Enrich claim_groups_detail with gene detection from canonical_query text.
+# detected_gene_ids: comma-joined gene IDs found in the query text (ground truth).
+# corrected_gene_id: detected gene ID when exactly one is found, else original gene_id.
+_data_prep = _repo_root() / "scripts" / "public" / "data_prep"
+if str(_data_prep) not in sys.path:
+    sys.path.insert(0, str(_data_prep))
+from query_expansion.config import load_expansion_config
+from query_expansion.expand import detect_genes
+from query_expansion.table import build_entity_index
+
+_det_cfg = _data_prep / "conf" / "query_expansion_dicty_gene_in_text_detection.yaml"
+_gene_info = _repo_root() / "dictybase_files" / "gene_information.txt"
+_det_index = build_entity_index(_gene_info, load_expansion_config(_det_cfg))
+
+group_queries = (
+    claim_groups_detail
+    .select(["group_claim_id", "canonical_query"])
+    .unique(subset=["group_claim_id"])
+)
+
+_det_rows = []
+for row in group_queries.iter_rows(named=True):
+    detected = detect_genes(str(row["canonical_query"] or ""), _det_index)
+    det_ids = sorted(detected.keys())
+    _det_rows.append({
+        "group_claim_id": row["group_claim_id"],
+        "detected_gene_ids": ",".join(det_ids) if det_ids else "",
+        "corrected_gene_id": det_ids[0] if len(det_ids) == 1 else "",
+    })
+
+detection_df = pl.DataFrame(_det_rows)
+claim_groups_detail = claim_groups_detail.join(detection_df, on="group_claim_id", how="left")
+
 claim_groups_detail.write_parquet(OUTPUT_GOLD_BUILD / "4a_claim_groups.parquet")
 
 # %%

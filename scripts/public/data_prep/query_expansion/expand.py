@@ -129,7 +129,8 @@ def expand_query_structured(
                     expansion_str += ", " + product_str
                 else:
                     expansion_str = product_str
-        blocks.append(f"{first_mention}: {expansion_str}")
+        if expansion_str:
+            blocks.append(f"{first_mention}: {expansion_str}")
     structured_suffix = (" ||| ".join(blocks)).rstrip() if blocks else ""
     bm25_query = q if not structured_suffix else (q + "\n" + structured_suffix)
     return (bm25_query, detected, structured_suffix)

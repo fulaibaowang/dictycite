@@ -41,8 +41,12 @@ Notebook reference:
 
 Use [notebooks/07_final_public_export.ipynb](../notebooks/07_final_public_export.ipynb) to write:
 
-- output/dicty_gold_build/7a_dicty_gold_llm_public.json
-- output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
+- `output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl` / `.json` — full public goldset
+- `output/dicty_gold_build/7b_dicty_gold_llm_private.jsonl` / `.json` — full payload with internal fields
+- `output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl` — EPMC article records
+- `output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl` / `.json` — 563-query expansion benchmark subset
+
+See [docs/DATA_PREP.md §6](DATA_PREP.md#6-final-public-export-json) for full schema and field descriptions.
 
 ## Gold-linked full curator notes (build dataset)
 
