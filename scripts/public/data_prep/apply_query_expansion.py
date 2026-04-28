@@ -6,7 +6,7 @@ Requires: pip install pyyaml  (see scripts/public/data_prep/requirements-query-e
 
 Example (example train split has no expansion keys; see ``make_goldset_subset.py``):
   python scripts/public/data_prep/apply_query_expansion.py \\
-    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml \\
+    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml \\
     --table dictybase_files/gene_information.txt \\
     --input example/dicty_gold_llm_public_train_200.jsonl \\
     --output /tmp/train_200_expanded.jsonl
@@ -65,10 +65,9 @@ def main() -> None:
             if text is None:
                 raise KeyError(f"missing query field {qf!r} in record keys={list(obj)!r}")
 
-            for vk in index.variant_keys_in_order():
-                out_key = cfg.expansion_outputs[vk]
+            for vk, spec in cfg.expand_variants.items():
                 expanded, _, _ = expand_query_structured(str(text), index, vk)
-                obj[out_key] = expanded
+                obj[spec.output_field] = expanded
 
             fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
 

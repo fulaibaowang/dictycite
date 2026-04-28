@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -27,8 +28,9 @@ class FiltersConfig:
 
 @dataclass
 class ExpandVariantSpec:
+    output_field: str
     expand_with: List[str]
-    exclude_output: List[str] = field(default_factory=list)
+    exclude_from_output: List[str] = field(default_factory=list)
     structured_strict: Optional[bool] = None
 
 
@@ -40,12 +42,9 @@ class ExpansionConfig:
     filters: FiltersConfig
     table: TableConfig = field(default_factory=TableConfig)
     query: QueryConfig = field(default_factory=QueryConfig)
-    expansion_outputs: Dict[str, str] = field(default_factory=dict)
-    comma_split_columns: List[str] = field(default_factory=list)
-    product_columns: List[str] = field(default_factory=list)
-    ddb_id_pattern: str = r"\bDDB_G\d+\b"
-    max_genes_total: int = 5
-    structured_max_aliases_per_gene: int = 4
+    comma_split_cols: List[str] = field(default_factory=list)
+    product_cols: List[str] = field(default_factory=list)
+    entity_id_pattern: str = ""
 
     @classmethod
     def from_dict(cls, raw: Dict[str, Any]) -> "ExpansionConfig":
@@ -63,9 +62,13 @@ class ExpansionConfig:
             ew = spec.get("expand_with")
             if not ew or not isinstance(ew, list):
                 raise ValueError(f"expand_variants.{name}: expand_with (list) required")
+            out_field = spec.get("output_field")
+            if not out_field:
+                raise ValueError(f"expand_variants.{name}: output_field required")
             fv[name] = ExpandVariantSpec(
+                output_field=str(out_field),
                 expand_with=list(ew),
-                exclude_output=list(spec.get("exclude_output") or []),
+                exclude_from_output=list(spec.get("exclude_from_output") or []),
                 structured_strict=spec.get("structured_strict"),
             )
 
@@ -81,7 +84,6 @@ class ExpansionConfig:
 
         t_raw = raw.get("table") or {}
         q_raw = raw.get("query") or {}
-        eo = raw.get("expansion_outputs") or {}
 
         return cls(
             entity_id_col=str(raw["entity_id_col"]),
@@ -90,28 +92,20 @@ class ExpansionConfig:
             filters=filters,
             table=TableConfig(separator=str(t_raw.get("separator", "\t"))),
             query=QueryConfig(read_field=str(q_raw.get("read_field", "query_text"))),
-            expansion_outputs={str(k): str(v) for k, v in eo.items()},
-            comma_split_columns=[str(x) for x in (raw.get("comma_split_columns") or [])],
-            product_columns=[str(x) for x in (raw.get("product_columns") or [])],
-            ddb_id_pattern=str(raw.get("ddb_id_pattern", r"\bDDB_G\d+\b")),
-            max_genes_total=int(raw.get("max_genes_total", 5)),
-            structured_max_aliases_per_gene=int(raw.get("structured_max_aliases_per_gene", 4)),
+            comma_split_cols=[str(x) for x in (raw.get("comma_split_cols") or [])],
+            product_cols=[str(x) for x in (raw.get("product_cols") or [])],
+            entity_id_pattern=str(raw.get("entity_id_pattern") or ""),
         )
 
     def validate(self) -> None:
-        for vk, out_key in self.expansion_outputs.items():
-            if vk not in self.expand_variants:
-                raise ValueError(
-                    f"expansion_outputs key {vk!r} not found in expand_variants"
-                )
-            if not out_key:
-                raise ValueError(f"expansion_outputs.{vk}: empty output field name")
-        for vk in self.expand_variants:
-            if vk not in self.expansion_outputs:
-                raise ValueError(
-                    f"expand_variants.{vk!r} missing from expansion_outputs "
-                    "(each variant needs a JSON output key)"
-                )
+        for vk, spec in self.expand_variants.items():
+            if not spec.output_field:
+                raise ValueError(f"expand_variants.{vk}: output_field must be non-empty")
+        if self.entity_id_pattern:
+            try:
+                re.compile(self.entity_id_pattern)
+            except re.error as e:
+                raise ValueError(f"entity_id_pattern is not a valid regex: {e}") from e
 
 
 def load_expansion_config(path: Path) -> ExpansionConfig:

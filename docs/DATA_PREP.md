@@ -60,7 +60,7 @@ The two variants differ in strictness: **query_expand_synonyms** applies these t
 
 - Notebook: [notebooks/05_query_expansion_bm25.ipynb](../notebooks/05_query_expansion_bm25.ipynb) (jupytext: `05_query_expansion_bm25.py`)
 - Gene lookup: [dictybase_files/gene_information.txt](../dictybase_files/gene_information.txt) — tab-separated columns **GENE ID**, **Gene Name**, **Synonyms** (comma-separated), **Gene products**. Used only for expansion; ambiguous aliases are skipped.
-- Reproducible JSONL enrichment (YAML + table, same tier rules): [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with example config [scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml). Requires `pip install -r scripts/public/data_prep/requirements-query-expansion.txt`.
+- Reproducible JSONL enrichment (YAML + table, same tier rules): [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with example config [scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml). Requires `pip install -r scripts/public/data_prep/requirements-query-expansion.txt`.
 
 ## 5) Goldset Labeling (LLM review)
 
@@ -138,7 +138,7 @@ Both expansion strings always have a non-empty suffix for every 7d record — us
 
 `example/dicty_gold_llm_public_train_200.jsonl` and `example/dicty_gold_llm_public_test_50.jsonl` are stratified samples of 7a built with [scripts/public/data_prep/make_goldset_subset.py](../scripts/public/data_prep/make_goldset_subset.py). They include `query_gene_expansion` (with `query_expansion_benchmark`) but omit legacy `query_text_expansion_*` fields. See [example/dicty_gold_llm_public_subset_stats.json](../example/dicty_gold_llm_public_subset_stats.json) for seeds and parameters.
 
-To re-apply expansion to an existing JSONL, use [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with config [scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml).
+To re-apply expansion to an existing JSONL, use [scripts/public/data_prep/apply_query_expansion.py](../scripts/public/data_prep/apply_query_expansion.py) with config [scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml](../scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml).
 
 ### EPMC JSONL (7c)
 

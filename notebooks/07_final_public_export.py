@@ -16,16 +16,16 @@
 # # Final Public Export (LLM-labeled goldset)
 #
 # This notebook builds:
-# - Labeled goldset JSON (7a/7b): queries, docs, in-text gene labels (`has_detectable_gene`, `n_detected_genes`, `query_expansion_benchmark` from Gene Name+Synonym+DDB id detection; see `query_expansion_dicty_gene_in_text_detection.yaml`).
-# - 7d benchmark JSONL/JSON: only `query_expansion_benchmark=yes` rows; top-level `query_text_expansion_synonyms` and `query_text_synonym_products` from `query_expansion_dicty_gene.example.yaml` + `expand_query_structured` (not the same as detection-only alias map).
+# - Labeled goldset JSON (7a/7b): queries, docs, in-text gene labels (`has_detectable_gene`,
+#   `n_detected_genes`, `query_expansion_benchmark`) from Gene Name+Synonym+DDB id detection.
+# - 7d benchmark JSONL/JSON: only `query_expansion_benchmark=yes` rows with both expansion strings.
 # - EPMC documents JSONL (7c).
 #
 # Inputs:
 # - output/dicty_gold_build/5a_gold_query_expand.parquet (columns: query, docs)
 # - output/dicty_gold_build/4a_claim_groups.parquet (rep claim + gene_id per group_claim_id)
 # - dictybase_files/gene_information.txt
-# - scripts/public/data_prep/conf/query_expansion_dicty_gene_in_text_detection.yaml (detection)
-# - scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml (7d expansion strings)
+# - scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml (detection + expansion)
 # - output/dicty_gold_build/6d_llm_full_agreement.tsv
 # - output/dicty_gold_build/3_articles_cleaned_abstract.parquet
 #
@@ -68,9 +68,7 @@ OUT_7D_JSONL = Path("../output/dicty_gold_build/7d_dicty_gold_query_expansion_be
 OUT_7D_JSON = Path("../output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.json")
 OUT_7E_JSONL = Path("../output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.jsonl")
 OUT_7E_JSON = Path("../output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.json")
-_DET_CONFIG = _DATA_PREP / "conf" / "query_expansion_dicty_gene_in_text_detection.yaml"
-_EXPAND_CONFIG = _DATA_PREP / "conf" / "query_expansion_dicty_gene.example.yaml"
-DETECTION_INDEX = build_entity_index(GENE_INFO_PATH, load_expansion_config(_DET_CONFIG))
+_EXPAND_CONFIG = _DATA_PREP / "conf" / "query_expansion_dicty_gene.yaml"
 EXPAND_INDEX = build_entity_index(GENE_INFO_PATH, load_expansion_config(_EXPAND_CONFIG))
 
 def load_labels(path: Path) -> pl.DataFrame:
@@ -262,7 +260,7 @@ for q in questions:
     q["genes"] = genes_for_gene_id_csv(gcsv, GENE_LOOKUP)
     q["claim_ids"] = meta.get("claim_ids", [])
     _qt = q["query_text"]
-    _detected = detect_genes(_qt, DETECTION_INDEX)
+    _detected = detect_genes(_qt, EXPAND_INDEX)
     n_det = len(_detected)
     _expandable = (
         n_det == 1 and all(_gene_has_expansion_content(gid, GENE_LOOKUP) for gid in _detected)

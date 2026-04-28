@@ -22,13 +22,13 @@ def _split_syn(x: Any) -> List[str]:
     return [t.strip() for t in s.split(",") if t.strip()]
 
 
-def _cell_tokens(val: Any, col: str, comma_split_columns: Set[str]) -> List[str]:
+def _cell_tokens(val: Any, col: str, comma_split_cols: Set[str]) -> List[str]:
     if val is None:
         return []
     s = str(val).strip()
     if not s or s.upper() == "NA":
         return []
-    if col in comma_split_columns:
+    if col in comma_split_cols:
         return _split_syn(val)
     return [s]
 
@@ -77,7 +77,7 @@ class EntityIndex:
     cfg: ExpansionConfig
     alias_to_gene: Dict[str, str]
     ambig_alias: Set[str]
-    ddb_re: re.Pattern
+    ddb_re: Optional[re.Pattern]
     token_re: re.Pattern
     variant_gene_to_aliases: Dict[str, Dict[str, List[str]]]
     variant_include_product: Dict[str, bool]
@@ -95,8 +95,9 @@ def _primary_gene_name_token(
     comma_split: Set[str],
 ) -> Optional[str]:
     """First non-product expand_with column: first token (matches notebook gname_out)."""
+    exclude = set(spec.exclude_from_output)
     for col in spec.expand_with:
-        if col in cfg.product_columns or col in spec.exclude_output:
+        if col in cfg.product_cols or col in exclude:
             continue
         if col not in row:
             continue
@@ -125,12 +126,12 @@ def _build_expansion_list_for_row(
     Like notebooks/query_expansion_bm25.py: the primary gene name is always kept
     first (no min-length / frequency filters); remaining tokens are filtered.
     """
-    exclude = {x for x in spec.exclude_output}
+    exclude = set(spec.exclude_from_output)
     primary = _primary_gene_name_token(row, spec, cfg, comma_split)
 
     raw: List[str] = []
     for col in spec.expand_with:
-        if col in cfg.product_columns:
+        if col in cfg.product_cols:
             continue
         if col in exclude:
             continue
@@ -141,8 +142,8 @@ def _build_expansion_list_for_row(
 
     out: List[str] = []
     if primary:
-        pl = primary.lower()
-        if not pl.startswith("ddb_g"):
+        pl_lower = primary.lower()
+        if not pl_lower.startswith("ddb_g"):
             out.append(primary)
 
     for a in raw:
@@ -166,7 +167,7 @@ def _build_expansion_list_for_row(
 
 
 def _product_for_row(row: Dict[str, Any], cfg: ExpansionConfig) -> Optional[str]:
-    for col in cfg.product_columns:
+    for col in cfg.product_cols:
         if col not in row:
             continue
         v = row.get(col)
@@ -195,7 +196,7 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
             if c not in cols:
                 raise ValueError(f"table {table_path}: missing column {c!r} (expand_with)")
 
-    comma_split = set(cfg.comma_split_columns)
+    comma_split = set(cfg.comma_split_cols)
     blocklist = set(cfg.filters.blocklist)
     rows = df.to_dicts()
 
@@ -238,7 +239,7 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 row, spec, cfg, comma_split, blocklist, alias_gene_count
             )
         variant_gene_to_aliases[vk] = gmap
-        include_prod = any(c in cfg.product_columns for c in spec.expand_with)
+        include_prod = any(c in cfg.product_cols for c in spec.expand_with)
         variant_include_product[vk] = include_prod
         if spec.structured_strict is not None:
             variant_structured_strict[vk] = spec.structured_strict
@@ -259,7 +260,7 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
     alias_to_gene: Dict[str, str] = {}
     ambig_alias: Set[str] = set()
 
-    for gid_u, _ in gene_to_product.items():
+    for gid_u in gene_to_product:
         seen_tokens: Set[str] = set()
         for vk in cfg.expand_variants:
             for a in variant_gene_to_aliases[vk].get(gid_u, []):
@@ -283,7 +284,7 @@ def build_entity_index(table_path: Path, cfg: ExpansionConfig) -> EntityIndex:
                 else:
                     alias_to_gene[a_norm] = gid_u
 
-    ddb_re = re.compile(cfg.ddb_id_pattern, re.IGNORECASE)
+    ddb_re = re.compile(cfg.entity_id_pattern, re.IGNORECASE) if cfg.entity_id_pattern else None
 
     return EntityIndex(
         cfg=cfg,

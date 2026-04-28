@@ -8,7 +8,7 @@ from .table import EntityIndex
 def detect_genes(query: str, index: EntityIndex) -> Dict[str, str]:
     """
     Detect entities in query by:
-      - DDB-style IDs (config regex) when the id exists in the table
+      - entity ID pattern (config entity_id_pattern) when the id exists in the table
       - token match against alias_to_gene (case-insensitive)
     Returns dict: {entity_id_upper -> first_mention_display}
     """
@@ -22,10 +22,11 @@ def detect_genes(query: str, index: EntityIndex) -> Dict[str, str]:
     detected: Dict[str, str] = {}
     known = set(index.gene_to_product.keys())
 
-    for m in index.ddb_re.finditer(q):
-        gid_u = m.group(0).upper()
-        if gid_u in known and gid_u not in detected:
-            detected[gid_u] = gid_u
+    if index.ddb_re is not None:
+        for m in index.ddb_re.finditer(q):
+            gid_u = m.group(0).upper()
+            if gid_u in known and gid_u not in detected:
+                detected[gid_u] = gid_u
 
     for tl in toks_l:
         gid_u = index.alias_to_gene.get(tl)
@@ -56,8 +57,6 @@ def expand_query_structured(
     include_gene_products = index.variant_include_product[variant_key]
     strict = index.variant_structured_strict[variant_key]
     gene_to_product = index.gene_to_product
-    max_genes = cfg.max_genes_total
-    max_aliases_loop = cfg.structured_max_aliases_per_gene
 
     q = str(query)
     toks = index.token_re.findall(q)
@@ -73,7 +72,7 @@ def expand_query_structured(
             return aliases_list[0]
         return detected_map[gid_u]
 
-    # 4+ entities
+    # 4+ entities: minimal
     if n_detected >= 4:
         if strict:
             return (q, detected, "")
@@ -90,10 +89,10 @@ def expand_query_structured(
         block = f"{first_mention}: {expansion_str}"
         return (q + "\n" + block, detected, block)
 
-    # 3 entities: light
+    # 3 entities: light (canonical name only)
     if n_detected == 3:
         blocks: List[str] = []
-        for gid_u in detected[:max_genes]:
+        for gid_u in detected:
             first_mention = detected_map[gid_u]
             canonical = _canonical(gid_u)
             if canonical.lower().startswith("ddb_g"):
@@ -108,9 +107,9 @@ def expand_query_structured(
         bm25_query = q if not structured_suffix else (q + "\n" + structured_suffix)
         return (bm25_query, detected, structured_suffix)
 
-    # 1–2 entities: full
+    # 1–2 entities: full expansion
     blocks = []
-    for gid_u in detected[:max_genes]:
+    for gid_u in detected:
         first_mention = detected_map[gid_u]
         aliases_list = gene_to_aliases.get(gid_u, [])
         expansion_aliases: List[str] = []
@@ -118,8 +117,6 @@ def expand_query_structured(
             al = a.lower()
             if al not in present and not al.startswith("ddb_g"):
                 expansion_aliases.append(a)
-                if len(expansion_aliases) >= max_aliases_loop:
-                    break
         expansion_str = ", ".join(expansion_aliases)
         if include_gene_products:
             product = gene_to_product.get(gid_u)

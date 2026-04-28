@@ -1,46 +1,44 @@
-# Dictyostelium gene table: matches notebooks/query_expansion_bm25.py defaults when used with
-# dictybase_files/gene_information.txt and the blocklist below (notebook GENERIC_ALIAS_BLOCKLIST).
-
-entity_id_col: "GENE ID"
+# Dictyostelium gene expansion — operational config
+# Matches notebooks/05_query_expansion_bm25.py defaults.
+# Table: dictybase_files/gene_information.txt (TSV, tab-separated)
 
 table:
   separator: "\t"
 
-query:
-  read_field: "query_text"
-
-expansion_outputs:
-  synonyms_only: "query_text_expansion_synonyms"
-  long: "query_text_synonym_products"
-
-# Columns whose cell values are split on commas into separate tokens.
-comma_split_columns:
-  - "Synonyms"
-
-# Whole-cell product strings (not comma-split); appended in long variant like the notebook.
-product_columns:
-  - "Gene products"
-
-ddb_id_pattern: "\\bDDB_G\\d+\\b"
+entity_id_col: "GENE ID"
 
 detect_from:
   - "GENE ID"
   - "Gene Name"
   - "Synonyms"
 
+comma_split_cols:
+  - "Synonyms"
+
+product_cols:
+  - "Gene products"
+
+entity_id_pattern: "\\bDDB_G\\d+\\b"
+
+query:
+  read_field: "query_text"
+
 expand_variants:
   synonyms_only:
+    output_field: "query_text_expansion_synonyms"
     expand_with:
       - "Gene Name"
       - "Synonyms"
-    exclude_output:
+    exclude_from_output:
       - "GENE ID"
+
   long:
+    output_field: "query_text_synonym_products"
     expand_with:
       - "Gene Name"
       - "Synonyms"
       - "Gene products"
-    exclude_output:
+    exclude_from_output:
       - "GENE ID"
 
 filters:

@@ -1007,7 +1007,7 @@ from query_expansion.config import load_expansion_config
 from query_expansion.expand import detect_genes
 from query_expansion.table import build_entity_index
 
-_det_cfg = _data_prep / "conf" / "query_expansion_dicty_gene_in_text_detection.yaml"
+_det_cfg = _data_prep / "conf" / "query_expansion_dicty_gene.yaml"
 _gene_info = _repo_root() / "dictybase_files" / "gene_information.txt"
 _det_index = build_entity_index(_gene_info, load_expansion_config(_det_cfg))
 

@@ -1,106 +1,69 @@
-query:
-  read_field: query_text
+# Query expansion config — generic example
+# Copy and adapt for your own entity table and queries.
+#
+# Usage:
+#   python apply_query_expansion.py \
+#     --config conf/example.yaml \
+#     --table path/to/entities.tsv \
+#     --input queries.jsonl \
+#     --output queries_expanded.jsonl
 
+# --- Entity table ---
 table:
-  separator: "\t"
-  entity_key: "GENE ID"   # row identity / canonical row key
+  separator: "\t"           # "\t" for TSV, "," for CSV
 
-columns:
-  gene_id:
-    source: "GENE ID"
-    detect:
-      enabled: true
-      regex:
-        - "\\bDDB_G\\d+\\b"
-    expand:
-      enabled: false
-    normalize:
-      case: upper
+entity_id_col: "EntityID"   # column that uniquely identifies each entity
 
-  gene_name:
-    source: "Gene Name"
-    detect:
-      enabled: true
-    expand:
-      enabled: true
-    split: null
-    normalize:
-      case: keep
-    filters:
-      min_len: 1
-      blocklist: []
-      max_entity_freq: null
-      drop_ambiguous: false
+# Columns scanned to build the alias lookup for in-text entity detection.
+detect_from:
+  - "Name"
+  - "Aliases"
 
-  synonyms:
-    source: "Synonyms"
-    detect:
-      enabled: true
-    expand:
-      enabled: true
-    split: ","
-    normalize:
-      case: keep
-      strip: true
-    filters:
-      min_len: 4
-      blocklist:
-        - kinase
-        - receptor
-        - transporter
-      max_entity_freq: 5
-      drop_ambiguous: true
-      max_terms_per_entity: 2
+# Columns whose values are comma-separated lists of aliases.
+comma_split_cols:
+  - "Aliases"
 
-  gene_products:
-    source: "Gene products"
-    detect:
-      enabled: false
-    expand:
-      enabled: true
-    split: ","
-    normalize:
-      case: keep
-      strip: true
-    filters:
-      min_len: 4
-      blocklist: []
-      max_entity_freq: null
-      drop_ambiguous: false
-      max_terms_per_entity: 1
+# Columns with free-text descriptions (not comma-split).
+# Appended whole in expansion variants that include them.
+product_cols:
+  - "Description"
 
-detection:
-  max_detected_entities: 5
-  resolve_mode: unique_only   # or first / all
+# Optional: regex to detect bare entity IDs directly in query text.
+# Leave empty or omit if your entity IDs don't appear literally in queries.
+entity_id_pattern: ""
 
-expansion:
-  mode: structured
-  join_within_entity: ", "
-  join_between_entities: " ||| "
-  show_trigger: true          # e.g. "MLCK: mlkA, myosin light chain kinase A"
+# --- Query field ---
+query:
+  read_field: "query"       # field in the input JSONL that holds the query string
 
-variants:
-  synonym:
-    include_columns:
-      - gene_name
-      - synonyms
-    output_field: query_expansion_Synonym
+# --- Expansion variants ---
+# Each variant defines what gets appended to the query and the output field name.
+# Expansion is tiered by how many entities are detected:
+#   1-2 entities: full expansion (name + filtered aliases from expand_with)
+#   3 entities:   light (canonical name only, no synonyms)
+#   4+ entities:  minimal (first entity only, name only)
+expand_variants:
+  names_only:
+    output_field: "query_expanded_names"
+    expand_with:
+      - "Name"
+      - "Aliases"
+    exclude_from_output:
+      - "EntityID"          # never append raw IDs to the query
 
-  synonym_product:
-    include_columns:
-      - gene_name
-      - synonyms
-      - gene_products
-    output_field: query_expansion_Synonym_Products
+  names_and_description:
+    output_field: "query_expanded_full"
+    expand_with:
+      - "Name"
+      - "Aliases"
+      - "Description"
+    exclude_from_output:
+      - "EntityID"
 
-  strict_synonym:
-    include_columns:
-      - gene_name
-      - synonyms
-    output_field: query_expansion_Synonym_Strict
-    overrides:
-      synonyms:
-        filters:
-          min_len: 5
-          max_entity_freq: 3
-          max_terms_per_entity: 1
+# --- Alias filters ---
+# Applied during index construction; affect both detection and expansion.
+filters:
+  min_alias_len: 3                      # ignore aliases shorter than this
+  max_aliases_per_entity: 3             # cap aliases stored per entity
+  auto_block_if_seen_in_n_entities: 5   # block aliases shared across too many entities
+  blocklist: []                         # lower-cased exact strings to always exclude

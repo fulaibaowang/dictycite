@@ -284,7 +284,7 @@ def main() -> None:
         stats["expansion_note"] = (
             "The canonical 7a export and this subset omit query_text_expansion_*; use query_text and genes[] or re-apply expansion with "
             "scripts/public/data_prep/apply_query_expansion.py and "
-            "scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml "
+            "scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml "
             "(see docs/DATA_PREP.md section 4.5). Optional local copies: "
             "example/dicty_gold_llm_public_train_200_expanded.jsonl and "
             "example/dicty_gold_llm_public_test_50_expanded.jsonl (gitignored)."

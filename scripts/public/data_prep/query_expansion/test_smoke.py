@@ -4,13 +4,13 @@ Expanded regression targets live next to the tracked subsets under ``example/`` 
 ``dicty_gold_llm_public_*_expanded.jsonl`` (gitignored). Generate once with::
 
   python3 scripts/public/data_prep/apply_query_expansion.py \\
-    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml \\
+    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml \\
     --table dictybase_files/gene_information.txt \\
     --input example/dicty_gold_llm_public_train_200.jsonl \\
     --output example/dicty_gold_llm_public_train_200_expanded.jsonl
 
   python3 scripts/public/data_prep/apply_query_expansion.py \\
-    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.example.yaml \\
+    --config scripts/public/data_prep/conf/query_expansion_dicty_gene.yaml \\
     --table dictybase_files/gene_information.txt \\
     --input example/dicty_gold_llm_public_test_50.jsonl \\
     --output example/dicty_gold_llm_public_test_50_expanded.jsonl
@@ -56,7 +56,7 @@ def _skip_if_no_refs() -> None:
 
 
 def _paths_train() -> tuple[Path, Path, Path, Path]:
-    cfg = DATA_PREP / "conf" / "query_expansion_dicty_gene.example.yaml"
+    cfg = DATA_PREP / "conf" / "query_expansion_dicty_gene.yaml"
     table = REPO / "dictybase_files" / "gene_information.txt"
     base = EXAMPLE / "dicty_gold_llm_public_train_200.jsonl"
     assert cfg.is_file() and table.is_file() and base.is_file()
@@ -79,10 +79,9 @@ def test_expand_train_200_matches_reference() -> None:
             base = json.loads(lb)
             assert ref["query_id"] == base["query_id"]
             text = base[cfg.query.read_field]
-            for vk in index.variant_keys_in_order():
-                out_key = cfg.expansion_outputs[vk]
+            for vk, spec in cfg.expand_variants.items():
                 got, _, _ = expand_query_structured(str(text), index, vk)
-                assert got == ref[out_key], (ref["query_id"], out_key)
+                assert got == ref[spec.output_field], (ref["query_id"], spec.output_field)
 
 
 def test_expand_test_50_matches_reference() -> None:
@@ -103,10 +102,9 @@ def test_expand_test_50_matches_reference() -> None:
             base = json.loads(lb)
             assert ref["query_id"] == base["query_id"]
             text = base[cfg.query.read_field]
-            for vk in index.variant_keys_in_order():
-                out_key = cfg.expansion_outputs[vk]
+            for vk, spec in cfg.expand_variants.items():
                 got, _, _ = expand_query_structured(str(text), index, vk)
-                assert got == ref[out_key], (ref["query_id"], out_key)
+                assert got == ref[spec.output_field], (ref["query_id"], spec.output_field)
 
 
 if __name__ == "__main__":
