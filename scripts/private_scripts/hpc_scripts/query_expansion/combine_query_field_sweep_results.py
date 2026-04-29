@@ -74,14 +74,18 @@ def load_stage_metrics(stage_path: Path, stage: str) -> pd.DataFrame | None:
 
 
 def load_hybrid_metrics(hybrid_path: Path) -> pd.DataFrame | None:
-    """Load hybrid results from results_all.csv; return None if missing.
+    """Load hybrid results from results_all.csv (legacy) or metrics.csv (new fusion layout).
+
     Normalizes to same schema as bm25/dense: batch (from split), stage, method, etc.
     """
     csv_path = hybrid_path / "results_all.csv"
     if not csv_path.is_file():
+        csv_path = hybrid_path / "metrics.csv"
+    if not csv_path.is_file():
         return None
     df = pd.read_csv(csv_path)
-    df = df.rename(columns={"split": "batch"})
+    if "split" in df.columns and "batch" not in df.columns:
+        df = df.rename(columns={"split": "batch"})
     df["stage"] = "hybrid"
     df["method"] = "Hybrid"
     if "n_queries" not in df.columns:
@@ -89,13 +93,27 @@ def load_hybrid_metrics(hybrid_path: Path) -> pd.DataFrame | None:
     return df
 
 
+def resolve_stage_path(parent: Path, stage: str) -> Path:
+    """Return the directory for a stage, supporting both legacy and new layouts.
+
+    Legacy: <parent>/<stage>/  (hybrid lives at <parent>/hybrid/)
+    New:    <parent>/retrieval/<stage>/  (hybrid lives at <parent>/retrieval/fusion/)
+    """
+    legacy_subdir = stage
+    new_subdir = "fusion" if stage == "hybrid" else stage
+    new_path = parent / "retrieval" / new_subdir
+    if new_path.is_dir():
+        return new_path
+    return parent / legacy_subdir
+
+
 def find_rerank_sweep_stages(workflow_dir: Path) -> list[str]:
     """Return list of stage names that exist under workflow_dir (fixed_long_rerank_sweep layout)."""
     found = []
     for stage in RERANK_SWEEP_STAGES:
-        stage_path = workflow_dir / stage
+        stage_path = resolve_stage_path(workflow_dir, stage)
         if stage == "hybrid":
-            if (stage_path / "results_all.csv").is_file():
+            if (stage_path / "results_all.csv").is_file() or (stage_path / "metrics.csv").is_file():
                 found.append(stage)
         else:
             if (stage_path / "metrics.csv").is_file():
@@ -107,7 +125,7 @@ def load_rerank_sweep_rows(workflow_dir: Path, stages: list[str]) -> list[pd.Dat
     """Load metrics from each stage subdir; return list of DataFrames with combo and query-field columns set."""
     rows = []
     for stage in stages:
-        stage_path = workflow_dir / stage
+        stage_path = resolve_stage_path(workflow_dir, stage)
         if stage == "hybrid":
             df = load_hybrid_metrics(stage_path)
         else:
@@ -404,7 +422,7 @@ def main() -> None:
         for stage in ("bm25", "dense"):
             if stage not in plot_stages:
                 continue
-            stage_path = combo_path / stage
+            stage_path = resolve_stage_path(combo_path, stage)
             df = load_stage_metrics(stage_path, stage)
             if df is None:
                 print(f"Skip (missing): {combo_name}/{stage}/metrics.csv")
@@ -414,10 +432,10 @@ def main() -> None:
             df["dense_query_field"] = dense_qf
             rows.append(df)
         if "hybrid" in plot_stages:
-            hybrid_path = combo_path / "hybrid"
+            hybrid_path = resolve_stage_path(combo_path, "hybrid")
             df = load_hybrid_metrics(hybrid_path)
             if df is None:
-                print(f"Skip (missing): {combo_name}/hybrid/results_all.csv")
+                print(f"Skip (missing): {combo_name}/(retrieval/fusion|hybrid)/(metrics|results_all).csv")
             else:
                 df["combo"] = combo_name
                 df["bm25_query_field"] = bm25_qf
