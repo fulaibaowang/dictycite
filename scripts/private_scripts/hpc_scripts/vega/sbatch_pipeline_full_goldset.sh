@@ -1,17 +1,15 @@
 #!/bin/bash
-#SBATCH -J dicty_pipeline_qe
+#SBATCH -J dicty_pipeline_7a_goldset
 #SBATCH -p gpu
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
 #SBATCH --gres=gpu:1
 #
-# VEGA: same pattern as BioASQ scripts/private_scripts/hpc/vega/sbatch_pipeline.sh
-# (Apptainer .sif, bind mounts, HF cache on /yun).
-# Example gold subset (train_200/test_50): config_vega_example_subset.env below.
-# Full 7a public goldset: sbatch_pipeline_full_goldset.sh + config_vega_7a_public_goldset.env
+# Full public goldset (7a_dicty_gold_llm_public.jsonl), not the example train_200/test_50 subset.
+# Same container/bind pattern as sbatch_pipeline.sh; extend --time if the run exceeds the wall clock.
 
 set -euo pipefail
 
@@ -25,7 +23,7 @@ PUBMED_HOST="/ceph/hpc/data/s25t12-03-users/pubmed"
 YUN_HOST="/ceph/hpc/data/s25t12-03-users/"
 HOME_HOST="/ceph/hpc/home/wangy"
 
-PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/vega/config_vega_example_subset.env"
+PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/vega/config_vega_7a_public_goldset.env"
 
 echo "Starting job ${SLURM_JOB_ID} on $(hostname) at $(date)"
 echo "Running pipeline script with config: ${PIPELINE_CONFIG}"
@@ -78,7 +76,7 @@ srun --mpi=none singularity exec \
     mkdir -p \"\$WORKFLOW_OUTPUT_DIR\"
     cp '${PIPELINE_CONFIG}' \"\$WORKFLOW_OUTPUT_DIR/\"
 
-    echo \"[run] Starting retrieval + rerank + evidence + generation pipeline\"
+    echo \"[run] Starting retrieval + rerank + evidence + generation pipeline (7a full goldset)\"
     ./scripts/public/shared_scripts/run_retrieval_rerank_pipeline.sh --config '${PIPELINE_CONFIG}'
 
     echo \"[done] Pipeline completed\"
