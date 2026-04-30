@@ -98,23 +98,40 @@ def build_rank_llm_requests(topics, ranked_bm25, searcher):
     return requests
 
 
+def _patch_tqdm_elapsed():
+    """Guard vLLM's throughput logging against ZeroDivisionError when tqdm elapsed=0."""
+    try:
+        import tqdm as _tqdm
+        _orig = _tqdm.tqdm.format_dict.fget
+
+        def _safe(self):
+            d = _orig(self)
+            if isinstance(d.get("elapsed"), (int, float)) and d["elapsed"] == 0:
+                d = dict(d)
+                d["elapsed"] = 1e-9
+            return d
+
+        _tqdm.tqdm.format_dict = property(_safe)
+        print("[patch] tqdm elapsed clamped to ≥1e-9 (vLLM ZeroDivision guard)", flush=True)
+    except Exception as e:
+        print(f"[patch] tqdm patch skipped: {e}", flush=True)
+
+
 def rerank_listwise(requests, model_path: str, context_size: int, num_passes: int,
-                    window_size: int, step: int, use_vllm: bool = False):
+                    window_size: int, step: int):
     from rank_llm.rerank.listwise import ZephyrReranker
+
+    _patch_tqdm_elapsed()
 
     print(
         f"[rerank] ZephyrReranker model={model_path} ctx={context_size} "
-        f"window={window_size} step={step} passes={num_passes} use_vllm={use_vllm}",
+        f"window={window_size} step={step} passes={num_passes}",
         flush=True,
     )
-    # use_vllm=False: avoids a ZeroDivisionError in vLLM's throughput logging
-    # (elapsed=0 on first generation batch). Falls back to HuggingFace Transformers;
-    # slower per-query but reliable.
     reranker = ZephyrReranker(
         model_path=model_path,
         context_size=context_size,
         num_few_shot_examples=0,
-        use_vllm=use_vllm,
     )
 
     t0 = time.time()
@@ -158,10 +175,6 @@ def main():
     ap.add_argument("--num_passes", type=int, default=3)
     ap.add_argument("--window_size", type=int, default=20)
     ap.add_argument("--step", type=int, default=10)
-    ap.add_argument("--use_vllm", action="store_true", default=False,
-                    help="Use vLLM batched generation (faster but hits a ZeroDivisionError "
-                         "in some vLLM versions; default off = HuggingFace Transformers)")
-
     args = ap.parse_args()
 
     out_dir = Path(args.output_dir)
@@ -187,7 +200,6 @@ def main():
         num_passes=args.num_passes,
         window_size=args.window_size,
         step=args.step,
-        use_vllm=args.use_vllm,
     )
     ranked_rr = reranked_to_dict(reranked)
     write_trec_run(out_dir / "rerank_run.txt", "rank_zephyr", ranked_rr)
