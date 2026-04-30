@@ -99,18 +99,22 @@ def build_rank_llm_requests(topics, ranked_bm25, searcher):
 
 
 def rerank_listwise(requests, model_path: str, context_size: int, num_passes: int,
-                    window_size: int, step: int):
+                    window_size: int, step: int, use_vllm: bool = False):
     from rank_llm.rerank.listwise import ZephyrReranker
 
     print(
         f"[rerank] ZephyrReranker model={model_path} ctx={context_size} "
-        f"window={window_size} step={step} passes={num_passes}",
+        f"window={window_size} step={step} passes={num_passes} use_vllm={use_vllm}",
         flush=True,
     )
+    # use_vllm=False: avoids a ZeroDivisionError in vLLM's throughput logging
+    # (elapsed=0 on first generation batch). Falls back to HuggingFace Transformers;
+    # slower per-query but reliable.
     reranker = ZephyrReranker(
         model_path=model_path,
         context_size=context_size,
         num_few_shot_examples=0,
+        use_vllm=use_vllm,
     )
 
     t0 = time.time()
@@ -154,6 +158,9 @@ def main():
     ap.add_argument("--num_passes", type=int, default=3)
     ap.add_argument("--window_size", type=int, default=20)
     ap.add_argument("--step", type=int, default=10)
+    ap.add_argument("--use_vllm", action="store_true", default=False,
+                    help="Use vLLM batched generation (faster but hits a ZeroDivisionError "
+                         "in some vLLM versions; default off = HuggingFace Transformers)")
 
     args = ap.parse_args()
 
@@ -180,6 +187,7 @@ def main():
         num_passes=args.num_passes,
         window_size=args.window_size,
         step=args.step,
+        use_vllm=args.use_vllm,
     )
     ranked_rr = reranked_to_dict(reranked)
     write_trec_run(out_dir / "rerank_run.txt", "rank_zephyr", ranked_rr)
