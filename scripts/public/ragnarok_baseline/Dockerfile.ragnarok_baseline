@@ -11,7 +11,7 @@
 #   apptainer build dictycite-ragnarok_<YYYY.MM.DD>.sif \
 #     docker://fulaibaowang/dictycite-ragnarok:<YYYY.MM.DD>
 
-ARG VLLM_BASE_IMAGE=vllm/vllm-openai:latest
+ARG VLLM_BASE_IMAGE=vllm/vllm-openai:v0.17.1
 FROM ${VLLM_BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
