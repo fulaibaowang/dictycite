@@ -49,35 +49,11 @@ nvidia-smi -L 2>&1 || true
 module purge
 module load apptainer 2>/dev/null || module load singularity 2>/dev/null || true
 
-# ---------- Vega GPU binding (see sbatch_vega_dense_index.sh for rationale) ----------
-# USE_NVCCLI=1 (default): libnvidia-container-cli with NVIDIA_VISIBLE_DEVICES.
-# USE_NVCCLI=0: legacy --nv with auxiliary device binds + only allocated /dev/nvidiaN.
-USE_NVCCLI="${USE_NVCCLI:-1}"
-ALLOC_GPU_IDS="${SLURM_JOB_GPUS:-${GPU_DEVICE_ORDINAL:-}}"
-
 APPTAINER_GPU_ARGS=()
 if [[ "${NUM_GPUS}" -gt 0 ]]; then
-  if [[ "${USE_NVCCLI}" == "1" ]]; then
-    APPTAINER_GPU_ARGS+=(--nvccli)
-    export APPTAINERENV_NVIDIA_VISIBLE_DEVICES="${ALLOC_GPU_IDS:-all}"
-    echo "[gpu] Using --nvccli  NVIDIA_VISIBLE_DEVICES=${APPTAINERENV_NVIDIA_VISIBLE_DEVICES}"
-  else
-    APPTAINER_GPU_ARGS+=(--nv)
-    echo "[gpu] Using --nv (legacy)"
-    for d in /dev/nvidiactl /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidia-modeset; do
-      [[ -e "$d" ]] && APPTAINER_GPU_ARGS+=(-B "$d")
-    done
-    if [[ -n "${ALLOC_GPU_IDS}" ]]; then
-      IFS=',' read -ra _ids <<< "${ALLOC_GPU_IDS}"
-      for id in "${_ids[@]}"; do
-        if [[ "$id" =~ ^[0-9]+$ && -e "/dev/nvidia${id}" ]]; then
-          APPTAINER_GPU_ARGS+=(-B "/dev/nvidia${id}")
-        fi
-      done
-    fi
-  fi
+  APPTAINER_GPU_ARGS+=(--nv)
 else
-  echo "No GPUs allocated; running container without GPU args"
+  echo "No GPUs allocated; running container without --nv"
 fi
 
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${SCRATCH:-${TMPDIR:-/tmp}}/apptainer-cache}"
@@ -130,8 +106,8 @@ print('[probe] CUDA allocation/synchronize OK')
 PY
     then
       echo \"[probe] CUDA failed at the start of the pipeline; aborting before retrieval/rerank.\" >&2
-      echo \"[probe] If --nvccli was selected, ensure libnvidia-container-cli is available;\" >&2
-      echo \"[probe] otherwise retry with USE_NVCCLI=0 or resubmit to a different GPU node.\" >&2
+      echo \"[probe] Likely a stuck GPU on this node. Resubmit (Slurm may pick a different GPU)\" >&2
+      echo \"[probe] or use sbatch --exclude=<node> to avoid that node.\" >&2
       exit 42
     fi
 
