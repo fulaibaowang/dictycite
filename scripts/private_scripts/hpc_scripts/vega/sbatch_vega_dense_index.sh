@@ -53,7 +53,14 @@ fi
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${SCRATCH:-${TMPDIR:-/tmp}}/apptainer-cache}"
 mkdir -p "${APPTAINER_CACHEDIR}"
 
-srun --mpi=none singularity exec \
+# Inner srun must request the GPU step on many Slurm sites (e.g. cgroup ConstrainDevices=yes):
+# the sbatch allocation can include --gres=gpu:1 while a bare inner srun step still has no GPU
+# devices in its cgroup, so the first real CUDA call fails with cudaErrorDevicesUnavailable.
+# If errors persist after this change, check job logs for CUDA_VISIBLE_DEVICES after srun;
+# --cleanenv can require APPTAINERENV_CUDA_VISIBLE_DEVICES set on the same process that runs
+# singularity exec (e.g. wrap: srun ... bash -c 'export APPTAINERENV_CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES"; exec singularity ...').
+
+srun --mpi=none --gres=gpu:1 singularity exec \
   --cleanenv \
   "${APPTAINER_GPU_ARGS[@]}" \
   -B "${WORKDIR}:/work" \

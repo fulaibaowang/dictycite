@@ -10,6 +10,11 @@
 #
 # Full public goldset (7a_dicty_gold_llm_public.jsonl), not the example train_200/test_50 subset.
 # Same container/bind pattern as sbatch_pipeline.sh; extend --time if the run exceeds the wall clock.
+#
+# Index prerequisite: config_vega_7a_public_goldset.env points BM25_INDEX_PATH and DENSE_INDEX_DIR
+# at indexes/dicty_bm25_index and indexes/dicty_medembed_index. Those must be built from
+# output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl (real `abstract` field) so first-stage
+# retrieval matches DOCS_JSONL. Rebuild on Vega: sbatch_vega_bm25_index.sh, then sbatch_vega_dense_index.sh.
 
 set -euo pipefail
 
@@ -28,6 +33,8 @@ PIPELINE_CONFIG="scripts/private_scripts/hpc_scripts/vega/config_vega_7a_public_
 echo "Starting job ${SLURM_JOB_ID} on $(hostname) at $(date)"
 echo "Running pipeline script with config: ${PIPELINE_CONFIG}"
 echo "Container image: ${CONTAINER_IMG}"
+echo "Index rebuild (7c corpus): scripts/private_scripts/hpc_scripts/vega/sbatch_vega_bm25_index.sh"
+echo "                            scripts/private_scripts/hpc_scripts/vega/sbatch_vega_dense_index.sh"
 
 NUM_GPUS="${SLURM_GPUS_PER_TASK:-${SLURM_GPUS_ON_NODE:-0}}"
 export NUM_GPUS
@@ -75,6 +82,10 @@ srun --mpi=none singularity exec \
     source '${PIPELINE_CONFIG}'
     mkdir -p \"\$WORKFLOW_OUTPUT_DIR\"
     cp '${PIPELINE_CONFIG}' \"\$WORKFLOW_OUTPUT_DIR/\"
+
+    echo \"[indexes] BM25_INDEX_PATH=\${BM25_INDEX_PATH}\"
+    echo \"[indexes] DENSE_INDEX_DIR=\${DENSE_INDEX_DIR}\"
+    echo \"[indexes] DOCS_JSONL=\${DOCS_JSONL}\"
 
     echo \"[run] Starting retrieval + rerank + evidence + generation pipeline (7a full goldset)\"
     ./scripts/public/shared_scripts/run_retrieval_rerank_pipeline.sh --config '${PIPELINE_CONFIG}'
