@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-# Stack ragnarok-baseline metrics next to the project's pipeline metrics
-# (BM25 / Dense / Fusion / Reranker) for the same goldset, in one table.
-#
-# Run AFTER both jobs finish:
-#   - sbatch_pipeline_full_goldset.sh                    -> writes metrics.csv per stage
-#   - sbatch_bm25_rerank.sh (this baseline)              -> writes metrics.csv with bm25 + rerank rows
+# Stack ragnarok-baseline metrics next to all project pipeline stages
+# (BM25 / Dense / Fusion / CrossEncoder / PostRerankFusion / Snippet variants)
+# for the same goldset, in one normalised table.
 #
 # Usage:
 #   python make_comparison_table.py \
-#     --project_workflow_dir <WORKFLOW_OUTPUT_DIR>/retrieval \
+#     --project_workflow_dir output/workflow_vega_7a_public_goldset_both_routes \
 #     --baseline_metrics_csv output/ragnarok_baseline/metrics.csv \
 #     --output_csv output/ragnarok_baseline/comparison.csv
 
@@ -19,69 +16,134 @@ from pathlib import Path
 
 import pandas as pd
 
+N_QUERIES = 1656  # fallback when not stored in the csv
 
-PROJECT_STAGES = {
-    "bm25": "project_bm25",
-    "dense": "project_dense",
-    "fusion": "project_fusion",
-    # rerank metrics are emitted by fuse_retrieval after the cross-encoder pass;
-    # path varies by config so we look for it explicitly.
-}
-
-
-def read_project_metrics(workflow_retrieval_dir: Path):
-    """Walk <workflow>/retrieval/{bm25,dense,fusion}/metrics.csv and tag the method."""
-    rows = []
-    for stage_dir, label in PROJECT_STAGES.items():
-        mp = workflow_retrieval_dir / stage_dir / "metrics.csv"
-        if not mp.exists():
-            print(f"[compare] missing {mp}, skipping")
-            continue
-        df = pd.read_csv(mp)
-        df["source"] = label
-        rows.append(df)
-    if not rows:
-        return pd.DataFrame()
-    return pd.concat(rows, ignore_index=True)
+METRIC_COLS = [
+    "MRR@10", "MAP@10", "GMAP@10", "Success@10",
+    "MeanR@10", "MeanR@50", "MeanR@100", "MeanR@200",
+    "MeanR@300", "MeanR@400", "MeanR@500", "MeanR@1000",
+    "MeanR@2000", "MeanR@5000",
+]
 
 
-def read_baseline_metrics(path: Path):
+def _norm(df: pd.DataFrame, method: str, batch: str, n_queries: int) -> pd.DataFrame:
+    """Return a single-row DataFrame with normalised columns."""
+    row = {"method": method, "batch": batch, "n_queries": n_queries}
+    for col in METRIC_COLS:
+        row[col] = df[col].iloc[0] if col in df.columns else float("nan")
+    return pd.DataFrame([row])
+
+
+def read_standard(path: Path) -> pd.DataFrame | None:
+    """retrieval/bm25 and retrieval/dense — already normalised."""
+    if not path.exists():
+        return None
     df = pd.read_csv(path)
-    df["source"] = df["method"].map(lambda m: f"ragnarok_{m}")
-    return df
+    if df.empty:
+        return None
+    row = df.iloc[[0]]
+    method = str(row["method"].iloc[0])
+    batch = str(row["batch"].iloc[0])
+    n = int(row["n_queries"].iloc[0]) if "n_queries" in row.columns else N_QUERIES
+    return _norm(row, method, batch, n)
+
+
+def read_fusion_best(path: Path) -> pd.DataFrame | None:
+    """retrieval/fusion — pick the row with the highest MRR@10."""
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    if df.empty:
+        return None
+    best = df.loc[[df["MRR@10"].idxmax()]]
+    batch = str(best["split"].iloc[0]) if "split" in best.columns else "unknown"
+    return _norm(best, "Fusion (best)", batch, N_QUERIES)
+
+
+def read_crossenc(path: Path) -> pd.DataFrame | None:
+    """rerank/cross_encoder — schema: run, label, role, metrics..."""
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    if df.empty:
+        return None
+    row = df.iloc[[0]]
+    batch = str(row["label"].iloc[0]) if "label" in row.columns else "unknown"
+    return _norm(row, "CrossEncoder", batch, N_QUERIES)
+
+
+def read_split_only(path: Path, method: str) -> pd.DataFrame | None:
+    """post_rerank_fusion / snippet stages — schema: split, metrics..."""
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    if df.empty:
+        return None
+    # May have a label column (snippet_rerank does)
+    row = df.iloc[[0]]
+    batch = str(row.get("label", row.get("split", pd.Series(["unknown"]))).iloc[0])
+    if "label" in row.columns:
+        batch = str(row["label"].iloc[0])
+    elif "split" in row.columns:
+        batch = str(row["split"].iloc[0])
+    return _norm(row, method, batch, N_QUERIES)
+
+
+def read_baseline(path: Path) -> pd.DataFrame | None:
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    if df.empty:
+        return None
+    rows = []
+    for _, r in df.iterrows():
+        label = f"Ragnarok/{r['method']}"
+        batch = str(r.get("batch", ""))
+        n = int(r.get("n_queries", N_QUERIES))
+        rows.append(_norm(pd.DataFrame([r]), label, batch, n))
+    return pd.concat(rows, ignore_index=True) if rows else None
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--project_workflow_dir", required=True,
-                    help="<WORKFLOW_OUTPUT_DIR>/retrieval directory from the project pipeline")
-    ap.add_argument("--baseline_metrics_csv", required=True,
-                    help="metrics.csv emitted by score_ragnarok_run.py")
+                    help="top-level workflow output dir (contains retrieval/, rerank/, snippet/)")
+    ap.add_argument("--baseline_metrics_csv", required=True)
     ap.add_argument("--output_csv", required=True)
-    ap.add_argument("--cols",
-                    default="source,method,batch,n_queries,MRR@10,MAP@10,Success@10,"
-                            "MeanR@10,MeanR@100,MeanR@500,MeanR@1000",
-                    help="Comma-separated columns to keep in the comparison table")
     args = ap.parse_args()
 
-    proj = read_project_metrics(Path(args.project_workflow_dir))
-    base = read_baseline_metrics(Path(args.baseline_metrics_csv))
+    wdir = Path(args.project_workflow_dir)
 
-    if proj.empty and base.empty:
-        raise SystemExit("No metrics found in either source.")
+    parts = [
+        read_standard(wdir / "retrieval/bm25/metrics.csv"),
+        read_standard(wdir / "retrieval/dense/metrics.csv"),
+        read_fusion_best(wdir / "retrieval/fusion/metrics.csv"),
+        read_crossenc(wdir / "rerank/cross_encoder/metrics.csv"),
+        read_split_only(wdir / "rerank/post_rerank_fusion/metrics.csv",        "PostRerankFusion"),
+        read_split_only(wdir / "rerank/post_rerank_fusion_snippet/metrics.csv", "PostRerankFusion+Snippet"),
+        read_split_only(wdir / "snippet/snippet_doc_fusion/metrics.csv",        "SnippetDocFusion"),
+        read_split_only(wdir / "snippet/snippet_rerank/metrics.csv",            "SnippetRerank"),
+        read_baseline(Path(args.baseline_metrics_csv)),
+    ]
 
-    combined = pd.concat([proj, base], ignore_index=True, sort=False)
+    frames = [p for p in parts if p is not None]
+    if not frames:
+        raise SystemExit("No metrics found.")
 
-    keep = [c for c in args.cols.split(",") if c in combined.columns]
-    combined = combined[keep]
+    combined = pd.concat(frames, ignore_index=True)
 
     out = Path(args.output_csv)
     out.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(out, index=False)
+    print(f"[compare] wrote {out}\n")
 
-    print(f"[compare] wrote {out}")
-    with pd.option_context("display.max_columns", None, "display.width", 200):
-        print(combined.to_string(index=False))
+    display_cols = ["method", "n_queries",
+                    "MRR@10", "MAP@10", "Success@10",
+                    "MeanR@10", "MeanR@100", "MeanR@500"]
+    display = combined[[c for c in display_cols if c in combined.columns]]
+    with pd.option_context("display.max_columns", None, "display.width", 200,
+                           "display.float_format", "{:.4f}".format):
+        print(display.to_string(index=False))
 
 
 if __name__ == "__main__":
