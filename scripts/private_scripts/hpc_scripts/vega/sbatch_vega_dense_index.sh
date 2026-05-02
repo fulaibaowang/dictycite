@@ -31,7 +31,7 @@ YUN_HOST="/ceph/hpc/data/s25t12-03-users/"
 HOME_HOST="/ceph/hpc/home/wangy"
 
 JSONL_GLOB="/work/output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl"
-OUT_DIR="/work/indexes/dicty_medembed_index"
+OUT_DIR="/work/indexes/dicty_medembed_index_gpu"
 
 BATCH_SIZE="${BATCH_SIZE:-256}"
 M="${M:-32}"
@@ -39,7 +39,7 @@ EF_CONSTRUCTION="${EF_CONSTRUCTION:-200}"
 EF_SEARCH="${EF_SEARCH:-100}"
 DENSE_DEVICE="${DENSE_DEVICE:-cuda}"            # cuda|cpu
 ALLOW_CPU_FALLBACK="${ALLOW_CPU_FALLBACK:-0}"   # 1 => fallback to CPU when CUDA probe fails
-USE_NVCCLI="${USE_NVCCLI:-0}"                   # 1 => add --nvccli (libnvidia-container-cli)
+USE_NVCCLI="${USE_NVCCLI:-1}"                   # 1 => use --nvccli (libnvidia-container-cli, recommended on Vega)
 
 echo "Starting job ${SLURM_JOB_ID:-local} on $(hostname) at $(date)"
 echo "Container: ${CONTAINER_IMG}"
@@ -61,32 +61,56 @@ module purge
 module load apptainer 2>/dev/null || module load singularity 2>/dev/null || true
 
 # ---------- Build singularity arg list ----------
+# Strategy:
+#   USE_NVCCLI=1 (default): use libnvidia-container-cli via --nvccli, with
+#     NVIDIA_VISIBLE_DEVICES = the Slurm-allocated GPU id(s). nvccli handles
+#     cgroup-correct device binding and avoids the NVML "Insufficient
+#     Permissions" problem we hit when binding all /dev/nvidia[0-9]* by hand.
+#   USE_NVCCLI=0: legacy --nv path. We then bind only the allocated /dev/nvidiaN
+#     (read from SLURM_JOB_GPUS) plus auxiliary device files. Binding ALL GPU
+#     devices breaks CUDA on cgroup-restricted multi-GPU nodes (NVML EPERM).
 APPTAINER_ARGS=()
 
-if [[ "${NUM_GPUS}" -gt 0 ]]; then
-  APPTAINER_ARGS+=(--nv)
-  if [[ "${USE_NVCCLI}" == "1" ]]; then
-    APPTAINER_ARGS+=(--nvccli)
-    echo "[gpu] Using --nv --nvccli"
-  else
-    echo "[gpu] Using --nv"
-  fi
-else
+if [[ "${NUM_GPUS}" -le 0 ]]; then
   echo "No GPUs allocated; MedEmbed build needs CUDA — request --gres=gpu:1"
 fi
 
-# Explicitly bind NVIDIA device files when present on the host. On some Vega
-# nodes, --nv leaves these out of the container, which makes CUDA enumerate the
-# device but fail at first allocation (cudaErrorDevicesUnavailable).
-NV_DEVICES=(/dev/nvidiactl /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidia-modeset)
-for d in /dev/nvidia[0-9]*; do
-  [[ -e "$d" ]] && NV_DEVICES+=("$d")
-done
-for d in "${NV_DEVICES[@]}"; do
-  if [[ -e "$d" ]]; then
-    APPTAINER_ARGS+=(-B "$d")
+# Determine allocated GPU physical id(s) for --nvccli / smart binding.
+# SLURM_JOB_GPUS is the comma-separated list of allocated GPU ids on this node.
+ALLOC_GPU_IDS="${SLURM_JOB_GPUS:-${GPU_DEVICE_ORDINAL:-}}"
+
+if [[ "${NUM_GPUS}" -gt 0 && "${USE_NVCCLI}" == "1" ]]; then
+  APPTAINER_ARGS+=(--nvccli)
+  # nvccli uses NVIDIA_VISIBLE_DEVICES (not CUDA_VISIBLE_DEVICES) to choose GPUs.
+  export APPTAINERENV_NVIDIA_VISIBLE_DEVICES="${ALLOC_GPU_IDS:-all}"
+  echo "[gpu] Using --nvccli  NVIDIA_VISIBLE_DEVICES=${APPTAINERENV_NVIDIA_VISIBLE_DEVICES}"
+elif [[ "${NUM_GPUS}" -gt 0 ]]; then
+  APPTAINER_ARGS+=(--nv)
+  echo "[gpu] Using --nv (legacy)"
+
+  # Auxiliary devices (always safe to bind when present on host).
+  for d in /dev/nvidiactl /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidia-modeset; do
+    [[ -e "$d" ]] && APPTAINER_ARGS+=(-B "$d")
+  done
+
+  # Bind ONLY the allocated GPU device file(s). Binding all /dev/nvidiaN on a
+  # cgroup-restricted multi-GPU node makes NVML hit EPERM on others and CUDA
+  # init reports device_count=0.
+  if [[ -n "${ALLOC_GPU_IDS}" ]]; then
+    IFS=',' read -ra _ids <<< "${ALLOC_GPU_IDS}"
+    for id in "${_ids[@]}"; do
+      if [[ "$id" =~ ^[0-9]+$ && -e "/dev/nvidia${id}" ]]; then
+        APPTAINER_ARGS+=(-B "/dev/nvidia${id}")
+        echo "[gpu] Binding allocated /dev/nvidia${id}"
+      fi
+    done
+  else
+    echo "[gpu] No SLURM_JOB_GPUS detected; binding all /dev/nvidiaN (may fail under cgroup)"
+    for d in /dev/nvidia[0-9]*; do
+      [[ -e "$d" ]] && APPTAINER_ARGS+=(-B "$d")
+    done
   fi
-done
+fi
 
 APPTAINER_ARGS+=(
   -B "${WORKDIR}:/work"
@@ -98,8 +122,8 @@ APPTAINER_ARGS+=(
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${SCRATCH:-${TMPDIR:-/tmp}}/apptainer-cache}"
 mkdir -p "${APPTAINER_CACHEDIR}"
 
-# Forward Slurm-provided GPU mapping into the container (avoid the
-# `--cleanenv` pitfall that drops it). Apptainer reads APPTAINERENV_*.
+# Forward Slurm-provided GPU mapping into the container; avoid --cleanenv
+# pitfall. Apptainer reads APPTAINERENV_* and exposes them inside the container.
 if [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]]; then
   export APPTAINERENV_CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES}"
 fi
