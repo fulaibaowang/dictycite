@@ -31,10 +31,13 @@ BATCH_SIZE="${BATCH_SIZE:-256}"
 M="${M:-32}"
 EF_CONSTRUCTION="${EF_CONSTRUCTION:-200}"
 EF_SEARCH="${EF_SEARCH:-100}"
+DENSE_DEVICE="${DENSE_DEVICE:-cuda}"            # cuda|cpu
+ALLOW_CPU_FALLBACK="${ALLOW_CPU_FALLBACK:-0}"   # 1 => fallback to CPU when CUDA probe fails
 
 echo "Starting job ${SLURM_JOB_ID:-local} on $(hostname) at $(date)"
 echo "Container: ${CONTAINER_IMG}"
 echo "jsonl_glob=${JSONL_GLOB}  out_dir=${OUT_DIR}"
+echo "device=${DENSE_DEVICE}  allow_cpu_fallback=${ALLOW_CPU_FALLBACK}"
 
 NUM_GPUS="${SLURM_GPUS_PER_TASK:-${SLURM_GPUS_ON_NODE:-0}}"
 export NUM_GPUS
@@ -84,10 +87,45 @@ srun --mpi=none --gres=gpu:1 singularity exec \
     echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
     nvidia-smi -L || true
 
+    DEVICE='${DENSE_DEVICE}'
+    if [[ \"\$DEVICE\" == \"cuda\" ]]; then
+      echo \"[probe] validating CUDA runtime before model load\"
+      if ! python - <<'PY'
+import sys
+import torch
+
+print(f'[probe] torch={torch.__version__}')
+print(f'[probe] cuda_available={torch.cuda.is_available()}')
+print(f'[probe] device_count={torch.cuda.device_count()}')
+if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+    raise RuntimeError('CUDA unavailable in this job step')
+
+try:
+    x = torch.randn(1, device='cuda')
+    y = x * 2
+    del x, y
+    torch.cuda.synchronize()
+    print('[probe] CUDA allocation/synchronize OK')
+except Exception as e:
+    raise RuntimeError(f'CUDA probe failed: {e}')
+PY
+      then
+        echo \"[probe] CUDA failed in this allocation (likely busy/unavailable GPU on node)\" >&2
+        nvidia-smi || true
+        if [[ '${ALLOW_CPU_FALLBACK}' == '1' ]]; then
+          echo \"[probe] Falling back to CPU (ALLOW_CPU_FALLBACK=1)\" >&2
+          DEVICE='cpu'
+        else
+          echo \"[probe] Set ALLOW_CPU_FALLBACK=1 to continue on CPU, or resubmit to get a healthy GPU allocation\" >&2
+          exit 42
+        fi
+      fi
+    fi
+
     python -u scripts/public/shared_scripts/index/build_dense_hnsw_index_from_jsonl_shards.py \
       --jsonl_glob '${JSONL_GLOB}' \
       --out_dir '${OUT_DIR}' \
-      --device 'cuda' \
+      --device \"\$DEVICE\" \
       --batch_size ${BATCH_SIZE} \
       --M ${M} \
       --ef_construction ${EF_CONSTRUCTION} \
