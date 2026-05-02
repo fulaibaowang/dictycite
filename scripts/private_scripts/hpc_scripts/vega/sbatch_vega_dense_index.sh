@@ -48,7 +48,18 @@ module load apptainer 2>/dev/null || module load singularity 2>/dev/null || true
 
 APPTAINER_GPU_ARGS=()
 if [[ "${NUM_GPUS}" -gt 0 ]]; then
-  APPTAINER_GPU_ARGS+=(--nv)
+  # Vega A100 nodes: --nv alone often fails to wire /dev/nvidia0 (only /dev/nvidia-caps shows up
+  # inside the container), causing cudaErrorDevicesUnavailable on first CUDA op. See Sylabs/Apptainer
+  # issue #523: --nvccli (libnvidia-container-cli backend) fixes device binding on MIG-capable A100
+  # hosts. Set USE_NVCCLI=0 to fall back to plain --nv.
+  USE_NVCCLI="${USE_NVCCLI:-1}"
+  if [[ "${USE_NVCCLI}" == "1" ]]; then
+    APPTAINER_GPU_ARGS+=(--nv --nvccli)
+    echo "[gpu] Using --nv --nvccli (libnvidia-container-cli)"
+  else
+    APPTAINER_GPU_ARGS+=(--nv)
+    echo "[gpu] Using --nv only (legacy)"
+  fi
 else
   echo "No GPUs allocated; MedEmbed build needs CUDA — request --gres=gpu:1"
 fi
