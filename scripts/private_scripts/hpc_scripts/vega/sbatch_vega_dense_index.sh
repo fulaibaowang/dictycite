@@ -59,12 +59,13 @@ mkdir -p "${APPTAINER_CACHEDIR}"
 # Inner srun must request the GPU step on many Slurm sites (e.g. cgroup ConstrainDevices=yes):
 # the sbatch allocation can include --gres=gpu:1 while a bare inner srun step still has no GPU
 # devices in its cgroup, so the first real CUDA call fails with cudaErrorDevicesUnavailable.
-# If errors persist after this change, check job logs for CUDA_VISIBLE_DEVICES after srun;
-# --cleanenv can require APPTAINERENV_CUDA_VISIBLE_DEVICES set on the same process that runs
-# singularity exec (e.g. wrap: srun ... bash -c 'export APPTAINERENV_CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES"; exec singularity ...').
+#
+# Important for Vega: keep Slurm's CUDA_VISIBLE_DEVICES in the container.
+# With `singularity exec --cleanenv`, that variable is often dropped (observed as <unset>),
+# which can break CUDA device mapping and produce cudaErrorDevicesUnavailable despite nvidia-smi.
+# Therefore we avoid --cleanenv in this GPU job.
 
 srun --mpi=none --gres=gpu:1 singularity exec \
-  --cleanenv \
   "${APPTAINER_GPU_ARGS[@]}" \
   -B "${WORKDIR}:/work" \
   -B "${YUN_HOST}:/yun" \
@@ -85,6 +86,8 @@ srun --mpi=none --gres=gpu:1 singularity exec \
     export PYTHONUNBUFFERED=1
 
     echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
+    echo \"[debug] SLURM_JOB_GPUS=\${SLURM_JOB_GPUS:-<unset>}  SLURM_STEP_GPUS=\${SLURM_STEP_GPUS:-<unset>}\"
+    ls -l /dev/nvidia* || true
     nvidia-smi -L || true
 
     DEVICE='${DENSE_DEVICE}'
