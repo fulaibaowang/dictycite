@@ -39,6 +39,12 @@ echo "                            scripts/private_scripts/hpc_scripts/vega/sbatc
 NUM_GPUS="${SLURM_GPUS_PER_TASK:-${SLURM_GPUS_ON_NODE:-0}}"
 export NUM_GPUS
 echo "Detected NUM_GPUS=${NUM_GPUS}"
+echo "[host] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}"
+echo "[host] SLURM_JOB_GPUS=${SLURM_JOB_GPUS:-<unset>}  SLURM_STEP_GPUS=${SLURM_STEP_GPUS:-<unset>}"
+echo "[host] /dev/nvidia* listing:"
+ls -l /dev/nvidia* 2>&1 || true
+echo "[host] nvidia-smi -L:"
+nvidia-smi -L 2>&1 || true
 
 module purge
 module load apptainer 2>/dev/null || module load singularity 2>/dev/null || true
@@ -104,8 +110,30 @@ singularity exec \
     export PYTHONUNBUFFERED=1
     export TQDM_DISABLE=1
 
-    echo \"[debug] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
+    echo \"[ctr] CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-<unset>}\"
+    echo \"[ctr] /dev/nvidia* listing inside container:\"
+    ls -l /dev/nvidia* 2>&1 || true
+    echo \"[ctr] nvidia-smi -L:\"
     nvidia-smi -L || true
+
+    echo \"[probe] validating CUDA runtime before retrieval pipeline\"
+    if ! python - <<'PY'
+import torch
+print(f'[probe] torch={torch.__version__}')
+print(f'[probe] cuda_available={torch.cuda.is_available()}')
+print(f'[probe] device_count={torch.cuda.device_count()}')
+if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+    raise RuntimeError('CUDA unavailable in this job step')
+x = torch.randn(1, device='cuda'); y = x * 2; del x, y
+torch.cuda.synchronize()
+print('[probe] CUDA allocation/synchronize OK')
+PY
+    then
+      echo \"[probe] CUDA failed at the start of the pipeline; aborting before retrieval/rerank.\" >&2
+      echo \"[probe] If --nvccli was selected, ensure libnvidia-container-cli is available;\" >&2
+      echo \"[probe] otherwise retry with USE_NVCCLI=0 or resubmit to a different GPU node.\" >&2
+      exit 42
+    fi
 
     source '${PIPELINE_CONFIG}'
     mkdir -p \"\$WORKFLOW_OUTPUT_DIR\"
