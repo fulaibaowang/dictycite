@@ -13,7 +13,7 @@
 #
 # To reuse BM25+dense+fusion from an existing run, set in the env file:
 #   RETRIEVAL_COPY_FROM=/home/wangy/dictycite_output/workflow_vega_7a_public_goldset_both_routes
-# (uncomment the line). The script rsyncs only retrieval/ into this job's WORKFLOW_OUTPUT_DIR.
+# (uncomment the line). The script copies retrieval/ from that run into this job's WORKFLOW_OUTPUT_DIR.
 #
 # Index prerequisite: same as sbatch_pipeline_full_goldset.sh (BM25 + dense under REPO_ROOT/indexes/).
 
@@ -114,9 +114,10 @@ PY
     mkdir -p \"\$WORKFLOW_OUTPUT_DIR\"
 
     if [ -n \"\${RETRIEVAL_COPY_FROM:-}\" ] && [ -d \"\${RETRIEVAL_COPY_FROM}/retrieval\" ]; then
-      echo \"[seed] rsync retrieval: \${RETRIEVAL_COPY_FROM}/retrieval/ -> \${WORKFLOW_OUTPUT_DIR}/retrieval/\"
-      mkdir -p \"\${WORKFLOW_OUTPUT_DIR}/retrieval\"
-      rsync -a \"\${RETRIEVAL_COPY_FROM}/retrieval/\" \"\${WORKFLOW_OUTPUT_DIR}/retrieval/\"
+      echo \"[seed] cp -a retrieval: \${RETRIEVAL_COPY_FROM}/retrieval -> \${WORKFLOW_OUTPUT_DIR}/\"
+      mkdir -p \"\${WORKFLOW_OUTPUT_DIR}\"
+      rm -rf \"\${WORKFLOW_OUTPUT_DIR}/retrieval\"
+      cp -a \"\${RETRIEVAL_COPY_FROM}/retrieval\" \"\${WORKFLOW_OUTPUT_DIR}/\"
     else
       echo \"[seed] RETRIEVAL_COPY_FROM unset or no retrieval/ there — running full retrieval (steps 1–3)\"
     fi
