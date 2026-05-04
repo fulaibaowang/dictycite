@@ -201,7 +201,11 @@ summary_df.to_csv(output_dir / "summary_table.csv", index=False)
 
 
 # %% [markdown]
-# ## 6. Panel A — First-stage Retrieval: Recall@K
+# ## 6. Supplement Fig S1 — First-stage Retrieval: Recall@K
+#
+# *Paper role:* supplement, recall-side justification for the fusion stage.
+# Referenced from main-paper §3.1 to support "fusion improves the candidate pool
+# even though it does not improve top-position MRR."
 #
 # Ours BM25+Dense fusion vs Ragnarok BM25.
 # Ragnarok BM25 retrieves top-100, so the curve is plotted up to K=100.
@@ -237,7 +241,11 @@ plt.show()
 
 
 # %% [markdown]
-# ## 7. Panel B — Reranking: MRR@K
+# ## 7. Supplement Fig S2 — Full Pipeline vs Ragnarok: Reranking MRR@K
+#
+# *Paper role:* supplement, full pipeline-vs-baseline comparison including
+# Post-rerank Fusion (the deployment configuration). Fig 1 in the main paper
+# uses a focused subset of these methods.
 #
 # Ours CrossEncoder and Post-rerank Fusion vs Ragnarok+RankZephyr listwise.
 # The first-stage fusion is shown as a thin gray reference so the rerank delta is visible.
@@ -318,5 +326,110 @@ fig_path = output_dir / "03_headline_bar.png"
 plt.savefig(fig_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig_path)
 plt.show()
+
+
+# %% [markdown]
+# ## 9. Figure 1 Candidate — "Stage upgrades plateau on dicty"
+#
+# Single-panel motivation figure for the main paper: MRR@K curves showing the
+# ladder BM25 -> BM25+Dense Fusion -> CrossEncoder, with Ragnarok+RankZephyr as
+# an external SOTA reference. The narrow y-range makes the small deltas legible.
+# Visual hierarchy: BM25 light, Fusion mid, CE bold, Ragnarok dashed reference.
+
+# %%
+fig1_ks = [1, 2, 3, 5, 10]
+
+# Need BM25-alone for this figure; load from the retrieval/bm25 run.
+runs["ours_bm25"] = load_run_tsv(
+    wdir / "retrieval" / "bm25" / "runs" / "BM25__7a_dicty_gold_llm_public__top5000.tsv"
+)
+LABELS["ours_bm25"] = "Ours: BM25 (1st stage, sparse)"
+
+fig1_methods_style = [
+    # (method_key, color, linewidth, linestyle, alpha, label_override)
+    ("ours_bm25",     "#1f77b4", 1.5, "-",  0.55, "Ours: BM25"),
+    ("ours_fusion",   "#2ca02c", 2.0, "-",  0.85, "Ours: BM25+Dense Fusion"),
+    ("ours_ce",       "#d62728", 2.6, "-",  1.00, "Ours: CrossEncoder"),
+    ("rag_rerank",    "#17becf", 1.8, "--", 0.95, "Ragnarok: BM25 + RankZephyr (external SOTA ref.)"),
+]
+
+fig1_mrr = {m: mean_at_ks(runs[m], qrels, fig1_ks, mrr_at_k) for m, *_ in fig1_methods_style}
+
+fig, ax = plt.subplots(figsize=(7, 4.5))
+for m, color, lw, ls, alpha, label in fig1_methods_style:
+    vals = [fig1_mrr[m][k] for k in fig1_ks]
+    ax.plot(
+        fig1_ks, vals,
+        marker="o", markersize=5, linewidth=lw, linestyle=ls,
+        color=color, alpha=alpha, label=label,
+    )
+
+# Tight y-range so plateau is legible
+all_vals = [fig1_mrr[m][k] for m, *_ in fig1_methods_style for k in fig1_ks]
+y_lo = max(0.0, min(all_vals) - 0.02)
+y_hi = min(1.0, max(all_vals) + 0.02)
+ax.set_ylim(y_lo, y_hi)
+
+ax.set_xlabel("K")
+ax.set_ylabel("Mean MRR@K")
+ax.set_xticks(fig1_ks)
+ax.set_xticklabels([str(k) for k in fig1_ks])
+ax.grid(True, axis="y", alpha=0.4)
+ax.grid(True, axis="x", alpha=0.3)
+ax.legend(fontsize=10, loc="lower right")
+fig.suptitle(
+    f"Stage upgrades plateau on dicty — MRR@K  (n={len(qrels)})",
+    fontsize=14, fontweight="bold",
+)
+plt.tight_layout()
+fig_path = output_dir / "fig1_candidate_mrr_plateau.png"
+plt.savefig(fig_path, dpi=150, bbox_inches="tight")
+print("Saved:", fig_path)
+plt.show()
+
+# Numerical deltas for caption-writing
+print("\nMRR@10 deltas vs BM25:")
+base = fig1_mrr["ours_bm25"][10]
+for m, *_ in fig1_methods_style:
+    v = fig1_mrr[m][10]
+    print(f"  {m:18s} MRR@10={v:.4f}  delta={v-base:+.4f}")
+
+
+# %% [markdown]
+# ## 10. Draft Results Text — §3.1 Pipeline performance and the plateau of stage upgrades
+#
+# *Paragraph draft for the manuscript Results section. Numbers are wired to the
+# figures above; revise prose freely, but recheck values if the run files are
+# regenerated.*
+#
+# > **3.1 Pipeline performance and the plateau of stage upgrades.**
+# > Before evaluating query-side modifications, we measured the headroom
+# > available to standard pipeline upgrades on the dicty goldset (n=1,656).
+# > On default queries, BM25 alone reaches MRR@10 = 0.593; adding a dense
+# > retrieval stage with RRF fusion does not improve top-position ranking
+# > (MRR@10 = 0.568), and a domain-trained cross-encoder reranker adds only
+# > +1.2 pp (MRR@10 = 0.605; **Fig 1**). For external reference, the
+# > general-domain listwise reranker RankZephyr applied to a Pyserini BM25
+# > first stage achieves MRR@10 = 0.566 — no improvement over its own BM25
+# > input. Fusion does meaningfully increase Recall@100 (+3 pp over BM25
+# > alone; **Fig S1**), which justifies its inclusion as the first stage
+# > despite the MRR trade — the gain is in the candidate pool, not in
+# > top-position precision. Together these results suggest that on dicty,
+# > *the bottleneck for top-position ranking lies upstream of the ranker*,
+# > motivating the query-side interventions evaluated in §3.2.
+#
+# **Reviewer-anticipation notes (not for the manuscript, just for us):**
+#
+# - Pyserini-BM25 vs PyTerrier-BM25 implementation differences must be
+#   acknowledged in either the methods section or Fig 1 caption (one sentence:
+#   "BM25 implementations differ in tokenization and default parameters; the
+#   comparison here is at the design level, not parameter-matched").
+# - The "fusion hurts MRR" finding is dicty-specific. Should be confirmed it is
+#   not a sweep artifact (i.e. RRF k=60 may not be optimal for top-1 ranking
+#   even though it is for recall). Consider citing the RRF-weight sweep results
+#   if available.
+# - The "no improvement" framing for RankZephyr is correct on this split but
+#   has the OOD-training caveat. The paper should state once that RankZephyr
+#   was trained on MSMARCO and was not adapted to biomedical text.
 
 # %%
