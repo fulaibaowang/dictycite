@@ -11,6 +11,9 @@
 #   .../fixed_long_rerank_sweep/retrieval/{bm25,dense,fusion}/, rerank_body/, rerank_synonyms/, rerank_long/
 # When WORKFLOW_SWEEP_OUTPUT_DIR is set (e.g. by sbatch), BASE_OUT = .../fixed_long_rerank_sweep (no overlap with query_field_sweep).
 #
+# Optional env (source from config): RETRIEVAL_COPY_FROM=/path/to/prior/fixed_long_rerank_sweep
+# If set and .../retrieval exists, copies it into BASE_OUT and skips the retrieval pipeline step.
+#
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -67,10 +70,26 @@ else
 fi
 export WORKFLOW_OUTPUT_DIR="$BASE_OUT"
 
-echo ""
-echo "========== Retrieval (BM25=synonym_products, Dense=synonym_products) -> $WORKFLOW_OUTPUT_DIR =========="
 mkdir -p "$WORKFLOW_OUTPUT_DIR"
-"$PIPELINE" --no-rerank --bm25-query-field "$QF_SYNONYM_PRODUCTS" --dense-query-field "$QF_SYNONYM_PRODUCTS"
+
+# Optional: reuse retrieval from a finished run (same hybrid query fields: synonym_products for BM25+dense).
+# Set RETRIEVAL_COPY_FROM to the directory that *contains* retrieval/ (i.e. the fixed_long_rerank_sweep root),
+# e.g. .../workflow_fixed_long_rerank_sweep_7d/fixed_long_rerank_sweep
+SKIP_RETRIEVAL=0
+if [ -n "${RETRIEVAL_COPY_FROM:-}" ] && [ -d "${RETRIEVAL_COPY_FROM}/retrieval" ]; then
+  echo ""
+  echo "========== Retrieval (seed from RETRIEVAL_COPY_FROM) -> $WORKFLOW_OUTPUT_DIR =========="
+  echo "[seed] cp -a \"${RETRIEVAL_COPY_FROM}/retrieval\" -> \"${WORKFLOW_OUTPUT_DIR}/retrieval\""
+  rm -rf "${WORKFLOW_OUTPUT_DIR}/retrieval"
+  cp -a "${RETRIEVAL_COPY_FROM}/retrieval" "${WORKFLOW_OUTPUT_DIR}/"
+  SKIP_RETRIEVAL=1
+fi
+
+if [ "$SKIP_RETRIEVAL" -eq 0 ]; then
+  echo ""
+  echo "========== Retrieval (BM25=synonym_products, Dense=synonym_products) -> $WORKFLOW_OUTPUT_DIR =========="
+  "$PIPELINE" --no-rerank --bm25-query-field "$QF_SYNONYM_PRODUCTS" --dense-query-field "$QF_SYNONYM_PRODUCTS"
+fi
 
 if [ -z "${DOCS_JSONL:-}" ]; then
   echo "DOCS_JSONL not set; skipping reranker sweep. Set DOCS_JSONL in config to run reranker."
