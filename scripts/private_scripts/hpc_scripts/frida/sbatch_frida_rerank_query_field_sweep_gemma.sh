@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J dicty_rerank_qf_7d_gemma
 #SBATCH -p frida
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
