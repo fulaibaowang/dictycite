@@ -37,10 +37,10 @@ export NUM_GPUS
 echo "Detected NUM_GPUS=${NUM_GPUS}"
 echo "[host] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}"
 
-if [[ "${NUM_GPUS}" -lt 2 ]]; then
-  echo "Gemma rerank config expects 2 GPUs (RERANK_NUM_GPUS=2). Submit with --gres=gpu:A100:2." >&2
-  exit 1
-fi
+# if [[ "${NUM_GPUS}" -lt 2 ]]; then
+#   echo "Gemma rerank config expects 2 GPUs (RERANK_NUM_GPUS=2). Submit with --gres=gpu:A100:2." >&2
+#   exit 1
+# fi
 
 srun \
   --container-image="${CONTAINER_IMG}" \
