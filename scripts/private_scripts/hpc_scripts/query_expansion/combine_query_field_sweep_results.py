@@ -19,6 +19,8 @@ Usage:
   python .../combine_query_field_sweep_results.py --workflow_dir output/workflow_baseline_full_sweep/query_field_sweep
   # Rerank sweep (fixed long + rerank body/synonyms/long)
   python .../combine_query_field_sweep_results.py --rerank_sweep --workflow_dir output/workflow_baseline_full_sweep/fixed_long_rerank_sweep
+  # Optional: same on Frida if you want combined_sweep_metrics.csv / combine's recall PNGs (not required for rerank-only MRR plots in query_expansion_sweeping.ipynb).
+  python .../combine_query_field_sweep_results.py --rerank_sweep --workflow_dir /shared/workspace/biolab/yun/dicty_output/workflow_fixed_long_rerank_sweep_7d_medcpt/fixed_long_rerank_sweep
   python .../combine_query_field_sweep_results.py --workflow_dir output/workflow_hpc_test --no_plot
   python .../combine_query_field_sweep_results.py --plot bm25 dense hybrid
   python .../combine_query_field_sweep_results.py --log_x --log_y

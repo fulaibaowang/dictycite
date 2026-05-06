@@ -14,6 +14,14 @@
 # Optional env (source from config): RETRIEVAL_COPY_FROM=/path/to/prior/fixed_long_rerank_sweep
 # If set and .../retrieval exists, copies it into BASE_OUT and skips the retrieval pipeline step.
 #
+# Optional: RETRIEVAL_SKIP_IF_PRESENT=1 — if WORKFLOW_OUTPUT_DIR/retrieval already exists (e.g. you cp'd it
+# once before parallel Slurm jobs), skip the retrieval step. Avoid using with RETRIEVAL_COPY_FROM in the
+# same run (copy-from wins first); safe for multiple jobs writing different rerank_* dirs in parallel.
+#
+# Optional: RERANK_QF_ONLY=body|synonyms|long — run only that rerank stage (same retrieval rules as above).
+# Parallel Slurm: use RETRIEVAL_SKIP_IF_PRESENT=1 after a one-time cp of retrieval/, or RETRIEVAL_COPY_FROM
+# only when jobs are not concurrent (each copy-from does rm -rf retrieval).
+#
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,7 +39,8 @@ while [ $# -gt 0 ]; do
       ;;
     -h|--help)
       echo "Usage: $0 [--config|-c <config.env>]"
-      echo "  Runs retrieval once (BM25+Dense+Hybrid with query_text_synonym_products), then reranker 3 times (query_text, synonyms, synonym_products)."
+      echo "  Runs retrieval once (BM25+Dense+Hybrid with query_text_synonym_products), then reranker 3 times (query_text, synonyms, synonym_products),"
+      echo "  unless RERANK_QF_ONLY=body|synonyms|long is set to run a single rerank stage (parallel Slurm jobs)."
       echo "  -c, --config PATH   Source PATH before running (required unless already sourced)."
       exit 0
       ;;
@@ -82,6 +91,12 @@ if [ -n "${RETRIEVAL_COPY_FROM:-}" ] && [ -d "${RETRIEVAL_COPY_FROM}/retrieval" 
   echo "[seed] cp -a \"${RETRIEVAL_COPY_FROM}/retrieval\" -> \"${WORKFLOW_OUTPUT_DIR}/retrieval\""
   rm -rf "${WORKFLOW_OUTPUT_DIR}/retrieval"
   cp -a "${RETRIEVAL_COPY_FROM}/retrieval" "${WORKFLOW_OUTPUT_DIR}/"
+  SKIP_RETRIEVAL=1
+fi
+
+if [ "$SKIP_RETRIEVAL" -eq 0 ] && [ "${RETRIEVAL_SKIP_IF_PRESENT:-0}" = "1" ] && [ -d "${WORKFLOW_OUTPUT_DIR}/retrieval" ]; then
+  echo ""
+  echo "========== Retrieval (skip: ${WORKFLOW_OUTPUT_DIR}/retrieval exists, RETRIEVAL_SKIP_IF_PRESENT=1) =========="
   SKIP_RETRIEVAL=1
 fi
 
@@ -140,9 +155,22 @@ export PYTHONPATH="$PIPELINE_SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 declare -a RERANK_QF_FULL=("$QF_BODY" "$QF_SYNONYMS" "$QF_SYNONYM_PRODUCTS")
 declare -a RERANK_QF_SHORT=("body" "synonyms" "long")
 
+if [ -n "${RERANK_QF_ONLY:-}" ]; then
+  case "${RERANK_QF_ONLY}" in
+    body|synonyms|long) ;;
+    *)
+      echo "Error: RERANK_QF_ONLY must be body, synonyms, or long (got: ${RERANK_QF_ONLY})" >&2
+      exit 1
+      ;;
+  esac
+fi
+
 for i in 0 1 2; do
   QF_FULL="${RERANK_QF_FULL[$i]}"
   QF_SHORT="${RERANK_QF_SHORT[$i]}"
+  if [ -n "${RERANK_QF_ONLY:-}" ] && [ "${RERANK_QF_ONLY}" != "${QF_SHORT}" ]; then
+    continue
+  fi
   RERANK_OUT="$WORKFLOW_OUTPUT_DIR/rerank_$QF_SHORT"
   echo ""
   if [ -f "$RERANK_OUT/metrics.csv" ] || [ -n "$(find "$RERANK_OUT" -maxdepth 2 -name '*.tsv' 2>/dev/null | head -1)" ]; then
@@ -170,6 +198,12 @@ for i in 0 1 2; do
   [ "${RERANK_DISABLE_METRICS:-0}" = "1" ] && RERANK_ARGS+=(--disable-metrics)
   [ "${RERANK_USE_MULTI_GPU:-0}" = "1" ] && RERANK_ARGS+=(--use-multi-gpu)
   [ -n "${RERANK_NUM_GPUS:-}" ] && RERANK_ARGS+=(--num-gpus "$RERANK_NUM_GPUS")
+  if [ "${RERANK_RERANKER_TYPE:-}" = "llm" ] || [ "${RERANK_USE_LLM:-0}" = "1" ]; then
+    RERANK_ARGS+=(--reranker-type llm)
+  fi
+  [ "${RERANK_LLM_USE_FP16:-1}" = "0" ] && RERANK_ARGS+=(--no-llm-use-fp16)
+  [ "${RERANK_LLM_USE_BF16:-0}" = "1" ] && RERANK_ARGS+=(--llm-use-bf16)
+  [ -n "${RERANK_PROGRESS_EVERY:-}" ] && RERANK_ARGS+=(--progress-every "$RERANK_PROGRESS_EVERY")
   python "$PIPELINE_SCRIPT_DIR/rerank/rerank_crossencoder.py" "${RERANK_ARGS[@]}"
 done
 
