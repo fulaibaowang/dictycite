@@ -6,7 +6,7 @@
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --gres=gpu:A100:4
+#SBATCH --gres=gpu:A100:3
 #
 # Frida: rerank query-field sweep (7d) with BGE Gemma (LLM / FlagLLMReranker).
 # Config: scripts/private_scripts/hpc_scripts/frida/config_frida_rerank_query_field_sweep_7d_gemma.env
