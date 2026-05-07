@@ -440,12 +440,25 @@ show_label_stats(labeled, "evidence_level")
 # Writes one JSON object per line from the cleaned EPMC abstracts parquet (key `abstract` = cleaned text).
 
 # %%
-# Export with key "abstract" (value = abstract_clean) so consumers (e.g. index scripts) use one field name.
+# Export the corpus in the unified RAG-pipeline schema: each row has
+#   {docno, pmid, type, title, text, ...metadata}
+# - docno = pmid (bare; matches existing abstracts-only HPC indexes)
+# - type  = "abstract"   (parallels chunked corpus' "body"/"caption")
+# - text  = abstract_clean (renamed; matches the new pipeline contract that
+#           dropped the legacy "abstract" field fallback in Phase 4)
 docs = (
     pl.read_parquet(DOCS_PATH)
     .with_columns(pl.col("pmid").cast(pl.Utf8))
-    .rename({"abstract_clean": "abstract"})
+    .with_columns(
+        pl.col("pmid").alias("docno"),
+        pl.lit("abstract").alias("type"),
+    )
+    .rename({"abstract_clean": "text"})
 )
+# Reorder so identifying fields lead each row.
+lead = ["docno", "pmid", "type", "title", "text"]
+ordered = lead + [c for c in docs.columns if c not in lead]
+docs = docs.select(ordered)
 docs.write_ndjson(DOCS_JSONL_OUT)
 print(f"Saved: {DOCS_JSONL_OUT}")
 

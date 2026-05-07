@@ -32,20 +32,22 @@ def iter_anserini_docs(input_path: Path):
                 continue
             d = json.loads(line)
 
-            pmid = (d.get("pmid") or d.get("docno") or "").strip()
-            if not pmid:
+            # Use the row's docno (chunk-aware) as Anserini doc id; fall back
+            # to pmid for the legacy bare-pmid abstracts corpus.
+            doc_id = (d.get("docno") or d.get("pmid") or "").strip()
+            if not doc_id:
                 skipped_no_pmid += 1
                 continue
 
             title = (d.get("title") or "").strip()
-            abstract = (d.get("abstract") or "").strip()
-            text = (title + "\n\n" + abstract).strip()
+            body = (d.get("text") or "").strip()
+            text = (title + "\n\n" + body).strip()
             if not text:
                 skipped_empty += 1
                 continue
 
             yielded += 1
-            yield {"id": pmid, "contents": text}
+            yield {"id": doc_id, "contents": text}
 
     print(
         f"[convert] yielded={yielded:,} skipped_no_pmid={skipped_no_pmid:,} "

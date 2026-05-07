@@ -11,11 +11,11 @@ Usage:
         --abstracts dicty_simulated_data/abstracts/corpus.jsonl \\
         --out dicty_simulated_data/abstracts_v2/corpus.jsonl
 
-    # abstracts + chunks (new full corpus)
+    # abstracts + chunks (new full-text corpus)
     python -m scripts.public.pdf_processing.build_corpus \\
         --abstracts dicty_simulated_data/abstracts/corpus.jsonl \\
         --chunks output/pdf_extraction/v1/chunks.jsonl \\
-        --out dicty_simulated_data/chunked/corpus.jsonl
+        --out dicty_fulltext_corpus/corpus.jsonl
 
 Output schema (one JSON record per line):
     {
