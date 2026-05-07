@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH -J dicty_pipe_7a_gold_rerank_gemma
 #SBATCH -p frida
-#SBATCH --time=48:00:00
+#SBATCH --time=36:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --gres=gpu:A100:4
+#SBATCH --gres=gpu:A100:2
 #
 # Full public goldset with BAAI/bge-reranker-v2-gemma (LLM / FlagLLMReranker backend).
 # Config: scripts/private_scripts/hpc_scripts/frida/config_frida_7a_public_goldset_rerank_gemma.env
