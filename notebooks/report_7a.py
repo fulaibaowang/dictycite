@@ -206,8 +206,9 @@ for idx, split in enumerate(splits):
         ax.set_ylabel("")
 
     ax.set_xlabel("K")
+    ax.set_xscale("log")
     ax.set_xticks(tick_values)
-    ax.set_xticklabels([str(k) for k in tick_values], rotation=90)
+    ax.set_xticklabels([str(k) for k in tick_values], rotation=0)
     ax.grid(True, axis="y")
     ax.grid(True, axis="x")
 
@@ -243,7 +244,7 @@ methods_stage2 = {
         "color": "#2ca02c",
         "marker": "D",
     },
-    "Rerank": {
+    "BGE-reranker-v2-m3": {
         "df": rerank_metrics,
         "color": "#1f77b4",
         "marker": "o",
@@ -336,7 +337,7 @@ axes_bar = axes_bar.ravel()
 
 method_colors_bar = {
     "BM25 Dense Fusion": "#2ca02c",
-    "Rerank": "#1f77b4",
+    "BGE-reranker-v2-m3": "#1f77b4",
     "Post-rerank fusion": "#ff7f0e",
 }
 
@@ -353,7 +354,7 @@ for idx, split in enumerate(splits):
     row_r = rerank_metrics[rerank_metrics["split"] == split]
     if not row_r.empty:
         vals.append(float(row_r.iloc[0]["MAP@10"]))
-        labels_methods.append("Rerank")
+        labels_methods.append("BGE-reranker-v2-m3")
 
     row_f = rerank_fusion_metrics[rerank_fusion_metrics["split"] == split]
     if not row_f.empty:
@@ -464,7 +465,7 @@ def _mrr_at_ks_for_run(run_df: pd.DataFrame, qrels: dict[str, set[str]], ks: lis
 
 run_dirs = {
     "BM25 Dense Fusion": retrieval_dir / "fusion" / "runs",
-    "Rerank": rerank_dir / "cross_encoder" / "runs",
+    "BGE-reranker-v2-m3": rerank_dir / "cross_encoder" / "runs",
     "Post-rerank fusion": rerank_dir / "post_rerank_fusion_snippet" / "runs",
 }
 
@@ -501,7 +502,7 @@ else:
 
 colors_map = {
     "BM25 Dense Fusion": "#2ca02c",
-    "Rerank": "#1f77b4",
+    "BGE-reranker-v2-m3": "#1f77b4",
     "Post-rerank fusion": "#ff7f0e",
 }
 
@@ -586,7 +587,7 @@ map_curves_rr = {k: v for k, v in map_curves.items() if k != "Post-rerank fusion
 mrr_curves_rr = {k: v for k, v in mrr_curves.items() if k != "Post-rerank fusion"}
 colors_map_rr = {
     "BM25 Dense Fusion": colors_map["BM25 Dense Fusion"],
-    "Rerank": "#9467bd",
+    "BGE-reranker-v2-m3": "#9467bd",
 }
 all_maps_rr = []
 for method_dict in map_curves_rr.values():

@@ -15,19 +15,27 @@
 # %% [markdown]
 # # Ours vs Ragnarok Baseline – Head-to-Head
 #
-# Compact comparison against the Ragnarok-style baseline (BM25 -> RankZephyr listwise),
-# stripped of pipeline-internal diagnostics.
+# Ranker comparison on the dicty goldset. Includes BGE-reranker-v2-m3 (our
+# main cross-encoder) and three alternates loaded as rerank-only swaps on the
+# shared first-stage retrieval pool: MS-MARCO MiniLM-L12 (lightweight),
+# MedCPT (domain-specific biomedical), and BGE Gemma (strong LLM reranker).
+# The Ragnarok BM25 + RankZephyr baseline is included as an external reference.
 #
 # **Goldset:** `7a_dicty_gold_llm_public` (n=1,656 queries, full public split).
 #
 # **Scope:**
 # 1. First-stage retrieval — ours BM25+Dense fusion vs Ragnarok BM25 (Recall@K)
-# 2. Reranking — ours CrossEncoder + PostRerankFusion vs Ragnarok+ZephyrReranker (MRR@K)
+# 2. Reranking — full picture across all rerankers (MRR@K)
+# 3. Per-query rerank impact (helped vs hurt) for each reranker
 #
 # **Caveats:** Ragnarok BM25 is Pyserini/Anserini-tuned, ours is PyTerrier; the BM25
 # stage is therefore not a fully matched comparison. The intended comparison is at
-# the *design* level (single BM25 vs hybrid retrieval; CE vs listwise LLM rerank),
-# not parameter-matched re-implementations. Ragnarok runs are capped at top-100.
+# the *design* level, not parameter-matched re-implementations. Ragnarok runs are
+# capped at top-100.
+#
+# **Note on figure scope:** the multi-line MRR@K figure in §9 is the full research
+# picture — all rerankers on one axis. The paper main figure will use a curated
+# subset of these methods (decided once framing is locked).
 
 # %% [markdown]
 # ## 1. Imports and Setup
@@ -65,20 +73,29 @@ output_dir.mkdir(parents=True, exist_ok=True)
 SPLIT = "7a_dicty_gold_llm_public"
 
 # %%
-# Single shared color palette, single shared label set.
+# Single shared color palette and label set for every method that appears in
+# any plot in this notebook.
 COLORS = {
-    "ours_fusion":     "#2ca02c",
-    "ours_ce":         "#d62728",
-    "ours_postfusion": "#9467bd",
-    "rag_bm25":        "#1f77b4",
-    "rag_rerank":      "#17becf",
+    "ours_bm25":                "#1f77b4",
+    "ours_fusion":              "#2ca02c",
+    "ours_ce":                  "#d62728",
+    "ours_postfusion":          "#9467bd",
+    "vega_medcpt_ce":           "#8c564b",
+    "frida_gemma_ce":           "#ff7f0e",
+    "frida_ms_marco_minilm_ce": "#e377c2",
+    "rag_bm25":                 "#1f77b4",
+    "rag_rerank":               "#17becf",
 }
 LABELS = {
-    "ours_fusion":     "Ours: BM25+Dense Fusion",
-    "ours_ce":         "Ours: CrossEncoder",
-    "ours_postfusion": "Ours: Post-rerank Fusion",
-    "rag_bm25":        "Ragnarok: BM25",
-    "rag_rerank":      "Ragnarok: BM25 + RankZephyr",
+    "ours_bm25":                "Ours: BM25",
+    "ours_fusion":              "Ours: BM25+Dense Fusion",
+    "ours_ce":                  "Ours: BGE-reranker-v2-m3",
+    "ours_postfusion":          "Ours: Post-rerank Fusion",
+    "vega_medcpt_ce":           "Ours: MedCPT (rerank-only)",
+    "frida_gemma_ce":           "Ours: BGE Gemma (rerank-only)",
+    "frida_ms_marco_minilm_ce": "Ours: MS MARCO MiniLM (rerank-only)",
+    "rag_bm25":                 "Ragnarok: BM25",
+    "rag_rerank":               "Ragnarok: BM25 + RankZephyr",
 }
 
 # %% [markdown]
@@ -108,8 +125,35 @@ def load_qrels(path: Path) -> dict[str, set[str]]:
     return qrels
 
 
+def load_query_ids_without_any_needs_fulltext_doc(path: Path) -> set[str]:
+    """Query IDs where no cited doc has evidence_level needs_fulltext (abstract-eval subset)."""
+    out: set[str] = set()
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            if not qid:
+                continue
+            if any(
+                (d.get("evidence_level") or "").strip() == "needs_fulltext"
+                for d in (q.get("docs") or [])
+            ):
+                continue
+            out.add(qid)
+    return out
+
+
 qrels = load_qrels(goldset_jsonl)
 print(f"Loaded qrels: {len(qrels)} queries")
+
+qids_no_needs_fulltext = load_query_ids_without_any_needs_fulltext_doc(goldset_jsonl)
+n_qrels_abstract_only = len(set(qrels) & qids_no_needs_fulltext)
+print(
+    f"Queries with no needs_fulltext doc (intersect qrels): {n_qrels_abstract_only} / {len(qrels)}"
+)
 
 
 # %%
@@ -139,13 +183,44 @@ def load_run_trec(path: Path) -> dict[str, list[str]]:
     return {str(qid): g["docid"].tolist() for qid, g in df.groupby("qid", sort=False)}
 
 
+def _resolve_cross_encoder_run_tsv(workflow_root: Path) -> Path:
+    runs_dir = workflow_root / "rerank" / "cross_encoder" / "runs"
+    preferred = runs_dir / "best_rrf_7a_dicty_gold_llm_public_top5000.tsv"
+    if preferred.is_file():
+        return preferred
+    candidates = sorted(runs_dir.glob("best_rrf*.tsv"))
+    if candidates:
+        return candidates[0]
+    raise FileNotFoundError(
+        f"no TSV in {runs_dir} (expected best_rrf_7a_dicty_gold_llm_public_top5000.tsv or best_rrf*.tsv)"
+    )
+
+
+# Required runs (always loaded)
 runs: dict[str, dict[str, list[str]]] = {
+    "ours_bm25":       load_run_tsv(wdir / "retrieval" / "bm25" / "runs" / "BM25__7a_dicty_gold_llm_public__top5000.tsv"),
     "ours_fusion":     load_run_tsv(wdir / "retrieval" / "fusion" / "runs" / "best_rrf_7a_dicty_gold_llm_public_top5000.tsv"),
     "ours_ce":         load_run_tsv(wdir / "rerank" / "cross_encoder" / "runs" / "best_rrf_7a_dicty_gold_llm_public_top5000.tsv"),
     "ours_postfusion": load_run_tsv(wdir / "rerank" / "post_rerank_fusion" / "runs" / "best_rrf_7a_dicty_gold_llm_public_top5000_rrf_poolR50_poolH50_k60.tsv"),
     "rag_bm25":        load_run_trec(baseline_dir / "runs" / "bm25_run.txt"),
     "rag_rerank":      load_run_trec(baseline_dir / "runs" / "rerank_run.txt"),
 }
+
+# Alternate rerankers (rerank-only on a shared first-stage retrieval pool); skipped if missing.
+for key, root in (
+    ("vega_medcpt_ce", base_dir / "output" / "workflow_vega_7a_public_goldset_rerank_medcpt"),
+    ("frida_gemma_ce", base_dir / "output" / "workflow_frida_7a_public_goldset_rerank_gemma"),
+    (
+        "frida_ms_marco_minilm_ce",
+        base_dir / "output" / "workflow_frida_7a_public_goldset_rerank_ms_marco_minilm",
+    ),
+):
+    try:
+        p = _resolve_cross_encoder_run_tsv(root)
+        runs[key] = load_run_tsv(p)
+    except FileNotFoundError as e:
+        print(f"Skip {key}: {e}")
+
 for name, run in runs.items():
     print(f"{name:18s}: {len(run)} qids")
 
@@ -178,11 +253,27 @@ def mean_at_ks(run, qrels_, ks, fn) -> dict[int, float]:
     return {k: float(np.mean(v)) if v else 0.0 for k, v in per_q.items()}
 
 
+def _per_query_mrr_at_k(run: dict[str, list[str]], qrels_: dict[str, set[str]], k: int) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for qid, rels in qrels_.items():
+        docs = run.get(qid, [])
+        out[qid] = mrr_at_k(docs, rels, k)
+    return out
+
+
 # %% [markdown]
 # ## 5. Headline Summary Table
+#
+# All methods on one table, including alternate rerankers when present.
 
 # %%
-summary_methods = ["ours_fusion", "ours_ce", "ours_postfusion", "rag_bm25", "rag_rerank"]
+summary_methods_all = [
+    "ours_bm25", "ours_fusion",
+    "ours_ce", "vega_medcpt_ce", "frida_gemma_ce", "frida_ms_marco_minilm_ce", "ours_postfusion",
+    "rag_bm25", "rag_rerank",
+]
+summary_methods = [m for m in summary_methods_all if m in runs]
+
 recall_ks_short = [10, 50, 100]
 mrr_ks_short = [1, 5, 10]
 
@@ -201,14 +292,15 @@ summary_df.to_csv(output_dir / "summary_table.csv", index=False)
 
 
 # %% [markdown]
-# ## 6. Supplement Fig S1 — First-stage Retrieval: Recall@K
+# ## 6. First-stage Retrieval: Recall@K
 #
-# *Paper role:* supplement, recall-side justification for the fusion stage.
-# Referenced from main-paper §3.1 to support "fusion improves the candidate pool
-# even though it does not improve top-position MRR."
+# Ours BM25+Dense fusion vs Ragnarok BM25. Ragnarok BM25 retrieves top-100, so
+# the curve is plotted up to K=100.
 #
-# Ours BM25+Dense fusion vs Ragnarok BM25.
-# Ragnarok BM25 retrieves top-100, so the curve is plotted up to K=100.
+# *Note:* Alternate CE rerankers (MedCPT, BGE Gemma, MS MARCO MiniLM) are
+# rerank-only and reuse the same first-stage retrieval pool — they do not change
+# Recall@K, only the ordering within the pool. Recall@K is therefore a property
+# of the first stage alone.
 
 # %%
 recall_ks = [5, 10, 20, 30, 50, 75, 100]
@@ -241,14 +333,11 @@ plt.show()
 
 
 # %% [markdown]
-# ## 7. Supplement Fig S2 — Full Pipeline vs Ragnarok: Reranking MRR@K
-#
-# *Paper role:* supplement, full pipeline-vs-baseline comparison including
-# Post-rerank Fusion (the deployment configuration). Fig 1 in the main paper
-# uses a focused subset of these methods.
+# ## 7. Full Pipeline vs Ragnarok: Reranking MRR@K
 #
 # Ours CrossEncoder and Post-rerank Fusion vs Ragnarok+RankZephyr listwise.
-# The first-stage fusion is shown as a thin gray reference so the rerank delta is visible.
+# The first-stage fusion is shown as a thin gray reference so the rerank delta
+# is visible.
 
 # %%
 mrr_ks = [1, 2, 3, 5, 10]
@@ -294,7 +383,9 @@ plt.show()
 # ## 8. Headline Bar — MRR@10 and Recall@100 Side-by-Side
 
 # %%
-bar_methods = ["ours_fusion", "rag_bm25", "ours_ce", "ours_postfusion", "rag_rerank"]
+bar_methods_all = ["ours_fusion", "rag_bm25", "ours_ce", "ours_postfusion", "rag_rerank"]
+bar_methods = [m for m in bar_methods_all if m in runs]
+
 mrr10 = {m: mean_at_ks(runs[m], qrels, [10], mrr_at_k)[10] for m in bar_methods}
 rec100 = {m: mean_at_ks(runs[m], qrels, [100], recall_at_k)[100] for m in bar_methods}
 
@@ -329,107 +420,271 @@ plt.show()
 
 
 # %% [markdown]
-# ## 9. Figure 1 Candidate — "Stage upgrades plateau on dicty"
+# ## 9. Ranker Comparison — MRR@K (paper Fig 3 main + supp Fig S2)
 #
-# Single-panel motivation figure for the main paper: MRR@K curves showing the
-# ladder BM25 -> BM25+Dense Fusion -> CrossEncoder, with Ragnarok+RankZephyr as
-# an external SOTA reference. The narrow y-range makes the small deltas legible.
-# Visual hierarchy: BM25 light, Fusion mid, CE bold, Ragnarok dashed reference.
+# Two figures generated from the same data:
+#
+# - **Paper main (Fig 3 candidate)** — 5 lines: BM25 + 4 cross-encoder rerankers
+#   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, BGE Gemma). The headline:
+#   ranker choice in domain RAG matters — a lightweight CE *hurts*, a mid-tier
+#   CE barely helps, domain/strong CEs help meaningfully.
+# - **Paper supplement (Fig S2 candidate)** — same 5 lines plus first-stage
+#   Fusion and Ragnarok+RankZephyr (external reference). For completeness;
+#   reviewers who want to see the full picture get one figure with everything.
+#
+# All four CEs operate on the BM25+Dense fusion candidate pool.
 
 # %%
-fig1_ks = [1, 2, 3, 5, 10]
+fig9_ks = [1, 2, 3, 5, 10]
 
-# Need BM25-alone for this figure; load from the retrieval/bm25 run.
-runs["ours_bm25"] = load_run_tsv(
-    wdir / "retrieval" / "bm25" / "runs" / "BM25__7a_dicty_gold_llm_public__top5000.tsv"
-)
-LABELS["ours_bm25"] = "Ours: BM25 (1st stage, sparse)"
+# Method styles (one place; both figures pick subsets).
+ALL_METHOD_STYLE = {
+    "ours_bm25":                ("#1f77b4", 1.6, "-",  0.85, "Ours: BM25"),
+    "ours_fusion":              ("#2ca02c", 1.8, "-",  0.75, "Ours: BM25+Dense Fusion"),
+    "frida_ms_marco_minilm_ce": ("#e377c2", 2.2, "-",  1.00, "MS-MARCO MiniLM-L12"),
+    "ours_ce":                  ("#d62728", 2.2, "-",  1.00, "BGE-reranker-v2-m3"),
+    "vega_medcpt_ce":           ("#8c564b", 2.4, "-",  1.00, "MedCPT"),
+    "frida_gemma_ce":           ("#ff7f0e", 2.6, "-",  1.00, "BGE Gemma"),
+    "rag_rerank":               ("#17becf", 1.8, "--", 0.85, "Ragnarok: BM25 + RankZephyr (ref.)"),
+}
 
-fig1_methods_style = [
-    # (method_key, color, linewidth, linestyle, alpha, label_override)
-    ("ours_bm25",     "#1f77b4", 1.5, "-",  0.55, "Ours: BM25"),
-    ("ours_fusion",   "#2ca02c", 2.0, "-",  0.85, "Ours: BM25+Dense Fusion"),
-    ("ours_ce",       "#d62728", 2.6, "-",  1.00, "Ours: CrossEncoder"),
-    ("rag_rerank",    "#17becf", 1.8, "--", 0.95, "Ragnarok: BM25 + RankZephyr (external SOTA ref.)"),
+FIG3_MAIN_KEYS = [
+    "ours_bm25", "frida_ms_marco_minilm_ce", "ours_ce", "vega_medcpt_ce", "frida_gemma_ce",
+]
+FIG_S2_KEYS = [
+    "ours_bm25", "ours_fusion",
+    "frida_ms_marco_minilm_ce", "ours_ce", "vega_medcpt_ce", "frida_gemma_ce",
+    "rag_rerank",
 ]
 
-fig1_mrr = {m: mean_at_ks(runs[m], qrels, fig1_ks, mrr_at_k) for m, *_ in fig1_methods_style}
 
-fig, ax = plt.subplots(figsize=(7, 4.5))
-for m, color, lw, ls, alpha, label in fig1_methods_style:
-    vals = [fig1_mrr[m][k] for k in fig1_ks]
-    ax.plot(
-        fig1_ks, vals,
-        marker="o", markersize=5, linewidth=lw, linestyle=ls,
-        color=color, alpha=alpha, label=label,
-    )
+def _plot_mrr_curves(method_keys: list[str], out_path: Path, title: str):
+    keys = [k for k in method_keys if k in runs]
+    mrr = {m: mean_at_ks(runs[m], qrels, fig9_ks, mrr_at_k) for m in keys}
 
-# Tight y-range so plateau is legible
-all_vals = [fig1_mrr[m][k] for m, *_ in fig1_methods_style for k in fig1_ks]
-y_lo = max(0.0, min(all_vals) - 0.02)
-y_hi = min(1.0, max(all_vals) + 0.02)
-ax.set_ylim(y_lo, y_hi)
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    for m in keys:
+        color, lw, ls, alpha, label = ALL_METHOD_STYLE[m]
+        ax.plot(
+            fig9_ks, [mrr[m][k] for k in fig9_ks],
+            marker="o", markersize=5, linewidth=lw, linestyle=ls,
+            color=color, alpha=alpha, label=label,
+        )
 
-ax.set_xlabel("K")
-ax.set_ylabel("Mean MRR@K")
-ax.set_xticks(fig1_ks)
-ax.set_xticklabels([str(k) for k in fig1_ks])
-ax.grid(True, axis="y", alpha=0.4)
-ax.grid(True, axis="x", alpha=0.3)
-ax.legend(fontsize=10, loc="lower right")
-fig.suptitle(
-    f"Stage upgrades plateau on dicty — MRR@K  (n={len(qrels)})",
-    fontsize=14, fontweight="bold",
+    all_vals = [mrr[m][k] for m in keys for k in fig9_ks]
+    y_lo = max(0.0, min(all_vals) - 0.02)
+    y_hi = min(1.0, max(all_vals) + 0.02)
+    ax.set_ylim(y_lo, y_hi)
+
+    ax.set_xlabel("K")
+    ax.set_ylabel("Mean MRR@K")
+    ax.set_xticks(fig9_ks)
+    ax.set_xticklabels([str(k) for k in fig9_ks])
+    ax.grid(True, axis="y", alpha=0.4)
+    ax.grid(True, axis="x", alpha=0.3)
+    ax.legend(fontsize=10, loc="lower right")
+    fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    print("Saved:", out_path)
+    plt.show()
+    return mrr
+
+
+fig3_mrr = _plot_mrr_curves(
+    FIG3_MAIN_KEYS,
+    output_dir / "fig3_main_ranker_comparison.png",
+    "Ranker choice — MRR@K",
 )
-plt.tight_layout()
-fig_path = output_dir / "fig1_candidate_mrr_plateau.png"
-plt.savefig(fig_path, dpi=150, bbox_inches="tight")
-print("Saved:", fig_path)
-plt.show()
 
-# Numerical deltas for caption-writing
-print("\nMRR@10 deltas vs BM25:")
-base = fig1_mrr["ours_bm25"][10]
-for m, *_ in fig1_methods_style:
-    v = fig1_mrr[m][10]
-    print(f"  {m:18s} MRR@10={v:.4f}  delta={v-base:+.4f}")
+fig_s2_mrr = _plot_mrr_curves(
+    FIG_S2_KEYS,
+    output_dir / "fig_s2_full_ranker_comparison.png",
+    "Full ranker comparison incl. fusion + RankZephyr",
+)
+
+# Numerical deltas vs BM25 for caption-writing.
+print("\nMRR@10 deltas vs BM25 (Fig S2 full set):")
+base = fig_s2_mrr["ours_bm25"][10]
+for m in FIG_S2_KEYS:
+    if m not in fig_s2_mrr:
+        continue
+    v = fig_s2_mrr[m][10]
+    print(f"  {m:30s} MRR@10={v:.4f}  delta={v-base:+.4f}")
 
 
 # %% [markdown]
-# ## 10. Draft Results Text — §3.1 Pipeline performance and the plateau of stage upgrades
+# ## 10. Results paragraph — TBD pending combo results & framing
 #
-# *Paragraph draft for the manuscript Results section. Numbers are wired to the
-# figures above; revise prose freely, but recheck values if the run files are
-# regenerated.*
+# *Placeholder.* Prose is held until the QE × {MedCPT, BGE Gemma} combo runs
+# are in and the paper framing is locked. The previous "stage upgrades plateau"
+# paragraph rested on BGE-reranker-v2-m3 alone and is no longer accurate now
+# that the four rerankers (MiniLM, BGE-v2-m3, MedCPT, BGE Gemma) are loaded
+# above.
+
+
+# %% [markdown]
+# ## 11. Fig S3 — Per-query rerank impact: MRR@10 delta vs BM25
 #
-# > **3.1 Pipeline performance and the plateau of stage upgrades.**
-# > Before evaluating query-side modifications, we measured the headroom
-# > available to standard pipeline upgrades on the dicty goldset (n=1,656).
-# > On default queries, BM25 alone reaches MRR@10 = 0.593; adding a dense
-# > retrieval stage with RRF fusion does not improve top-position ranking
-# > (MRR@10 = 0.568), and a domain-trained cross-encoder reranker adds only
-# > +1.2 pp (MRR@10 = 0.605; **Fig 1**). For external reference, the
-# > general-domain listwise reranker RankZephyr applied to a Pyserini BM25
-# > first stage achieves MRR@10 = 0.566 — no improvement over its own BM25
-# > input. Fusion does meaningfully increase Recall@100 (+3 pp over BM25
-# > alone; **Fig S1**), which justifies its inclusion as the first stage
-# > despite the MRR trade — the gain is in the candidate pool, not in
-# > top-position precision. Together these results suggest that on dicty,
-# > *the bottleneck for top-position ranking lies upstream of the ranker*,
-# > motivating the query-side interventions evaluated in §3.2.
+# *Paper role:* supplement Fig S3. One panel per loaded reranker (MS-MARCO
+# MiniLM, BGE-reranker-v2-m3, MedCPT, BGE Gemma), sharing y-axis and x-bins.
+# Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
+# hurt / unchanged per query. The 4 panels show that lightweight CE produces
+# many hurt queries while domain/strong CEs are increasingly asymmetric in
+# favor of helped — depth behind the Fig 3 main-paper claim.
 #
-# **Reviewer-anticipation notes (not for the manuscript, just for us):**
+# Also exports the worst-hurt-by-BGE-reranker-v2-m3 queries to CSV for
+# qualitative inspection.
+
+# %%
+def _delta_arrays(rerank_run: dict[str, list[str]], k: int = 10):
+    pq_b = _per_query_mrr_at_k(runs["ours_bm25"], qrels, k)
+    pq_r = _per_query_mrr_at_k(rerank_run, qrels, k)
+    common_q = [q for q in qrels if q in runs["ours_bm25"] and q in rerank_run]
+    deltas = np.array([pq_r[q] - pq_b[q] for q in common_q], dtype=float)
+    return common_q, pq_b, pq_r, deltas
+
+
+bins = np.concatenate([
+    np.array([-1.05, -0.75, -0.5, -0.35, -0.25, -0.18, -0.12, -0.07, -0.025]),
+    np.array([0.025, 0.07, 0.12, 0.18, 0.25, 0.35, 0.5, 0.75, 1.05]),
+])
+
+fig1b_panels_all = [
+    ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
+    ("ours_ce",                  "BGE-reranker-v2-m3"),
+    ("vega_medcpt_ce",           "MedCPT"),
+    ("frida_gemma_ce",           "BGE Gemma"),
+]
+fig1b_panels = [(k, l) for k, l in fig1b_panels_all if k in runs]
+
+n_panels = len(fig1b_panels)
+fig, axes = plt.subplots(1, n_panels, figsize=(5.0 * n_panels, 4.5), sharey=True)
+if n_panels == 1:
+    axes = [axes]
+
+print("Per-query MRR@10 Δ (rerank − BM25):")
+for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
+    _, _, _, deltas = _delta_arrays(runs[rerank_key], k=10)
+    n_total = len(deltas)
+    n_helped = int((deltas > 0).sum())
+    n_hurt = int((deltas < 0).sum())
+    n_unchanged = int((deltas == 0).sum())
+    mean_help = float(deltas[deltas > 0].mean()) if n_helped else 0.0
+    mean_hurt = float(deltas[deltas < 0].mean()) if n_hurt else 0.0
+    mean_overall = float(deltas.mean())
+
+    print(
+        f"  {short_label:12s}  n={n_total}  "
+        f"helped {n_helped} ({n_helped/n_total:.1%}, mean Δ +{mean_help:.4f})  "
+        f"unchanged {n_unchanged}  "
+        f"hurt {n_hurt} ({n_hurt/n_total:.1%}, mean Δ {mean_hurt:.4f})  "
+        f"agg Δ {mean_overall:+.4f}"
+    )
+
+    hurt_m = deltas < -0.025
+    help_m = deltas > 0.025
+    neutral_m = ~(hurt_m | help_m)
+
+    ax.hist(
+        deltas[hurt_m], bins=bins, color="#d62728", alpha=0.85,
+        label=f"Hurt (n={n_hurt}, {n_hurt/n_total:.0%})",
+    )
+    ax.hist(
+        deltas[help_m], bins=bins, color="#2ca02c", alpha=0.85,
+        label=f"Helped (n={n_helped}, {n_helped/n_total:.0%})",
+    )
+    n_neutral = int(neutral_m.sum())
+    ax.bar(
+        [0], [n_neutral], width=0.05, color="#888888", alpha=0.95,
+        label=f"Unchanged (n={n_neutral}, {n_neutral/n_total:.0%})",
+    )
+    ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
+    ax.axvline(mean_overall, color="black", linestyle=":", linewidth=1.4,
+               label=f"mean Δ = {mean_overall:+.3f}")
+    ax.set_xlabel(f"MRR@10 Δ ({short_label} − BM25)")
+    ax.set_xlim(-1.05, 1.05)
+    ax.grid(True, axis="y", alpha=0.4)
+    ax.legend(fontsize=9, loc="upper left")
+    ax.set_title(short_label, fontsize=12)
+
+axes[0].set_ylabel("# queries")
+fig.suptitle(
+    f"Per-query rerank impact on MRR@10 vs BM25  (n={len(qrels)})",
+    fontsize=13, fontweight="bold",
+)
+plt.tight_layout()
+fig1b_path = output_dir / "fig_s3_per_query_rerank_delta.png"
+plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
+print("Saved:", fig1b_path)
+plt.show()
+
+
+# %%
+# Worst-hurt-by-BGE-reranker-v2-m3 queries → CSV for qualitative inspection.
+def _load_query_text_and_rel_abstracts_by_qid(
+    path: Path, qrels_: dict[str, set[str]]
+) -> tuple[dict[str, str], dict[str, str]]:
+    texts: dict[str, str] = {}
+    rel_abs: dict[str, str] = {}
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            if not qid:
+                continue
+            texts[qid] = (q.get("query_text") or "").strip()
+            rels = qrels_.get(qid)
+            if not rels:
+                continue
+            parts: list[str] = []
+            for d in q.get("docs") or []:
+                pm = str(d.get("pmid") or "").strip()
+                if pm not in rels:
+                    continue
+                ac = (d.get("abstract_clean") or "").strip()
+                if ac:
+                    parts.append(ac)
+            rel_abs[qid] = "\n\n---\n\n".join(parts) if len(parts) > 1 else (parts[0] if parts else "")
+
+    return texts, rel_abs
+
+
+query_text_by_qid, rel_abstract_by_qid = _load_query_text_and_rel_abstracts_by_qid(goldset_jsonl, qrels)
+
+common_qids_ce, pq_bm25_ce, pq_ce_ce, deltas_ce = _delta_arrays(runs["ours_ce"], k=10)
+hurt_ranked = sorted(
+    ((q, float(d)) for q, d in zip(common_qids_ce, deltas_ce) if d < 0),
+    key=lambda t: t[1],
+)
+hurt_csv = output_dir / "worst_bge_v2_m3_hurt_queries.csv"
+pd.DataFrame(
+    [
+        {
+            "rank": i + 1,
+            "query_id": q,
+            "delta_mrr10_ce_minus_bm25": d,
+            "mrr10_bm25": pq_bm25_ce[q],
+            "mrr10_ce": pq_ce_ce[q],
+            "query_text": query_text_by_qid.get(q, ""),
+            "relevant_abstract_clean": rel_abstract_by_qid.get(q, ""),
+        }
+        for i, (q, d) in enumerate(hurt_ranked)
+    ]
+).to_csv(hurt_csv, index=False)
+print(f"Wrote {len(hurt_ranked)} BGE-v2-m3-hurt queries (sorted worst-first): {hurt_csv}")
+
+
+# %% [markdown]
+# ## 12. Results paragraph (continued) — TBD pending combo results & framing
 #
-# - Pyserini-BM25 vs PyTerrier-BM25 implementation differences must be
-#   acknowledged in either the methods section or Fig 1 caption (one sentence:
-#   "BM25 implementations differ in tokenization and default parameters; the
-#   comparison here is at the design level, not parameter-matched").
-# - The "fusion hurts MRR" finding is dicty-specific. Should be confirmed it is
-#   not a sweep artifact (i.e. RRF k=60 may not be optimal for top-1 ranking
-#   even though it is for recall). Consider citing the RRF-weight sweep results
-#   if available.
-# - The "no improvement" framing for RankZephyr is correct on this split but
-#   has the OOD-training caveat. The paper should state once that RankZephyr
-#   was trained on MSMARCO and was not adapted to biomedical text.
+# *Placeholder.* With MS-MARCO MiniLM-L12, BGE-reranker-v2-m3, MedCPT, and
+# BGE Gemma now in §11, the per-query distribution differs substantially across
+# rerankers — lightweight CE has many hurt queries, domain/strong CEs are
+# asymmetrically helpful. The paragraph for the paper will be drafted once the
+# QE × {MedCPT, BGE Gemma} combo runs land and the paper framing is locked.
 
 # %%

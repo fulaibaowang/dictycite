@@ -15,8 +15,6 @@
 # %%
 import json
 import os
-import re
-from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -37,427 +35,266 @@ RERANK_DISPLAY = {
     "hybrid": "Retrieval Fusion (long)",
 }
 
-# %% [markdown]
-# ## Query-field sweep: statistical comparison (recall 200–1000)
-#
-# We compare retrieval profiles (e.g. hybrid combo bm25_qf × dense_qf) using **mean recall over K ∈ {200, 300, 400, 500, 1000}** so the choice of operating point (e.g. rerank cutoff) does not dominate. Data from `scripts/private_scripts/hpc_scripts/query_expansion/combine_query_field_sweep_results.py` (combined sweep metrics). Stats: mean ± std across batches (train/test), rank, and optional paired test of best vs others.
 
 # %%
-# Two benchmarks (7d / 7e): sweep under `workflow_query_field_sweep_no_rm3_{tag}/query_field_sweep/`;
-# rerank under `workflow_fixed_long_rerank_sweep_{tag}/fixed_long_rerank_sweep/` (see Vega configs).
+# Path setup + workflow-root resolver shared by the rerank cells below.
 root = Path(os.environ.get("DICTYCITE_ROOT", "../"))
 
-BENCHMARK_CONFIGS = [
+
+def _resolve_rerank_sweep_root(cfg: dict) -> Path:
+    """Directory that contains rerank_body/ (and bm25/, …). Handles outer workflow dir + nested sweep."""
+    rd = cfg["rerank_dir"]
+    candidates: list[Path] = []
+    if rd.is_absolute():
+        candidates = [rd, rd / "fixed_long_rerank_sweep"]
+    else:
+        for base in (root, Path("../")):
+            candidates.append(base / rd)
+    for c in candidates:
+        if (c / "rerank_body").is_dir():
+            return c
+    return candidates[0] if candidates else rd
+
+
+# %% [markdown]
+# ### Rerank MRR@K under each QE variant — paper supp Fig S4 source
+#
+# *Research artifact + paper supp source.* Produces a single MRR@K line plot
+# per `RERANK_PANEL_CONFIGS` entry — one for each (tag, reranker) combo where
+# we have rerank-only runs against the same QE variants. Used to populate
+# Fig S4 (QE × {MedCPT, BGE Gemma}) and the QE × BGE-reranker-v2-m3 reference
+# in Fig 4 main.
+#
+# This cell loads gold JSONL + run TSVs from `rerank_body` / `rerank_synonyms`
+# / `rerank_long` and optional `retrieval/fusion`, plots MRR@K like the
+# right-hand panel of the per-batch figure above, and saves
+# `figures/rerank_mrr_panel_{tag}.png` next to the sweep root.
+
+# %%
+# CE rerank MRR@K only — run TSVs; no combined_sweep_metrics / retrieval sweep.
+
+RERANK_PANEL_CONFIGS = [
     {
-        "tag": "7d",
-        "sweep_dir": Path("output/workflow_baseline_full_sweep/workflow_query_field_sweep_no_rm3_7d/query_field_sweep"),
+        "tag": "7d_medcpt",
+        "rerank_dir": Path("output/workflow_baseline_full_sweep/workflow_fixed_long_rerank_sweep_7d_medcpt/fixed_long_rerank_sweep"),
         "gold_jsonl": Path("output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl"),
-        "rerank_dir": Path("output/workflow_baseline_full_sweep/workflow_fixed_long_rerank_sweep_7d/fixed_long_rerank_sweep"),
         "run_token": "7d_dicty_gold_query_expansion_benchmark",
     },
     {
-        "tag": "7e",
-        "sweep_dir": Path("output/workflow_baseline_full_sweep/workflow_query_field_sweep_no_rm3_7e/query_field_sweep"),
-        "gold_jsonl": Path("output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.jsonl"),
-        "rerank_dir": Path("output/workflow_baseline_full_sweep/workflow_fixed_long_rerank_sweep_7e/fixed_long_rerank_sweep"),
-        "run_token": "7e_dicty_gold_query_expansion_benchmark",
+        "tag": "7d_gemma",
+        "rerank_dir": Path("output/workflow_baseline_full_sweep/workflow_fixed_long_rerank_sweep_7d_gemma/fixed_long_rerank_sweep"),
+        "gold_jsonl": Path("output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl"),
+        "run_token": "7d_dicty_gold_query_expansion_benchmark",
+    },
+    {
+        "tag": "7d",
+        "rerank_dir": Path("output/workflow_baseline_full_sweep/workflow_fixed_long_rerank_sweep_7d/fixed_long_rerank_sweep"),
+        "gold_jsonl": Path("output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl"),
+        "run_token": "7d_dicty_gold_query_expansion_benchmark",
     },
 ]
 
+KS_MAP_RR = [1, 5, 10, 20, 50, 100, 200]
+_rr_colors = {"body": "#8e44ad", "synonyms": "#16a085", "long": "#d35400", "hybrid": "#2980b9"}
+_rr_markers = {"body": "o", "synonyms": "s", "long": "^", "hybrid": "D"}
+_display_to_qf_rr = {v: k for k, v in RERANK_DISPLAY.items()}
+_method_order_rr = list(RERANK_DISPLAY.values())
 
-def _resolve_sweep_csv(cfg: dict) -> Path | None:
-    for base in (root, Path("../")):
-        d = base / cfg["sweep_dir"]
-        for name in ("combined_sweep_metrics.csv", "combined_sweep_metrics_wide.csv"):
-            p = d / name
-            if p.is_file():
-                return p
-    return None
 
-# %%
-# Path to combined sweep metrics (from combine_query_field_sweep_results.py)
+def _rp_load_gold(path: Path) -> dict[str, list[str]]:
+    gold: dict[str, list[str]] = {}
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            q = json.loads(line)
+            qid = str(q.get("query_id", q.get("id", "")))
+            if not qid:
+                continue
+            pmids: list[str] = []
+            for doc in q.get("documents", []) or []:
+                if isinstance(doc, str) and doc.startswith("http"):
+                    pmids.append(doc.split("/")[-1])
+                elif doc:
+                    pmids.append(str(doc))
+            for d in q.get("docs", []) or []:
+                if isinstance(d, dict) and d.get("pmid"):
+                    pmids.append(str(d["pmid"]))
+            gold[qid] = list(set(pmids))
+    return gold
 
-K_RANGE = [200, 300, 400, 500, 1000]  # recall@K range for "operating region" metric
-MEANR_COLS = [f"MeanR@{k}" for k in K_RANGE]
 
-for cfg in BENCHMARK_CONFIGS:
-    SWEEP_CSV = _resolve_sweep_csv(cfg)
-    if SWEEP_CSV is None:
-        print(
-            f"[{cfg['tag']}] No combined_sweep_metrics*.csv under {cfg['sweep_dir']}. "
-            "Run combine_query_field_sweep_results.py for this sweep; skipping benchmark."
-        )
+def _rp_load_run(path: Path) -> dict[str, list[str]]:
+    run: dict[str, list[str]] = {}
+    header = None
+
+    def _header_indices(h: list[str]) -> tuple[int, int]:
+        low = [p.lstrip("\ufeff").lower() for p in h]
+        qid_idx = low.index("qid") if "qid" in low else 0
+        for key in ("docno", "docid", "doc"):
+            if key in low:
+                return qid_idx, low.index(key)
+        return qid_idx, 1
+
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if not parts:
+                continue
+            if parts[0].lstrip("\ufeff").lower() == "qid":
+                header = parts
+                continue
+            if len(parts) < 3:
+                continue
+            if header is not None:
+                qid_idx, docno_idx = _header_indices(header)
+            else:
+                qid_idx, docno_idx = 0, 1
+            qid, docno = parts[qid_idx], parts[docno_idx]
+            run.setdefault(qid, []).append(docno)
+    return run
+
+
+def _rp_mrr_at_k(ranked: list[str], relset: set[str], k: int) -> float:
+    for i, docno in enumerate(ranked[:k], start=1):
+        if docno in relset:
+            return 1.0 / i
+    return 0.0
+
+
+def _rp_mean_mrr_at_k(gold: dict[str, list[str]], run: dict[str, list[str]], k: int) -> float:
+    scores = []
+    for qid, relset in gold.items():
+        ranked = run.get(qid, [])
+        scores.append(_rp_mrr_at_k(ranked, set(relset), k))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def _rp_ylim_from_vals(vals: list[float], hi_clip: float) -> tuple[float, float]:
+    if not vals:
+        return 0.5, hi_clip
+    lo, hi = min(vals), max(vals)
+    pad = (hi - lo) * 0.05 if hi > lo else 0.02
+    return max(0.0, lo - pad), min(hi_clip, hi + pad)
+
+
+_rc_rr = {
+    "figure.figsize": (6.5, 4.8),
+    "axes.titlesize": 13,
+    "axes.labelsize": 12,
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+}
+
+for cfg in RERANK_PANEL_CONFIGS:
+    rerank_root = _resolve_rerank_sweep_root(cfg)
+    if not (rerank_root / "rerank_body").is_dir():
+        print(f"[{cfg['tag']}] Skip rerank panel: no rerank_body under {rerank_root}")
         continue
 
-    df = pd.read_csv(SWEEP_CSV)
+    gold_path = cfg["gold_jsonl"]
+    gold_resolved = gold_path if gold_path.is_absolute() else None
+    if gold_resolved is None:
+        for base in (root, Path("../")):
+            p = base / gold_path
+            if p.is_file():
+                gold_resolved = p
+                break
+        if gold_resolved is None:
+            gold_resolved = root / gold_path
+    if not gold_resolved.is_file():
+        print(f"[{cfg['tag']}] Skip: gold JSONL not found: {gold_resolved}")
+        continue
 
-    # If we loaded the wide-format combined_sweep_metrics_wide.csv, reshape to long format
-    # expected by the rest of this notebook (stage + bm25_query_field + dense_query_field + MeanR@K).
-    if SWEEP_CSV.name.endswith("combined_sweep_metrics_wide.csv"):
-        if "query_field" not in df.columns:
-            raise ValueError(f"Expected 'query_field' column in wide sweep metrics, got: {list(df.columns)}")
-
-        rows_long = []
-        methods = ["bm25", "dense", "hybrid"]
-        roles = ["train", "test"]
-        for _, row in df.iterrows():
-            qf = str(row["query_field"]).strip()
-            for method in methods:
-                for role in roles:
-                    rec_vals = {}
-                    for k in K_RANGE:
-                        wide_col = f"{role}_{method}_MeanR@{k}"
-                        if wide_col in df.columns:
-                            rec_vals[f"MeanR@{k}"] = float(row[wide_col])
-                    if not rec_vals:
-                        continue
-                    rows_long.append({
-                        "stage": method,
-                        "bm25_query_field": qf,
-                        "dense_query_field": qf,
-                        "batch": role,
-                        **rec_vals,
-                    })
-        if not rows_long:
-            raise ValueError("No MeanR@K columns found in wide sweep metrics; cannot build long-format table.")
-        df = pd.DataFrame(rows_long)
-
-    # Ensure we have the recall columns (hybrid/bm25/dense may have different column sets)
-    available = [c for c in MEANR_COLS if c in df.columns]
-    if not available:
-        raise ValueError(f"None of {MEANR_COLS} found in {SWEEP_CSV}. Columns: {list(df.columns)}")
-
-    # Mean recall over K in [200, 300, 400, 500, 1000] per (profile, batch). Profile = stage + query fields.
-    df["batch"] = df["batch"].astype(str).str.strip()
-    if "stage" in df.columns:
-        df["stage"] = df["stage"].astype(str).str.strip()
-    if "bm25_query_field" in df.columns and "dense_query_field" in df.columns:
-        df["bm25_query_field"] = df["bm25_query_field"].astype(str).str.strip()
-        df["dense_query_field"] = df["dense_query_field"].astype(str).str.strip()
-        df["bm25_qf_display"] = df["bm25_query_field"].map(QF_DISPLAY).fillna(df["bm25_query_field"])
-        df["dense_qf_display"] = df["dense_query_field"].map(QF_DISPLAY).fillna(df["dense_query_field"])
-        df["profile"] = df["stage"].str.upper() + " (" + df["bm25_qf_display"] + ", " + df["dense_qf_display"] + ")"
-    else:
-        df["profile"] = df.get("stage", df.get("method", "unknown"))
-
-    # Operating-region mean recall across K
-    df["mean_recall_200_1000"] = df[available].mean(axis=1)
-
-    # Simple scoring profile: MeanR@500 + MeanR@1000 (when available)
-    score_cols = [c for c in ["MeanR@500", "MeanR@1000"] if c in df.columns]
-    if score_cols:
-        df["score_r500_r1000"] = df[score_cols].sum(axis=1)
-
-    # Per-profile summary: mean/std across batches
-    agg_dict = {
-        "mean_recall_200_1000": ["mean", "std"],
-        "batch": ["nunique"],
-    }
-    if "score_r500_r1000" in df.columns:
-        agg_dict["score_r500_r1000"] = ["mean"]
-
-    summary = df.groupby("profile").agg(agg_dict)
-    summary.columns = [
-        "mean_recall" if c == ("mean_recall_200_1000", "mean") else
-        "std_recall" if c == ("mean_recall_200_1000", "std") else
-        "n_batches" if c == ("batch", "nunique") else
-        "score_r500_r1000" if c == ("score_r500_r1000", "mean") else "_".join(map(str, c))
-        for c in summary.columns
-    ]
-    summary = summary.reset_index()
-
-    # Rank by score profile when available, otherwise by mean_recall
-    if "score_r500_r1000" in summary.columns:
-        summary = summary.sort_values("score_r500_r1000", ascending=False).reset_index(drop=True)
-    else:
-        summary = summary.sort_values("mean_recall", ascending=False).reset_index(drop=True)
-    summary["rank"] = range(1, len(summary) + 1)
-
-    print("Recall (mean over K in {200..1000}), mean ± std across batches:\n")
-    display(pl.from_pandas(summary))
-
-    # Per-stage top profiles for quick inspection (BM25 and Dense)
-    print("\nTop profiles by stage (ranked by score_r500_r1000 when available, else mean_recall):\n")
-
-    for stage in ["bm25", "dense"]:
-        # Filter profiles belonging to this stage (profile starts with STAGE in upper-case)
-        stage_profiles = summary[summary["profile"].str.upper().str.startswith(stage.upper())]
-        if stage_profiles.empty:
-            continue
-        print(f"\n{stage.upper()} profiles:\n")
-        display(pl.from_pandas(stage_profiles.head(5)))
-
-
-    # Compact per-stage summary: for each batch (train/test), three scores per query-field
-    # Uses score profile: MeanR@500 + MeanR@1000 when available.
-
-    batches = sorted(df["batch"].astype(str).str.strip().unique().tolist())
-
-    print("Per-stage summary by batch (BM25 and DENSE):\n")
-
-    for stage in ["bm25", "dense"]:
-        stage_df = df[df["stage"] == stage].copy()
-        if stage_df.empty:
-            continue
-
-        # Stage-specific query field
-        if stage == "bm25":
-            stage_df["qf"] = stage_df["bm25_query_field"].astype(str).str.strip()
-        else:
-            stage_df["qf"] = stage_df["dense_query_field"].astype(str).str.strip()
-        stage_df["qf_display"] = stage_df["qf"].map(QF_DISPLAY).fillna(stage_df["qf"])
-
-        # Score profile: MeanR@500 + MeanR@1000 (when available)
-        score_cols = [c for c in ["MeanR@500", "MeanR@1000"] if c in stage_df.columns]
-        if score_cols:
-            stage_df["score_r500_r1000"] = stage_df[score_cols].sum(axis=1)
-
-        stage_df["batch"] = stage_df["batch"].astype(str).str.strip()
-
-        for batch in batches:
-            sub = stage_df[stage_df["batch"] == batch]
-            if sub.empty:
-                continue
-
-            agg = {
-                "mean_recall_200_1000": "mean",
-            }
-            if "score_r500_r1000" in sub.columns:
-                agg["score_r500_r1000"] = "mean"
-
-            summary_stage = (
-                sub.groupby("qf_display").agg(agg).reset_index()
-            )
-
-            # Rename columns for display
-            cols = {"qf_display": "query_field", "mean_recall_200_1000": "mean_recall"}
-            summary_stage = summary_stage.rename(columns=cols)
-
-            # Sort by score if present, otherwise by mean_recall
-            if "score_r500_r1000" in summary_stage.columns:
-                summary_stage = summary_stage.sort_values("score_r500_r1000", ascending=False)
-            else:
-                summary_stage = summary_stage.sort_values("mean_recall", ascending=False)
-
-            print(f"\n{stage.upper()} – {batch}:")
-            display(pl.from_pandas(summary_stage))
-
-    # Plot recall curves per batch: BM25 | Dense in 1×2 panels. X-axis is log-scaled (K).
-    # n in subtitles only when metrics.csv / combined CSV supplies a consistent `n_queries`.
-
-    def _n_queries_if_known(subset: pd.DataFrame, batch: str) -> int | None:
-        """Return evaluation query count only from `n_queries` when present and unique per batch."""
-        sub = subset[subset["batch"].astype(str).str.strip() == str(batch).strip()]
-        if sub.empty or "n_queries" not in sub.columns:
-            return None
-        n = pd.to_numeric(sub["n_queries"], errors="coerce").dropna()
-        if n.empty:
-            return None
-        uniq = n.unique()
-        if len(uniq) != 1:
-            return None
-        return int(uniq[0])
-
-
-    # Recall columns + K ordering
-    recall_cols = sorted(
-        [c for c in df.columns if c.startswith("MeanR@")],
-        key=lambda c: int(c.split("@")[1]),
-    )
-    if not recall_cols:
-        raise ValueError(f"No MeanR@K columns found in sweep metrics: {list(df.columns)}")
-    ks = [int(c.split("@")[1]) for c in recall_cols]
-
-    plot_df = df.copy()
-    plot_df["batch"] = plot_df["batch"].astype(str).str.strip()
-    plot_df["stage"] = plot_df["stage"].astype(str).str.strip()
-    plot_df["combo"] = plot_df.get("combo", "").astype(str).str.strip()
-    plot_df["bm25_qf"] = plot_df["bm25_query_field"].astype(str).str.strip()
-    plot_df["dense_qf"] = plot_df["dense_query_field"].astype(str).str.strip()
-
-    plot_df["bm25_qf_disp"] = plot_df["bm25_qf"].map(QF_DISPLAY).fillna(plot_df["bm25_qf"])
-    plot_df["dense_qf_disp"] = plot_df["dense_qf"].map(QF_DISPLAY).fillna(plot_df["dense_qf"])
-
-    batches = plot_df["batch"].unique().tolist()
-    qf_order = ["body", "synonyms", "long"]
-
-    # Distinct from notebooks/report.py tab-blues/oranges/greens
-    QF_COLORS = {"body": "#8e44ad", "synonyms": "#16a085", "long": "#d35400"}
-    QF_MARKERS = {"body": "o", "synonyms": "s", "long": "^"}
-
-    figures_dir = root / cfg["sweep_dir"] / "figures"
-    figures_dir.mkdir(parents=True, exist_ok=True)
-
-    _rc_plot = {
-        "figure.figsize": (13.5, 4.8),
-        "axes.titlesize": 14,
-        "axes.labelsize": 13,
-        "xtick.labelsize": 11,
-        "ytick.labelsize": 12,
+    rerank_dirs = {
+        "body": rerank_root / "rerank_body",
+        "synonyms": rerank_root / "rerank_synonyms",
+        "long": rerank_root / "rerank_long",
+        "hybrid": rerank_root / "retrieval" / "fusion",
     }
 
-    # --- Rerank MRR@K: load before combined figure ---
-    RERANK_SWEEP_DIR = root / cfg["rerank_dir"]
+    gold_bench = _rp_load_gold(gold_resolved)
+    run_token = cfg["run_token"]
+    mrr_curves: dict[str, list[float]] = {}
 
-    RERANK_DIRS = {
-        "body": RERANK_SWEEP_DIR / "rerank_body",
-        "synonyms": RERANK_SWEEP_DIR / "rerank_synonyms",
-        "long": RERANK_SWEEP_DIR / "rerank_long",
-        "hybrid": RERANK_SWEEP_DIR / "retrieval" / "fusion",
-    }
-
-    KS_MAP = [1, 5, 10, 20, 50, 100, 200]
-
-
-    def load_gold_jsonl(path: Path) -> dict:
-        """Load gold from JSONL: qid -> list of relevant docnos (PMIDs as strings)."""
-        gold = {}
-        with open(path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                q = json.loads(line)
-                qid = str(q.get("query_id", q.get("id", "")))
-                if not qid:
-                    continue
-                pmids = []
-                for doc in q.get("documents", []):
-                    if isinstance(doc, str) and doc.startswith("http"):
-                        pmids.append(doc.split("/")[-1])
-                    elif doc:
-                        pmids.append(str(doc))
-                for d in q.get("docs", []):
-                    if isinstance(d, dict) and d.get("pmid"):
-                        pmids.append(str(d["pmid"]))
-                gold[qid] = list(set(pmids))
-        return gold
-
-
-    def load_run(path):
-        """Load run TSV: qid -> ranked list of docnos.
-
-        CE rerank TSVs are typically ``qid, docno, rank, score``; retrieval fusion from
-        ``fuse_retrieval.runmap_to_tsv`` is ``qid, rank, docno, score``. Resolve columns
-        by name when a header row is present. Treat ``\\ufeffqid`` as ``qid`` so UTF-8 BOM
-        does not force the no-header fallback (where ``docno_idx=1`` would read *rank* as
-        docno for fusion files and collapse fusion MRR).
-        """
-        run = {}
-        header = None
-
-        def _header_indices(h: list[str]) -> tuple[int, int]:
-            low = [p.lstrip("\ufeff").lower() for p in h]
-            qid_idx = low.index("qid") if "qid" in low else 0
-            for key in ("docno", "docid", "doc"):
-                if key in low:
-                    return qid_idx, low.index(key)
-            return qid_idx, 1
-
-        with open(path, encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split("\t")
-                if not parts:
-                    continue
-                if parts[0].lstrip("\ufeff").lower() == "qid":
-                    header = parts
-                    continue
-                if len(parts) < 3:
-                    continue
-                if header is not None:
-                    qid_idx, docno_idx = _header_indices(header)
-                else:
-                    qid_idx, docno_idx = 0, 1
-                qid, docno = parts[qid_idx], parts[docno_idx]
-                run.setdefault(qid, []).append(docno)
-        return run
-
-
-    def mrr_at_k(ranked, relset, k):
-        """Reciprocal rank of first relevant doc in top-k (0 if none)."""
-        for i, docno in enumerate(ranked[:k], start=1):
-            if docno in relset:
-                return 1.0 / i
-        return 0.0
-
-
-    def mean_mrr_at_k(gold, run, k):
-        scores = []
-        for qid, relset in gold.items():
-            ranked = run.get(qid, [])
-            scores.append(mrr_at_k(ranked, set(relset), k))
-        return sum(scores) / len(scores) if scores else 0.0
-
-
-    def _ylim_from_vals(vals, hi_clip):
-        if not vals:
-            return 0.5, hi_clip
-        lo, hi = min(vals), max(vals)
-        pad = (hi - lo) * 0.05 if hi > lo else 0.02
-        return max(0.0, lo - pad), min(hi_clip, hi + pad)
-
-
-    BENCHMARK_TOKEN = cfg["run_token"]
-    GOLD_JSONL = root / cfg["gold_jsonl"]
-
-    gold_bench = load_gold_jsonl(GOLD_JSONL)
-    mrr_curves = defaultdict(dict)
-
-    for method_key, rdir in RERANK_DIRS.items():
+    for method_key, rdir in rerank_dirs.items():
         runs_dir = rdir / "runs"
         if not runs_dir.is_dir():
-            print(f"[{cfg['tag']}] Skipping rerank method {method_key}: no runs dir")
             continue
-        matching = sorted(f for f in runs_dir.glob("*.tsv") if BENCHMARK_TOKEN in f.stem)
+        matching = sorted(f for f in runs_dir.glob("*.tsv") if run_token in f.stem)
         if not matching:
             continue
         if len(matching) > 1:
-            print(f"[{cfg['tag']}] Warning: {len(matching)} TSVs match '{BENCHMARK_TOKEN}' "
-                  f"in {runs_dir}; using {matching[0].name}")
-        run = load_run(matching[0])
-        mrr_vals = [mean_mrr_at_k(gold_bench, run, k) for k in KS_MAP]
-        mrr_curves["benchmark"][RERANK_DISPLAY[method_key]] = mrr_vals
+            print(
+                f"[{cfg['tag']}] Warning: {len(matching)} TSVs match '{run_token}' in {runs_dir}; "
+                f"using {matching[0].name}"
+            )
+        run_data = _rp_load_run(matching[0])
+        label = RERANK_DISPLAY[method_key]
+        mrr_curves[label] = [_rp_mean_mrr_at_k(gold_bench, run_data, k) for k in KS_MAP_RR]
 
-    roles_present = [r for r in sorted(mrr_curves.keys()) if mrr_curves[r]]
-    has_rerank = bool(roles_present and mrr_curves.get("benchmark"))
+    if not mrr_curves:
+        print(f"[{cfg['tag']}] No run TSVs matched '{run_token}' — nothing to plot.")
+        continue
 
-    _rerank_qf_colors = {**QF_COLORS, "hybrid": "#2980b9"}
-    _rerank_qf_markers = {**QF_MARKERS, "hybrid": "D"}
-    _display_to_qf = {v: k for k, v in RERANK_DISPLAY.items()}
-    method_order_rr = list(RERANK_DISPLAY.values())
+    rows = []
+    for method, vals in mrr_curves.items():
+        row = {"method": method}
+        for k, v in zip(KS_MAP_RR, vals):
+            row[f"MRR@{k}"] = round(v, 4)
+        rows.append(row)
+    df_rr = pd.DataFrame(rows).sort_values("MRR@10", ascending=False).reset_index(drop=True)
+    print(f"MRR@K ({cfg['tag']}, from run TSVs):\n")
+    display(pl.from_pandas(df_rr))
 
-    print(f"MRR@K summary ({cfg['tag']} benchmark):\n")
-    for role in roles_present:
-        rows = []
-        for method, vals in mrr_curves[role].items():
-            row = {"method": method}
-            for k, v in zip(KS_MAP, vals):
-                row[f"MRR@{k}"] = round(v, 4)
-            rows.append(row)
-        if rows:
-            df_summary = pd.DataFrame(rows)
-            df_summary = df_summary.sort_values("MRR@10", ascending=False).reset_index(drop=True)
-            label = f"{cfg['tag']} benchmark" if role == "benchmark" else role
-            print(f"\n{label.upper()}:")
-            display(pl.from_pandas(df_summary))
+    figures_dir = rerank_root / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
 
-    if not roles_present:
-        print(
-            f"\n[{cfg['tag']}] No rerank run TSVs matched '{BENCHMARK_TOKEN}' "
-            "— third panel skipped until runs exist.\n"
-        )
+    include_hybrid = RERANK_DISPLAY["hybrid"] in mrr_curves
 
+    with plt.rc_context(_rc_rr):
+        _, ax = plt.subplots(figsize=(6.5, 4.85))
+        for method in _method_order_rr:
+            if method not in mrr_curves:
+                continue
+            qf = _display_to_qf_rr.get(method, method)
+            ax.plot(
+                KS_MAP_RR,
+                mrr_curves[method],
+                marker=_rr_markers.get(qf, "o"),
+                color=_rr_colors.get(qf, "#333333"),
+                linewidth=1.8,
+                markersize=6,
+            )
+        mrr_flat = [v for vals in mrr_curves.values() for v in vals]
+        if mrr_flat:
+            lo, hi = _rp_ylim_from_vals(mrr_flat, 1.0)
+            ax.set_ylim(lo, hi)
+        # Title is reranker-aware: tag drives the model name shown.
+        _title_model = {
+            "7d": "BGE-reranker-v2-m3",
+            "7d_medcpt": "MedCPT",
+            "7d_gemma": "BGE Gemma",
+            "7e": "BGE-reranker-v2-m3",
+            "7e_medcpt": "MedCPT",
+            "7e_gemma": "BGE Gemma",
+        }.get(cfg["tag"], "Reranker")
+        ax.set_title(f"{_title_model} vs fusion[long] (n={len(gold_bench)})", fontsize=13, fontweight="bold")
+        ax.set_xlabel("K")
+        ax.set_xscale("log")
+        ax.set_ylabel("MRR@K")
+        ax.grid(True, axis="y", alpha=0.35)
+        ax.grid(True, axis="x", alpha=0.35)
 
-    def _shared_legend_handles(include_hybrid: bool):
-        """Match line styles across retrieval + rerank panels."""
-        out = []
+        leg_handles = []
         for q in ["body", "synonyms", "long"]:
-            out.append(
+            leg_handles.append(
                 Line2D(
                     [0],
                     [0],
-                    color=QF_COLORS[q],
-                    marker=QF_MARKERS[q],
+                    color=_rr_colors[q],
+                    marker=_rr_markers[q],
                     linestyle="-",
                     linewidth=1.8,
                     markersize=6,
@@ -465,185 +302,61 @@ for cfg in BENCHMARK_CONFIGS:
                 )
             )
         if include_hybrid:
-            out.append(
+            leg_handles.append(
                 Line2D(
                     [0],
                     [0],
-                    color=_rerank_qf_colors["hybrid"],
-                    marker=_rerank_qf_markers["hybrid"],
+                    color=_rr_colors["hybrid"],
+                    marker=_rr_markers["hybrid"],
                     linestyle="-",
                     linewidth=1.8,
                     markersize=6,
                     label=RERANK_DISPLAY["hybrid"],
                 )
             )
-        return out
+        fig = ax.get_figure()
+        fig.legend(
+            handles=leg_handles,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.02),
+            ncol=4 if include_hybrid else 3,
+            fontsize=10,
+            frameon=True,
+            fancybox=False,
+            edgecolor="0.85",
+        )
+        fig.suptitle(f"Rerank MRR@K — [{cfg['tag']}]", fontsize=14, fontweight="bold", y=1.02)
+        plt.tight_layout()
+        out_path = figures_dir / f"rerank_mrr_panel_{cfg['tag']}.png"
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.show()
+        plt.close(fig)
 
-
-    n_queries_gold = len(gold_bench)
-
-    with plt.rc_context(_rc_plot):
-        for batch in batches:
-            subset = plot_df[plot_df["batch"] == batch]
-            if subset.empty:
-                continue
-            n_known = _n_queries_if_known(subset, batch)
-            n_suffix = f" (n={n_known})" if n_known is not None else ""
-
-            vals_bm25 = []
-            for qf in qf_order:
-                rows = subset[(subset["stage"] == "bm25") & (subset["bm25_qf"] == qf)]
-                if rows.empty:
-                    continue
-                row = rows.iloc[0]
-                vals_bm25.extend(float(row[c]) for c in recall_cols)
-            y0_lo, y0_hi = _ylim_from_vals(vals_bm25, 1.02)
-
-            vals_dense = []
-            for qf in qf_order:
-                rows = subset[(subset["stage"] == "dense") & (subset["dense_qf"] == qf)]
-                if rows.empty:
-                    continue
-                row = rows.iloc[0]
-                vals_dense.extend(float(row[c]) for c in recall_cols)
-            y1_lo, y1_hi = _ylim_from_vals(vals_dense, 1.02)
-
-            ncols = 3 if has_rerank else 2
-            fig_w = 4.7 * ncols
-            fig, axes = plt.subplots(1, ncols, figsize=(fig_w, 4.85))
-
-            if ncols == 1:
-                axes = [axes]
-            else:
-                axes = list(axes)
-
-            # BM25 retrieval (own y-scale)
-            ax0 = axes[0]
-            for qf in qf_order:
-                rows = subset[(subset["stage"] == "bm25") & (subset["bm25_qf"] == qf)]
-                if rows.empty:
-                    continue
-                row = rows.iloc[0]
-                vals = [float(row[c]) for c in recall_cols]
-                ax0.plot(
-                    ks,
-                    vals,
-                    marker=QF_MARKERS.get(qf, "o"),
-                    color=QF_COLORS.get(qf, "#333333"),
-                    linewidth=1.8,
-                    markersize=6,
-                )
-            ax0.set_title(f"BM25 retrieval{n_suffix}", fontsize=13, fontweight="bold")
-            ax0.set_ylim(y0_lo, y0_hi)
-            ax0.set_xlabel("K")
-            ax0.set_xscale("log")
-            ax0.set_ylabel("Mean Recall@K")
-            ax0.grid(True, axis="y", alpha=0.35)
-            ax0.grid(True, axis="x", alpha=0.35)
-
-            # Dense retrieval (own y-scale)
-            ax1 = axes[1]
-            for qf in qf_order:
-                rows = subset[(subset["stage"] == "dense") & (subset["dense_qf"] == qf)]
-                if rows.empty:
-                    continue
-                row = rows.iloc[0]
-                vals = [float(row[c]) for c in recall_cols]
-                ax1.plot(
-                    ks,
-                    vals,
-                    marker=QF_MARKERS.get(qf, "o"),
-                    color=QF_COLORS.get(qf, "#333333"),
-                    linewidth=1.8,
-                    markersize=6,
-                )
-            ax1.set_title(f"Dense retrieval{n_suffix}", fontsize=13, fontweight="bold")
-            ax1.set_ylim(y1_lo, y1_hi)
-            ax1.set_xlabel("K")
-            ax1.set_xscale("log")
-            ax1.set_ylabel("")
-            ax1.grid(True, axis="y", alpha=0.35)
-            ax1.grid(True, axis="x", alpha=0.35)
-
-            if has_rerank:
-                ax2 = axes[2]
-                role_key = "benchmark"
-                for method in method_order_rr:
-                    if method not in mrr_curves[role_key]:
-                        continue
-                    qf = _display_to_qf.get(method, method)
-                    ax2.plot(
-                        KS_MAP,
-                        mrr_curves[role_key][method],
-                        marker=_rerank_qf_markers.get(qf, "o"),
-                        color=_rerank_qf_colors.get(qf, "#333333"),
-                        linewidth=1.8,
-                        markersize=6,
-                    )
-                mrr_flat = [v for vals in mrr_curves[role_key].values() for v in vals]
-                if mrr_flat:
-                    _lo, _hi = _ylim_from_vals(mrr_flat, 1.0)
-                    ax2.set_ylim(_lo, _hi)
-                ax2.set_title(f"CE rerank vs fusion[long] (n={n_queries_gold})", fontsize=13, fontweight="bold")
-                ax2.set_xlabel("K")
-                ax2.set_xscale("log")
-                ax2.set_ylabel("MRR@K")
-                ax2.grid(True, axis="y", alpha=0.35)
-                ax2.grid(True, axis="x", alpha=0.35)
-
-            leg_handles = _shared_legend_handles(include_hybrid=has_rerank)
-            fig.legend(
-                handles=leg_handles,
-                loc="upper center",
-                bbox_to_anchor=(0.5, 0.1),
-                ncol=4 if has_rerank else 3,
-                fontsize=10,
-                frameon=True,
-                fancybox=False,
-                edgecolor="0.85",
-            )
-            fig.suptitle(
-                f"Retrieval vs rerank (MRR@K) — [{cfg['tag']}] query-field sweep ({batch})",
-                fontsize=14,
-                fontweight="bold",
-                y=1.02,
-            )
-            plt.tight_layout()
-            fig.subplots_adjust(bottom=0.22)
-
-            safe_name = re.sub(r"[^\w\-]", "_", str(batch))
-            out_path = figures_dir / f"retrieval_rerank_row_{cfg['tag']}_{safe_name}.png"
-            fig.savefig(out_path, dpi=150, bbox_inches="tight")
-            plt.show()
-            plt.close(fig)
-
-    print(
-        f"[{cfg['tag']}] Saved 1×{'3' if has_rerank else '2'} retrieval (+ rerank) figures under {figures_dir}"
-    )
+    print(f"[{cfg['tag']}] Saved rerank-only figure: {out_path}")
 
 # %% [markdown]
-# Rerank MRR@K numbers are summarized above per benchmark tag (`7d` / `7e`): runs live under `workflow_fixed_long_rerank_sweep_{tag}/fixed_long_rerank_sweep/` (`rerank_body`, …).
+# Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE Gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
 
 # %% [markdown]
-# # Fig 2 Candidate — Main Paper
+# # Fig 4 Candidate — Main Paper (QE main result)
 #
-# *Paper role:* main-paper Fig 2. Pays off the §3.1 plateau motivation by showing
-# that query-side modifications (QE) deliver gains exceeding the rerank-stage
-# improvements measured in §3.1.
+# *Paper role:* main-paper figure for the query-expansion contribution.
+# Showcases QE on the standard pipeline (BGE-reranker-v2-m3): retrieval recall
+# improves substantially with QE, that gain carries through the rerank stage,
+# and the inset (panel d) shows the QE lift shrinks as the reranker gets
+# stronger — orthogonality with diminishing returns.
 #
 # - Panel (a): BM25 Recall@K, 3 QE variants — body / synonyms / long
 # - Panel (b): Dense Recall@K, same 3 QE variants
-# - Panel (c): CE rerank MRR@K under each QE variant **plus** the retrieval
-#   fusion of long-QE (no rerank) — the punchline line that surpasses
-#   CE+default-query
+# - Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant
+# - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE Gemma}
 #
-# Color palette deliberately aligned with Fig 1 in `ragnarok_comparison.ipynb`:
-# blue gradient for QE intensity (body=gray default, synonyms=mid-blue,
-# long=deep-blue), and green (`#2ca02c`, the "Fusion" color from Fig 1) for the
-# retrieval-fusion punchline.
+# Full per-reranker MRR@K curves (paper supp Fig S4 source) are produced by the
+# *"Rerank MRR@K under each QE variant"* cell above.
 #
-# Sample size: n=563 (7d expanded-query benchmark). Fig 1's n=1,656 is the
-# default-query full goldset — figure caption must flag this.
+# Sample size: n=563 (7d expanded-query benchmark). The ranker-comparison
+# Fig 3 uses n=1,656 (default-query full goldset) — the caption must flag the
+# difference.
 
 # %%
 from pathlib import Path
@@ -778,6 +491,42 @@ print("MRR@10 by panel-c method:", {m: round(v[fig2_ks_mrr.index(10)], 4) for m,
 
 
 # %%
+# Cross-reranker MRR@10 across QE variants — feeds panel (d) inset.
+# We load (reranker × QE) run TSVs and compute MRR@10 for each combo so the
+# inset can display QE Δ MRR@10 per reranker.
+RERANKER_DIRS_INSET: dict[str, Path] = {
+    "BGE-reranker-v2-m3": _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d" / "fixed_long_rerank_sweep",
+    "MedCPT":             _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_medcpt" / "fixed_long_rerank_sweep",
+    "BGE Gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
+}
+
+cross_reranker_mrr10: dict[str, dict[str, float]] = {}
+for rname, rdir in RERANKER_DIRS_INSET.items():
+    cross_reranker_mrr10[rname] = {}
+    for qf in ["body", "synonyms", "long"]:
+        runs_dir = rdir / f"rerank_{qf}" / "runs"
+        if not runs_dir.is_dir():
+            continue
+        candidates = list(runs_dir.glob(f"*{FIG2_TAG}*.tsv"))
+        if not candidates:
+            continue
+        run = _fig2_load_run(candidates[0])
+        cross_reranker_mrr10[rname][qf] = _fig2_mean_mrr(run, fig2_gold, 10)
+
+print("\nQE × reranker MRR@10:")
+for rname, qf_mrr in cross_reranker_mrr10.items():
+    body = qf_mrr.get("body", float("nan"))
+    syn  = qf_mrr.get("synonyms", float("nan"))
+    long = qf_mrr.get("long", float("nan"))
+    delta_long_body = (long - body) if (not np.isnan(body) and not np.isnan(long)) else float("nan")
+    delta_syn_body  = (syn - body) if (not np.isnan(body) and not np.isnan(syn)) else float("nan")
+    print(
+        f"  {rname:22s}  body={body:.4f}  synonyms={syn:.4f}  long={long:.4f}  "
+        f"Δ(long−body)={delta_long_body:+.4f}  Δ(syn−body)={delta_syn_body:+.4f}"
+    )
+
+
+# %%
 # Style: blue gradient for QE intensity, green for fusion punchline (matches Fig 1's "Fusion" color).
 QE_STYLE = {
     "body":     {"color": "#888888", "label": "Original Query",        "lw": 1.6, "ls": "-",  "alpha": 0.85},
@@ -791,8 +540,8 @@ FUSION_STYLE = {
 
 n_q = len(fig2_gold)
 
-fig, axes = plt.subplots(1, 3, figsize=(15, 4.7))
-ax_a, ax_b, ax_c = axes
+fig, axes = plt.subplots(1, 4, figsize=(18, 4.7), gridspec_kw={"width_ratios": [0.95, 0.95, 0.95, 1.20]})
+ax_a, ax_b, ax_c, ax_d = axes
 
 
 # Panel (a): BM25 Recall@K
@@ -802,7 +551,7 @@ for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     ax_a.plot(fig2_ks_recall, bm25_recall[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
-ax_a.set_title(f"(a) BM25 retrieval — Recall@K", fontsize=13, fontweight="bold")
+ax_a.set_title("(a) BM25 retrieval", fontsize=13, fontweight="bold")
 ax_a.set_xscale("log")
 ax_a.set_xlabel("K")
 ax_a.set_ylabel("Mean Recall@K")
@@ -817,7 +566,7 @@ for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     ax_b.plot(fig2_ks_recall, dense_recall[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
-ax_b.set_title(f"(b) Dense retrieval — Recall@K", fontsize=13, fontweight="bold")
+ax_b.set_title("(b) Dense retrieval", fontsize=13, fontweight="bold")
 ax_b.set_xscale("log")
 ax_b.set_xlabel("K")
 ax_b.set_ylabel("")
@@ -825,9 +574,9 @@ ax_b.grid(True, axis="y", alpha=0.35)
 ax_b.grid(True, axis="x", alpha=0.35)
 
 
-# Panel (c): CE rerank MRR@K under each QE variant. The retrieval-fusion line
-# (no rerank) was deliberately dropped to keep the panel a clean QE-on-CE story;
-# that comparison lives in the standalone supplement Fig S3 below.
+# Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant. The retrieval-fusion
+# line (no rerank) was deliberately dropped to keep the panel clean; that
+# comparison lives in the diagnostic cell below.
 for qf in ["body", "synonyms", "long"]:
     if qf not in mrr_curves:
         continue
@@ -835,12 +584,71 @@ for qf in ["body", "synonyms", "long"]:
     ax_c.plot(fig2_ks_mrr, mrr_curves[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
 
-ax_c.set_title(f"(c) CE rerank — MRR@K under each QE variant", fontsize=13, fontweight="bold")
+ax_c.set_title("(c) BGE-reranker-v2-m3 — MRR@K", fontsize=13, fontweight="bold")
 ax_c.set_xscale("log")
 ax_c.set_xlabel("K")
 ax_c.set_ylabel("Mean MRR@K")
 ax_c.grid(True, axis="y", alpha=0.35)
 ax_c.grid(True, axis="x", alpha=0.35)
+
+
+# Panel (d): QE lift across rerankers. Two nested bars per reranker —
+# Δ MRR@10 (synonyms − body) and Δ MRR@10 (long − body) — using the same
+# blue gradient as panels (a)–(c) so QE intensity is visually consistent.
+# The diminishing bar height across the row tells the orthogonality story:
+# QE compounds with weaker rerankers; with a strong enough reranker
+# (BGE Gemma) the marginal QE benefit shrinks.
+inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE Gemma"]
+inset_qf_pair = ["synonyms", "long"]
+
+inset_data: dict[str, dict[str, float]] = {}
+for rname in inset_reranker_order:
+    qf_mrr = cross_reranker_mrr10.get(rname, {})
+    body = qf_mrr.get("body", float("nan"))
+    inset_data[rname] = {}
+    for qf in inset_qf_pair:
+        v = qf_mrr.get(qf, float("nan"))
+        inset_data[rname][qf] = (v - body) if not (np.isnan(body) or np.isnan(v)) else float("nan")
+
+xpos = np.arange(len(inset_reranker_order))
+bar_width = 0.36
+
+all_deltas: list[float] = []
+for i, qf in enumerate(inset_qf_pair):
+    deltas = [inset_data[r].get(qf, float("nan")) for r in inset_reranker_order]
+    deltas_plot = [0.0 if np.isnan(d) else d for d in deltas]
+    all_deltas.extend(d for d in deltas if not np.isnan(d))
+    offset = (i - 0.5) * bar_width
+    bars = ax_d.bar(
+        xpos + offset, deltas_plot, bar_width,
+        color=QE_STYLE[qf]["color"], alpha=0.9, edgecolor="black", linewidth=0.4,
+        label=QE_STYLE[qf]["label"],
+    )
+    for bar, delta in zip(bars, deltas):
+        if np.isnan(delta):
+            continue
+        h = bar.get_height()
+        ax_d.text(
+            bar.get_x() + bar.get_width() / 2,
+            h + (0.0015 if h >= 0 else -0.0015),
+            f"{delta:+.3f}",
+            ha="center", va="bottom" if h >= 0 else "top",
+            fontsize=8, fontweight="bold",
+        )
+
+ax_d.axhline(0, color="black", linewidth=0.6)
+ax_d.set_xticks(xpos)
+ax_d.set_xticklabels(inset_reranker_order, rotation=15, ha="right", fontsize=10)
+ax_d.set_ylabel("Δ MRR@10 (vs body QE)")
+ax_d.set_title("(d) QE lift across rerankers", fontsize=13, fontweight="bold")
+ax_d.legend(fontsize=9, loc="upper right", frameon=True, edgecolor="0.85")
+ax_d.grid(True, axis="y", alpha=0.35)
+
+if all_deltas:
+    y_max = max(all_deltas)
+    y_min = min(0.0, min(all_deltas))
+    pad = (y_max - y_min) * 0.20 if y_max > y_min else 0.01
+    ax_d.set_ylim(y_min - pad * 0.3, y_max + pad)
 
 
 # Shared legend
@@ -853,14 +661,14 @@ fig.legend(handles=legend_handles, loc="lower center", bbox_to_anchor=(0.5, -0.0
            ncol=3, fontsize=11, frameon=True, edgecolor="0.85")
 
 fig.suptitle(
-    f"Query expansion improves retrieval recall (a, b) and downstream cross-encoder "
-    f"rerank quality (c)  |  n={n_q}",
+    f"QE improves retrieval recall (a, b), lifts BGE-reranker-v2-m3 MRR (c), "
+    f"and the lift carries — with diminishing returns — across rerankers (d)  |  n={n_q}",
     fontsize=13, fontweight="bold", y=1.02,
 )
 plt.tight_layout()
 fig.subplots_adjust(bottom=0.18)
 
-fig2_path = fig2_out_dir / "fig2_candidate_qe_main.png"
+fig2_path = fig2_out_dir / "fig4_candidate_qe_main.png"
 fig.savefig(fig2_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig2_path)
 plt.show()
@@ -896,51 +704,55 @@ for m in panel_c_order:
 
 
 # %% [markdown]
-# ## Draft Results Text — §3.2 Query expansion delivers gains beyond the rerank ladder
+# ## Results paragraph — TBD pending paper framing
 #
-# *Numerical values populated from the cell above; n=563 (7d expanded-query
-# benchmark). Note that this benchmark differs from the n=1,656 default-query
-# goldset used in §3.1 — the figure caption should flag the change.*
+# *Placeholder.* QE story for the paper, drafted from the data in panels
+# (a)–(d):
 #
-# > **3.2 Query expansion delivers gains beyond the rerank ladder.**
-# > Given the §3.1 finding that ranker upgrades plateau on dicty, we tested
-# > whether query-side modifications produce larger gains. We generated two
-# > expansion variants — gene synonyms only, and gene synonyms combined with
-# > gene-product names (long-form expansion) — and evaluated them on the
-# > n=563 expanded-query benchmark. Both BM25 (**Fig 2a**) and dense
-# > retrieval (**Fig 2b**) gain substantially in Recall@K: BM25 Recall@100
-# > rises from 0.816 (original query) to 0.901 (long-form), an +8.5 pp gain,
-# > and dense Recall@100 from 0.762 to 0.881 (+11.9 pp). At the rerank stage
-# > (**Fig 2c**), applying expansion to the cross-encoder rerank input
-# > improves MRR@10 from 0.576 to 0.622 — a +4.6 pp gain that is roughly
-# > 4× the entire stage-upgrade ladder reported in §3.1 (+1.2 pp). For
-# > consistency, on this benchmark a retrieval fusion of long-form queries
-# > (no rerank) achieves MRR@10 = 0.619 (**Fig S3**), reinforcing the §3.1
-# > finding that on dicty, query-side modifications carry more leverage than
-# > ranker-side ones.
+# - QE substantially improves first-stage Recall@100 on both BM25 and Dense
+#   retrieval (panels a, b — see headline table below for exact numbers).
+# - That recall gain carries through to MRR@10 on the standard reranker
+#   (BGE-reranker-v2-m3, panel c).
+# - The QE lift is **not uniform across rerankers** (panel d):
+#   BGE-reranker-v2-m3 ≈ +4.6 pp, MedCPT ≈ +5.7 pp, BGE Gemma ≈ +0.9 pp.
+#   With a strong enough reranker (Gemma), the marginal QE benefit shrinks —
+#   the strong reranker can recover the gold doc even from a less-precise
+#   query, so query-side and ranker-side improvements partially substitute
+#   rather than fully compound.
 #
-# **Key headline numbers** (for ablation tables / abstract):
+# This nuances the orthogonality claim from "QE and ranker choice are
+# independent levers" to "QE and ranker choice are partially orthogonal —
+# both help on weaker rerankers; the QE benefit diminishes as the reranker
+# gets stronger." Final prose waits until paper framing is locked.
 #
-# | Method                                | MRR@10 | Recall@100 |
-# |---------------------------------------|--------|------------|
-# | BM25 (original query)                 | —      | 0.816      |
-# | BM25 (+ synonyms & products)          | —      | 0.901      |
-# | Dense (original query)                | —      | 0.762      |
-# | Dense (+ synonyms & products)         | —      | 0.881      |
-# | CE rerank on original query           | 0.576  | —          |
-# | CE rerank on synonyms expansion       | 0.623  | —          |
-# | CE rerank on long-form expansion      | 0.622  | —          |
-# | Retrieval Fusion (long QE, no rerank) | 0.619  | —          |
+# **Key headline numbers** (n=563, 7d expanded-query benchmark):
+#
+# | Method                                                      | MRR@10 | Recall@100 |
+# |-------------------------------------------------------------|--------|------------|
+# | BM25 (original query)                                       | —      | 0.816      |
+# | BM25 (+ synonyms & products)                                | —      | 0.901      |
+# | Dense (original query)                                      | —      | 0.762      |
+# | Dense (+ synonyms & products)                               | —      | 0.881      |
+# | Retrieval Fusion (long QE, no rerank)                       | 0.619  | —          |
+# | BGE-reranker-v2-m3 on original query                        | 0.576  | —          |
+# | BGE-reranker-v2-m3 on synonyms expansion                    | 0.623  | —          |
+# | BGE-reranker-v2-m3 on long-form expansion                   | 0.622  | —          |
+# | MedCPT on original query                                    | 0.624  | —          |
+# | MedCPT on synonyms expansion                                | 0.681  | —          |
+# | BGE Gemma on original query                                 | 0.694  | —          |
+# | BGE Gemma on synonyms expansion                             | 0.703  | —          |
 
 
 # %% [markdown]
-# ## Supplement Fig S3 — Retrieval-only QE fusion vs CE Rerank with QE
+# ## Diagnostic — Retrieval-only long-QE vs BGE-reranker-v2-m3 on long-QE
 #
-# *Paper role:* supplement, consistency check supporting §3.2's claim that
-# query-side modifications carry more leverage than ranker-side ones. Shows
-# that a retrieval fusion of long-form QE variants (no reranker) lands at
-# essentially the same MRR@K as CE+long-QE — a separate piece of evidence
-# for §3.1's "ranker plateaus on dicty" finding, on the n=563 benchmark.
+# *Diagnostic, not paper-bound under the new framing.* Shows that retrieval
+# fusion of long-form QE (no reranker) lands at essentially the same MRR@K
+# as BGE-reranker-v2-m3 + long-QE on the n=563 benchmark. Useful internal
+# sanity check that BGE-reranker-v2-m3 adds little beyond what QE already
+# achieves at the retrieval stage — but no longer load-bearing for the paper
+# (the ranker-choice contribution in Fig 3 supersedes the original "rerank
+# plateau" framing this figure was built to support).
 
 # %%
 fig_s3, ax_s3 = plt.subplots(figsize=(6.5, 4.5))
@@ -949,7 +761,7 @@ fig_s3, ax_s3 = plt.subplots(figsize=(6.5, 4.5))
 if "long" in mrr_curves:
     s = QE_STYLE["long"]
     ax_s3.plot(fig2_ks_mrr, mrr_curves["long"], marker="o", markersize=6,
-               color=s["color"], linewidth=2.4, label="CE rerank + long-form QE")
+               color=s["color"], linewidth=2.4, label="BGE-reranker-v2-m3 + long-form QE")
 
 if "fusion_long" in mrr_curves:
     ax_s3.plot(fig2_ks_mrr, mrr_curves["fusion_long"], marker="D", markersize=6,
@@ -960,7 +772,7 @@ if "fusion_long" in mrr_curves:
 if "body" in mrr_curves:
     ax_s3.plot(fig2_ks_mrr, mrr_curves["body"], marker="o", markersize=4,
                color="#888888", linewidth=1.4, alpha=0.85,
-               label="CE rerank + original query (reference)")
+               label="BGE-reranker-v2-m3 + original query (reference)")
 
 ax_s3.set_xscale("log")
 ax_s3.set_xlabel("K")
@@ -969,11 +781,11 @@ ax_s3.grid(True, axis="y", alpha=0.35)
 ax_s3.grid(True, axis="x", alpha=0.35)
 ax_s3.legend(fontsize=10, loc="lower right")
 fig_s3.suptitle(
-    f"Fig S3 — Retrieval-only QE matches CE+QE on dicty  |  n={n_q}",
+    f"Diagnostic — Retrieval-only long-QE matches BGE-v2-m3 + long-QE  |  n={n_q}",
     fontsize=12, fontweight="bold",
 )
 plt.tight_layout()
-fig_s3_path = fig2_out_dir / "fig_s3_retrieval_only_qe_vs_ce.png"
+fig_s3_path = fig2_out_dir / "diag_retrieval_only_qe_vs_bge_v2_m3.png"
 fig_s3.savefig(fig_s3_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig_s3_path)
 plt.show()
