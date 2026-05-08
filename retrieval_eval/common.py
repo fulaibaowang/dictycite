@@ -10,6 +10,8 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 import numpy as np
 import pandas as pd
 
+from .aggregate import dedupe_run_map_by_pmid, docno_to_pmid
+
 
 # ---------------------------
 # Query record parsing
@@ -325,6 +327,10 @@ def evaluate_run(
 ) -> Tuple[Dict[str, float], pd.DataFrame]:
     if ks_recall is None:
         ks_recall = RECALL_KS
+    # Gold is pmid-level; the run may be chunk-level (e.g. "<pmid>#body_007").
+    # Collapse to pmid-level here so pipeline-stage callers can keep chunk
+    # identity in their run_maps for downstream lookups.
+    run_map = dedupe_run_map_by_pmid(run_map)
     qids = list(gold_map.keys())
 
     ap10s, rr10s, succ10s, r10s = [], [], [], []
@@ -367,7 +373,22 @@ def evaluate_run(
     return summary, pd.DataFrame(perq_rows)
 
 
-def run_df_to_run_map(res_df: pd.DataFrame, qid_col: str = "qid", docno_col: str = "docno") -> Dict[str, List[str]]:
+def run_df_to_run_map(
+    res_df: pd.DataFrame,
+    qid_col: str = "qid",
+    docno_col: str = "docno",
+) -> Dict[str, List[str]]:
+    """Convert a retrieval result dataframe to a {qid: [docnos]} map.
+
+    Returns docnos exactly as they appear in the dataframe — chunk-level
+    (e.g. ``"12345#body_007"``) for chunked corpora, bare PMIDs for legacy
+    corpora. No aggregation: pipeline callers (rerankers, fusion, snippet
+    builders) need chunk identity preserved here.
+
+    Eval callers should pass the result to :func:`evaluate_run`, which
+    transparently collapses chunk docnos to PMID level before comparing
+    against the gold map.
+    """
     run: Dict[str, List[str]] = {}
     for qid, g in res_df.groupby(qid_col, sort=False):
         run[str(qid)] = [str(x) for x in g[docno_col].tolist()]
