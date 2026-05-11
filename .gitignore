@@ -32,3 +32,4 @@ dicty_simulated_data/
 dictybase_files/ontology/
 CLAUDE.md
 logs/
+.claude/
