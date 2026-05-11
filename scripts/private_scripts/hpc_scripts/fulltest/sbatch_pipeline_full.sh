@@ -5,8 +5,8 @@
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --cpus-per-task=16
-#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:A100:1
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ mkdir -p logs
 # -----------------------------
 # Paths / inputs
 # -----------------------------
-CONTAINER_IMG="/shared/home/yun.wang/biolab/yun/bioasq_08.03.26.sqfs"
+CONTAINER_IMG="/shared/home/yun.wang/biolab/yun/bioasq_08.03.26b200.sqfs"
 WORKDIR="${PWD}"
 
 PUBMED_HOST="/shared/workspace/biolab/pubmed"
