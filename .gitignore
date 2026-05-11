@@ -12,7 +12,10 @@ output/dicty_gold_build/*
 !output/dicty_gold_build/6c_llm_labels_run3.jsonl
 !output/dicty_gold_build/7a_dicty_gold_llm_public.jsonl
 !output/dicty_gold_build/7c_articles_cleaned_abstract.jsonl
+!output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv
 !output/dicty_gold_build/7d_dicty_gold_query_expansion_benchmark.jsonl
+# v2 corpus is a derived artifact (rebuild via build_corpus.py); too large for GitHub
+dicty_fulltext_corpus/v2/corpus.jsonl
 !output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.jsonl
 !output/dicty_gold_build/8b_gold_linked_notes_examples.jsonl
 scripts/public/article_fetching/output/

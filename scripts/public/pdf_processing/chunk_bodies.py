@@ -25,6 +25,10 @@ from pathlib import Path
 from .chunk import chunk_body, split_captions_from_body
 from .config import CHUNK_CAP, CHUNK_MIN, CHUNK_OVERLAP, CHUNK_TARGET, DEFAULT_OUT_DIR
 
+# tier4 flags that disqualify a PMID from chunking. low_chars_per_page is the
+# scan signal (body < 500 chars/page) — chunking such bodies produces junk.
+EXCLUDED_TIER4_FLAGS = frozenset({"low_chars_per_page"})
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -68,8 +72,13 @@ def main() -> int:
         cleaned_records = [json.loads(line) for line in f]
 
     rows: list[dict] = []
+    n_skipped_error = n_skipped_flag = 0
     for rec in cleaned_records:
         if "error" in rec:
+            n_skipped_error += 1
+            continue
+        if set(rec.get("tier4_flags") or []) & EXCLUDED_TIER4_FLAGS:
+            n_skipped_flag += 1
             continue
         pmid = rec["pmid"]
         body_file = body_dir / f"{pmid}.txt"
@@ -118,7 +127,11 @@ def main() -> int:
     with out_path.open("w") as f:
         for row in rows:
             f.write(json.dumps(row) + "\n")
-    print(f"Wrote {len(rows)} chunks to {out_path}")
+    n_pmids = len({r["pmid"] for r in rows})
+    print(f"Wrote {len(rows)} chunks ({n_pmids} unique pmids) to {out_path}")
+    if n_skipped_error or n_skipped_flag:
+        print(f"Skipped: {n_skipped_error} extraction errors, {n_skipped_flag} tier4-excluded "
+              f"(flags: {sorted(EXCLUDED_TIER4_FLAGS)})")
     return 0
 
 

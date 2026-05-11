@@ -75,9 +75,13 @@ def load_titles(path: Path) -> dict[str, str]:
 
 
 def iter_abstracts(path: Path, titles: dict[str, str] | None = None) -> list[dict]:
-    """Read the legacy abstracts corpus and emit unified-schema rows.
+    """Read an abstracts corpus and emit unified-schema rows.
 
-    Input rows: {"pmid", "title", "abstract"}.
+    Accepts either of two input row schemas (auto-detected per row):
+      - legacy abstracts corpus: {"pmid", "title", "abstract"}
+      - 7c_articles_cleaned_abstract.jsonl (and similar):
+        {"pmid", "title", "text", "type": "abstract", ...}
+
     Output docno: <pmid>#abstract. Titles are taken from the optional titles map
     when present; otherwise fall back to the row's own title field.
     """
@@ -89,7 +93,7 @@ def iter_abstracts(path: Path, titles: dict[str, str] | None = None) -> list[dic
             pmid = str(r.get("pmid", "")).strip()
             if not pmid:
                 continue
-            text = (r.get("abstract") or "").strip()
+            text = (r.get("abstract") or r.get("text") or "").strip()
             title = titles.get(pmid) or r.get("title") or ""
             out.append({
                 "docno": f"{pmid}#abstract",
