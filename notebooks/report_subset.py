@@ -1154,13 +1154,13 @@ plt.show()
 EVIDENCE_LEVEL_ORDER = [
     "abstract_support_details",
     "supports_core",
-    "needs_fulltext",
+    "abstract_insufficient",
 ]
 
 EVIDENCE_LEVEL_LABELS = {
     "abstract_support_details": "Abstract support details",
     "supports_core": "Supports core",
-    "needs_fulltext": "Needs full text",
+    "abstract_insufficient": "Abstract insufficient",
 }
 
 ks_evidence = [1, 5, 10, 20, 30,  50, 75, 100]

@@ -19,7 +19,7 @@
 # Compare extractors on a small sample of dictybase PDFs and prototype the cleaning pipeline.
 # Goal: pick one extractor + cleaning chain for the full ~228-PDF processing run.
 #
-# Sample (`needs_fulltext` unless noted):
+# Sample (`abstract_insufficient` unless noted):
 # - `10373524` (1999) — pdfs/
 # - `16367873` (2006) — pdfs/
 # - `24550398` (2014) — pdfs/
@@ -41,11 +41,11 @@ OUT_DIR = Path("/Users/yun/develop/dictycite/output/pdf_extraction/prototype")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 SAMPLES = [
-    ("10373524", PDFS_DIR, "1999 needs_fulltext"),
-    ("16367873", PDFS_DIR, "2006 needs_fulltext"),
-    ("24550398", PDFS_DIR, "2014 needs_fulltext"),
+    ("10373524", PDFS_DIR, "1999 abstract_insufficient"),
+    ("16367873", PDFS_DIR, "2006 abstract_insufficient"),
+    ("24550398", PDFS_DIR, "2014 abstract_insufficient"),
     ("26359303", PDFS_DIR, "2015 abstract_supports_detail (control)"),
-    ("29626371", MANUAL_DIR, "2018 needs_fulltext (manual)"),
+    ("29626371", MANUAL_DIR, "2018 abstract_insufficient (manual)"),
     ("9564522",  PDFS_DIR, "edge: Benchmarks multi-article"),
     ("27663234", PDFS_DIR, "edge: Elsevier accepted manuscript"),
 ]
@@ -617,7 +617,7 @@ for row in clean_stats:
 #
 # Build target list:
 # - Example union (train_200 ∪ test_50) ∩ available PDFs in `pdfs/`, minus 3 known-scans
-# - Plus all PDFs in `manual/` (covers some `needs_fulltext` PMIDs missing from `pdfs/`)
+# - Plus all PDFs in `manual/` (covers some `abstract_insufficient` PMIDs missing from `pdfs/`)
 #
 # Output to `output/pdf_extraction_v1/` (separate from prototype) — body only,
 # plus `flag_report.jsonl` for Tier 4 review.

@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:1
 #
 # VEGA: 3×3 BM25 × Dense query-field sweep (same logic as query_expansion/sbatch_query_field_sweep.sh).
-# Runs twice: gold benchmark 7d (full), then 7e (7d minus evidence_level=needs_fulltext). Each run writes
+# Runs twice: gold benchmark 7d (full), then 7e (7d minus evidence_level=abstract_insufficient). Each run writes
 # nine subdirs under ${WORKFLOW_SWEEP_OUTPUT_DIR}/query_field_sweep/ for its own sweep root.
 #
 # Adjust SWEEP_CONFIGS or time limit if needed.

@@ -125,8 +125,8 @@ def load_qrels(path: Path) -> dict[str, set[str]]:
     return qrels
 
 
-def load_query_ids_without_any_needs_fulltext_doc(path: Path) -> set[str]:
-    """Query IDs where no cited doc has evidence_level needs_fulltext (abstract-eval subset)."""
+def load_query_ids_without_any_abstract_insufficient_doc(path: Path) -> set[str]:
+    """Query IDs where no cited doc has evidence_level abstract_insufficient (abstract-eval subset)."""
     out: set[str] = set()
     with path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -138,7 +138,7 @@ def load_query_ids_without_any_needs_fulltext_doc(path: Path) -> set[str]:
             if not qid:
                 continue
             if any(
-                (d.get("evidence_level") or "").strip() == "needs_fulltext"
+                (d.get("evidence_level") or "").strip() == "abstract_insufficient"
                 for d in (q.get("docs") or [])
             ):
                 continue
@@ -149,10 +149,10 @@ def load_query_ids_without_any_needs_fulltext_doc(path: Path) -> set[str]:
 qrels = load_qrels(goldset_jsonl)
 print(f"Loaded qrels: {len(qrels)} queries")
 
-qids_no_needs_fulltext = load_query_ids_without_any_needs_fulltext_doc(goldset_jsonl)
-n_qrels_abstract_only = len(set(qrels) & qids_no_needs_fulltext)
+qids_no_abstract_insufficient = load_query_ids_without_any_abstract_insufficient_doc(goldset_jsonl)
+n_qrels_abstract_only = len(set(qrels) & qids_no_abstract_insufficient)
 print(
-    f"Queries with no needs_fulltext doc (intersect qrels): {n_qrels_abstract_only} / {len(qrels)}"
+    f"Queries with no abstract_insufficient doc (intersect qrels): {n_qrels_abstract_only} / {len(qrels)}"
 )
 
 

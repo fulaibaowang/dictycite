@@ -67,7 +67,7 @@ Output these two fields:
 **`evidence_level`**
 - `"abstract_supports_detail"`: abstract explicitly supports the core claim **and** the key detail(s) stated in the claim
 - `"abstract_supports_core"`: abstract explicitly supports the core claim, but not the key detail(s)
-- `"needs_fulltext"`: paper seems plausibly on-topic, but the abstract does **not** explicitly support the core claim (or is too vague); full text likely needed
+- `"abstract_insufficient"`: paper seems plausibly on-topic, but the abstract does **not** explicitly support the core claim (or is too vague); full text likely needed
 - `"not_applicable"`: only if `doc_match` is `"no"`
 
 ### Decision procedure (follow strictly)
@@ -90,7 +90,7 @@ Output these two fields:
    - If `doc_match="no"` → `"not_applicable"`
    - Else if abstract explicitly states the **detail claim(s)** (and core) → `"abstract_supports_detail"`
    - Else if abstract explicitly states the **core claim** but not the detail(s) → `"abstract_supports_core"`
-   - Else → `"needs_fulltext"`
+   - Else → `"abstract_insufficient"`
 
 ### Output format (JSON only, minimal)
 Return ONLY this JSON object, with no extra text and no extra keys:
@@ -98,7 +98,7 @@ Return ONLY this JSON object, with no extra text and no extra keys:
 ```json
 {{
   "doc_match": "yes|no|unclear",
-  "evidence_level": "abstract_supports_detail|abstract_supports_core|needs_fulltext|not_applicable",
+  "evidence_level": "abstract_supports_detail|abstract_supports_core|abstract_insufficient|not_applicable",
   "reason": "max 25 words, concrete."
 }}
 ```
@@ -183,7 +183,7 @@ for _, row in sample.iterrows():
     try:
         out = parse_label_json(raw)
     except Exception as e:
-        out = {"doc_match": "unclear", "evidence_level": "needs_fulltext", "reason": f"parse_error: {e}"}
+        out = {"doc_match": "unclear", "evidence_level": "abstract_insufficient", "reason": f"parse_error: {e}"}
 
     # add your required keys
     out["group_claim_id"] = group_claim_id
@@ -287,9 +287,9 @@ merged.head()
 #   (i.e., only "yes" paired with non-yes counts as disagreement)
 #
 # For evidence_level:
-#   - Disagreement = when "abstract_supports_detail" or "abstract_supports_core" vs "needs_fulltext"
+#   - Disagreement = when "abstract_supports_detail" or "abstract_supports_core" vs "abstract_insufficient"
 #   - NO disagreement = when "abstract_supports_detail" vs "abstract_supports_core"
-#   (i.e., any explicit support vs needs_fulltext counts as disagreement)
+#   (i.e., any explicit support vs abstract_insufficient counts as disagreement)
 
 def doc_match_disagree(v1, v2):
     """Returns True if v1 and v2 represent a meaningful disagreement."""
@@ -303,8 +303,8 @@ def evidence_disagree(v1, v2):
     """Returns True if v1 and v2 represent a meaningful disagreement."""
     supports = {"abstract_supports_detail", "abstract_supports_core"}
     pair = {v1, v2}
-    # Disagreement if one is explicit support and the other is needs_fulltext
-    if (pair & supports) and "needs_fulltext" in pair:
+    # Disagreement if one is explicit support and the other is abstract_insufficient
+    if (pair & supports) and "abstract_insufficient" in pair:
         return True
     return False
 
@@ -388,7 +388,7 @@ has_no_or_unclear = merged[["doc_match_1","doc_match_2","doc_match_3"]].isin(["n
 doc_match_agreement = (~(has_yes & has_no_or_unclear)).astype(int)
 
 has_support = merged[["evidence_1","evidence_2","evidence_3"]].isin(supports).any(axis=1)
-has_needs = merged[["evidence_1","evidence_2","evidence_3"]].eq("needs_fulltext").any(axis=1)
+has_needs = merged[["evidence_1","evidence_2","evidence_3"]].eq("abstract_insufficient").any(axis=1)
 evidence_agreement = (~(has_support & has_needs)).astype(int)
 
 # --- Table 1: agreement summary ---
@@ -414,12 +414,12 @@ full_agreement_table["doc_match"] = (
 )
 
 # pick a representative evidence label:
-# if any supports_detail -> detail, elif any supports_core -> core, else needs_fulltext
+# if any supports_detail -> detail, elif any supports_core -> core, else abstract_insufficient
 full_agreement_table["evidence_level"] = (
     merged.loc[mask_full, ["evidence_1","evidence_2","evidence_3"]]
     .apply(lambda r: "abstract_supports_detail" if (r=="abstract_supports_detail").any()
                    else ("abstract_supports_core" if (r=="abstract_supports_core").any()
-                         else "needs_fulltext"),
+                         else "abstract_insufficient"),
            axis=1)
 )
 

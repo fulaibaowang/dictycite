@@ -1210,7 +1210,7 @@ plt.show()
 # ## 12. Supplement Fig S4 / Source for Main Fig 3 — Post-rerank Fusion Metrics by Evidence Level
 #
 # *Paper role:*
-# - **Main Fig 3** uses the `needs_fulltext` panel from this section (the
+# - **Main Fig 3** uses the `abstract_insufficient` panel from this section (the
 #   third column of the multi-panel plot below) to argue that abstract-only
 #   retrieval plateaus on claims requiring full-text evidence — motivating
 #   the PDF-chunk extension as future work.
@@ -1224,13 +1224,13 @@ plt.show()
 EVIDENCE_LEVEL_ORDER = [
     "abstract_support_details",
     "supports_core",
-    "needs_fulltext",
+    "abstract_insufficient",
 ]
 
 EVIDENCE_LEVEL_LABELS = {
     "abstract_support_details": "Abstract support details",
     "supports_core": "Supports core",
-    "needs_fulltext": "Needs full text",
+    "abstract_insufficient": "Abstract insufficient",
 }
 
 ks_evidence = [1, 5, 10, 20, 30,  50, 75, 100]
@@ -1463,11 +1463,11 @@ for split in splits:
 #
 # *Paper role:* main-paper Fig 3. Single-panel overlay of MRR@K curves for
 # each evidence level, paying off the §3.2 QE story by showing where current
-# methods still fail (`needs_fulltext` queries) and motivating the PDF-chunk
+# methods still fail (`abstract_insufficient` queries) and motivating the PDF-chunk
 # extension as future work.
 #
 # Single-panel design (vs Fig S4's 3×3 grid) chosen to make the gap between
-# `needs_fulltext` and the abstract-resolvable levels visible at a glance.
+# `abstract_insufficient` and the abstract-resolvable levels visible at a glance.
 # Uses MRR@K (not Recall@K) because qrels are document-level — the same PMIDs
 # would be retrieved across evidence levels; what differs is whether the
 # abstract surfaces the claim well enough to rank highly.
@@ -1477,24 +1477,24 @@ for split in splits:
 EVIDENCE_FIG3_COLORS = {
     "abstract_supports_core":     "#2ca02c",  # green — abstract sufficient, best
     "abstract_supports_detail":   "#1f77b4",  # blue — abstract sufficient, secondary
-    "needs_fulltext":             "#d62728",  # red — abstract insufficient, the ceiling
+    "abstract_insufficient":             "#d62728",  # red — abstract insufficient, the ceiling
 }
 EVIDENCE_FIG3_MARKERS = {
     "abstract_supports_core":     "o",
     "abstract_supports_detail":   "s",
-    "needs_fulltext":             "D",
+    "abstract_insufficient":             "D",
 }
 EVIDENCE_FIG3_LW = {
     "abstract_supports_core":     1.8,
     "abstract_supports_detail":   1.8,
-    "needs_fulltext":             2.6,  # bold the focal level
+    "abstract_insufficient":             2.6,  # bold the focal level
 }
 # Fig-3-specific pretty labels (Section 12's EVIDENCE_LEVEL_LABELS dict uses
 # different keys than the data, leaving most levels unlabeled; override here).
 EVIDENCE_FIG3_LABELS = {
     "abstract_supports_core":     "Abstract supports core",
     "abstract_supports_detail":   "Abstract supports detail",
-    "needs_fulltext":             "Needs full text",
+    "abstract_insufficient":             "Abstract insufficient",
 }
 
 # Compact x-axis: K up to 100 (where the message lives — top-of-list quality)
@@ -1561,13 +1561,13 @@ for lvl in levels:
 # > of three evidence levels reflecting how the cited paper supports the
 # > claim: `abstract_supports_core` (the abstract states the claim's core
 # > finding), `abstract_supports_detail` (the abstract contains supporting
-# > detail for the claim), and `needs_fulltext` (the supporting passage
+# > detail for the claim), and `abstract_insufficient` (the supporting passage
 # > appears only in the body of the paper). Stratifying our best pipeline
 # > configuration (Post-rerank Fusion) by evidence level reveals a sharp
 # > divide (**Fig 3**): on the abstract-resolvable levels, MRR@10 reaches
 # > 0.80 (`abstract_supports_detail`, n=816) and 0.50
 # > (`abstract_supports_core`, n=654), with Recall@100 above 0.92 in both
-# > cases. On `needs_fulltext` queries (n=387), MRR@10 collapses to 0.16
+# > cases. On `abstract_insufficient` queries (n=387), MRR@10 collapses to 0.16
 # > and — critically — Recall@100 drops to 0.61. The deficit is therefore
 # > not merely a ranking issue: roughly 40% of these queries fail to
 # > retrieve the gold paper anywhere in the top-100, indicating that the
@@ -1586,7 +1586,7 @@ for lvl in levels:
 #   finding with looser lexical overlap. This reinforces §3.1's
 #   lexical-dominance theme but is a sidebar — keep brief or move to
 #   discussion if space is tight.
-# - The Recall@100 deficit on `needs_fulltext` is the strongest single
+# - The Recall@100 deficit on `abstract_insufficient` is the strongest single
 #   piece of evidence motivating full-text indexing. Worth including in
 #   the abstract / contributions list.
 

@@ -49,7 +49,7 @@ Return two labels:
 
 ### Labels
 **doc_match**: "yes" | "no" | "unclear"
-**evidence_level**: "abstract_supports_detail" | "abstract_supports_core" | "needs_fulltext" | "not_applicable"
+**evidence_level**: "abstract_supports_detail" | "abstract_supports_core" | "abstract_insufficient" | "not_applicable"
 
 ### Decision procedure (follow strictly)
 1) Identify core vs detail in the claim
@@ -63,7 +63,7 @@ Return ONLY this JSON object, with no extra text and no extra keys:
 ```json
 {{
   "doc_match": "yes|no|unclear",
-  "evidence_level": "abstract_supports_detail|abstract_supports_core|needs_fulltext|not_applicable",
+  "evidence_level": "abstract_supports_detail|abstract_supports_core|abstract_insufficient|not_applicable",
   "reason": "max 25 words, concrete."
 }}
 ```
@@ -85,7 +85,7 @@ VALID_DOC_MATCH = {"yes", "no", "unclear"}
 VALID_EVIDENCE = {
     "abstract_supports_detail",
     "abstract_supports_core",
-    "needs_fulltext",
+    "abstract_insufficient",
     "not_applicable",
 }
 
@@ -128,7 +128,7 @@ def parse_label_json(text: str) -> Dict[str, str]:
     obj = json.loads(m.group(0))
 
     dm = obj.get("doc_match", "unclear")
-    ev = obj.get("evidence_level", "needs_fulltext")
+    ev = obj.get("evidence_level", "abstract_insufficient")
     rs = obj.get("reason", "")
 
     dm = dm if isinstance(dm, str) else str(dm)
@@ -141,7 +141,7 @@ def parse_label_json(text: str) -> Dict[str, str]:
     if dm not in VALID_DOC_MATCH:
         dm = "unclear"
     if ev not in VALID_EVIDENCE:
-        ev = "needs_fulltext"
+        ev = "abstract_insufficient"
 
     # keep reason short
     rs = " ".join(rs.strip().split())
@@ -254,7 +254,7 @@ def main():
                 # Silent fallback (only if raise_on_error=False)
                 parsed = {
                     "doc_match": "unclear",
-                    "evidence_level": "needs_fulltext",
+                    "evidence_level": "abstract_insufficient",
                     "reason": error_msg,
                 }
 

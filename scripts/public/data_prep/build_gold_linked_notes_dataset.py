@@ -671,10 +671,10 @@ def main() -> None:
     n_8b_claims_total = 0
     n_8b_claims_exact_detail = 0
     n_8b_claims_abstract_only = 0
-    n_8b_claims_with_fulltext = 0
+    n_8b_claims_with_abstract_insufficient = 0
     n_8b_genes_all_exact_detail = 0
     n_8b_genes_abstract_only = 0
-    n_8b_genes_with_fulltext = 0
+    n_8b_genes_with_abstract_insufficient = 0
     if build_out.exists() and stats_tsv.exists():
         stats_df = pl.read_csv(stats_tsv, separator="\t").select(
             ["gene_id", "n_curator_claim_rows", "n_non_gold_claim_rows"]
@@ -799,8 +799,8 @@ def main() -> None:
                         n_8b_claims_exact_detail += 1
                     if toks and toks <= _ABSTRACT_ONLY_LEVELS:
                         n_8b_claims_abstract_only += 1
-                    if "needs_fulltext" in toks:
-                        n_8b_claims_with_fulltext += 1
+                    if "abstract_insufficient" in toks:
+                        n_8b_claims_with_abstract_insufficient += 1
 
                 if claims:
                     per_toks = [evidence_level_tokens(c.get("evidence_level")) for c in claims]
@@ -811,8 +811,8 @@ def main() -> None:
                         n_8b_genes_all_exact_detail += 1
                     if all(t and t <= _ABSTRACT_ONLY_LEVELS for t in per_toks):
                         n_8b_genes_abstract_only += 1
-                    if any("needs_fulltext" in t for t in per_toks):
-                        n_8b_genes_with_fulltext += 1
+                    if any("abstract_insufficient" in t for t in per_toks):
+                        n_8b_genes_with_abstract_insufficient += 1
 
     report_lines = [
         "# Gold-linked notes build — provenance report",
@@ -854,21 +854,21 @@ def main() -> None:
         "",
         "## 8b evidence-level summary",
         "",
-        f"Per-gene categories partition the **{n_8b_rows}** genes that passed the 8b filter: each gene has at least one gold claim, and it falls in **abstract-only** iff every claim’s token set is non-empty and ⊆ `abstract_supports_detail` ∪ `abstract_supports_core`; otherwise it has **needs_fulltext** on at least one claim.",
+        f"Per-gene categories partition the **{n_8b_rows}** genes that passed the 8b filter: each gene has at least one gold claim, and it falls in **abstract-only** iff every claim’s token set is non-empty and ⊆ `abstract_supports_detail` ∪ `abstract_supports_core`; otherwise it has **abstract_insufficient** on at least one claim.",
         "",
         "| Metric | Count |",
         "| --- | ---: |",
         f"| Genes in 8b (one curator-note example per gene) | {n_8b_rows} |",
         f"| Total claims (sum over genes) | {n_8b_claims_total} |",
         f"| Genes: every claim is exactly `abstract_supports_detail` | {n_8b_genes_all_exact_detail} |",
-        f"| Genes: every claim uses only `abstract_supports_detail` and/or `abstract_supports_core` (no `needs_fulltext`) | {n_8b_genes_abstract_only} |",
-        f"| Genes: at least one claim includes `needs_fulltext` | {n_8b_genes_with_fulltext} |",
+        f"| Genes: every claim uses only `abstract_supports_detail` and/or `abstract_supports_core` (no `abstract_insufficient`) | {n_8b_genes_abstract_only} |",
+        f"| Genes: at least one claim includes `abstract_insufficient` | {n_8b_genes_with_abstract_insufficient} |",
         "",
         "| Claims (row-level) | Count |",
         "| --- | ---: |",
         f"| Claim string is exactly `abstract_supports_detail` | {n_8b_claims_exact_detail} |",
         f"| Claim tokens ⊆ `abstract_supports_detail` ∪ `abstract_supports_core` (non-empty) | {n_8b_claims_abstract_only} |",
-        f"| Claim includes token `needs_fulltext` | {n_8b_claims_with_fulltext} |",
+        f"| Claim includes token `abstract_insufficient` | {n_8b_claims_with_abstract_insufficient} |",
         "",
     ]
     report_md.write_text("\n".join(report_lines), encoding="utf-8")

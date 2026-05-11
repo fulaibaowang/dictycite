@@ -44,7 +44,7 @@ Evidence-level full agreement (pairs / queries):
 | --- | --- | --- |
 | abstract_supports_core | 762 | 654 |
 | abstract_supports_detail | 631 | 619 |
-| needs_fulltext | 262 | 251 |
+| abstract_insufficient | 262 | 251 |
 | not_applicable | 158 | 150 |
 
 ## Query expansion and reranking

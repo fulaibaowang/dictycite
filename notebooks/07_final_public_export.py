@@ -381,17 +381,17 @@ with open(OUT_7D_JSON, "w", encoding="utf-8") as f:
     json.dump({"questions": benchmark_7d}, f, ensure_ascii=False, indent=2)
 print(f"Saved (7d JSON): {OUT_7D_JSON}")
 
-# 7e: same as 7d but drop queries that include any doc with evidence_level=needs_fulltext (abstract-eval subset)
-def _no_needs_fulltext_doc(q: Dict[str, Any]) -> bool:
+# 7e: same as 7d but drop queries that include any doc with evidence_level=abstract_insufficient (abstract-eval subset)
+def _no_abstract_insufficient_doc(q: Dict[str, Any]) -> bool:
     for d in q.get("docs") or []:
-        if (d.get("evidence_level") or "").strip() == "needs_fulltext":
+        if (d.get("evidence_level") or "").strip() == "abstract_insufficient":
             return False
     return True
 
 
-benchmark_7e = [q for q in benchmark_7d if _no_needs_fulltext_doc(q)]
+benchmark_7e = [q for q in benchmark_7d if _no_abstract_insufficient_doc(q)]
 n_7e_dropped = len(benchmark_7d) - len(benchmark_7e)
-print(f"7e filter: kept {len(benchmark_7e)}, dropped {n_7e_dropped} (any doc needs_fulltext)")
+print(f"7e filter: kept {len(benchmark_7e)}, dropped {n_7e_dropped} (any doc abstract_insufficient)")
 _write_jsonl(OUT_7E_JSONL, benchmark_7e)
 print(f"Saved (7e benchmark): {OUT_7E_JSONL}  (n={len(benchmark_7e)})")
 with open(OUT_7E_JSON, "w", encoding="utf-8") as f:

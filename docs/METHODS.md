@@ -58,9 +58,9 @@ Two expansion variants were produced. The *synonyms-only* variant appends canoni
 
 ## 6. LLM Labeling and Agreement Filtering
 
-Each claim--article pair was labeled by Llama 3.3 using a structured prompt that requested two judgments: (a) `doc_match`---whether the article is a correct document-level match for the claim (`yes`, `no`, or `unclear`); and (b) `evidence_level`---whether the abstract alone supports the claim at the detail level, core level, or requires full text (`abstract_supports_detail`, `abstract_supports_core`, `needs_fulltext`, or `not_applicable`).
+Each claim--article pair was labeled by Llama 3.3 using a structured prompt that requested two judgments: (a) `doc_match`---whether the article is a correct document-level match for the claim (`yes`, `no`, or `unclear`); and (b) `evidence_level`---whether the abstract alone supports the claim at the detail level, the core level, or not at all (`abstract_supports_detail`, `abstract_supports_core`, `abstract_insufficient`, or `not_applicable`). The `abstract_insufficient` label records the LLM's judgment that the abstract does not explicitly support the claim; it makes no claim about whether the full text would.
 
-The unit of labeling is the (claim group, PMID) pair. The ~1,705 claim groups expand to 2,119 such pairs (since many claims cite multiple publications). To assess consistency, labeling was performed in three independent runs over all 2,119 pairs. Disagreement was defined as `yes` versus `no`/`unclear` for document match, and any abstract-support label versus `needs_fulltext` for evidence level. Pairs with full agreement on both dimensions were retained, yielding 2,028 pairs (95.7% agreement). Representative labels were assigned by priority: `yes` > `no` > `unclear` for document match; `abstract_supports_detail` > `abstract_supports_core` > `needs_fulltext` for evidence level.
+The unit of labeling is the (claim group, PMID) pair. The ~1,705 claim groups expand to 2,119 such pairs (since many claims cite multiple publications). To assess consistency, labeling was performed in three independent runs over all 2,119 pairs. Disagreement was defined as `yes` versus `no`/`unclear` for document match, and any abstract-support label versus `abstract_insufficient` for evidence level. Pairs with full agreement on both dimensions were retained, yielding 2,028 pairs (95.7% agreement). Representative labels were assigned by priority: `yes` > `no` > `unclear` for document match; `abstract_supports_detail` > `abstract_supports_core` > `abstract_insufficient` for evidence level.
 
 ## 7. Final Export
 
@@ -112,7 +112,7 @@ Each element of `docs[]`:
 | `anchor_pos` | Citation anchor positions in the claim |
 | `citation_captions` | Author--year citation strings |
 | `doc_match` | LLM label: `yes`, `no`, or `unclear` |
-| `evidence_level` | LLM label: `abstract_supports_detail`, `abstract_supports_core`, `needs_fulltext`, or `not_applicable` |
+| `evidence_level` | LLM label: `abstract_supports_detail`, `abstract_supports_core`, `abstract_insufficient`, or `not_applicable` |
 | `reason` | LLM reasoning (brief, may be empty) |
 
 The companion file `articles_all_cleaned_abstract.jsonl` contains the full EPMC corpus (20,447 records) as one JSON object per line with fields `pmid`, `title`, `abstract` (cleaned), and article metadata.
@@ -549,7 +549,7 @@ The labeler uses the expanded query (`query_expand` / long variant, falling back
 1. Identify the main entities, core claim, and detail claims.
 2. Scan title + abstract for explicit support.
 3. Assign `doc_match`: `yes` (on-topic, supports core), `no` (unrelated), `unclear` (ambiguous).
-4. Assign `evidence_level`: `abstract_supports_detail` (core + detail), `abstract_supports_core` (core only), `needs_fulltext` (plausibly on-topic but abstract insufficient), `not_applicable` (if doc_match = no).
+4. Assign `evidence_level`: `abstract_supports_detail` (core + detail), `abstract_supports_core` (core only), `abstract_insufficient` (plausibly on-topic but the abstract does not explicitly support the claim), `not_applicable` (if doc_match = no).
 
 Output format: JSON with keys `doc_match`, `evidence_level`, `reason` (max 25 words).
 
@@ -573,7 +573,7 @@ Implemented in `notebooks/06_goldset_llm_labeling.ipynb`.
    - Disagreement: `yes` paired with `no` or `unclear` in any run pair.
    - NOT disagreement: `no` vs `unclear` (both indicate non-match).
 3. **Evidence-level disagreement** (`evidence_disagree`): pairwise check.
-   - Disagreement: any of `{abstract_supports_detail, abstract_supports_core}` paired with `needs_fulltext`.
+   - Disagreement: any of `{abstract_supports_detail, abstract_supports_core}` paired with `abstract_insufficient`.
    - NOT disagreement: `abstract_supports_detail` vs `abstract_supports_core` (both indicate abstract support).
 4. **Full agreement mask**: `~doc_match_disagree & ~evidence_disagree`.
 
@@ -591,7 +591,7 @@ Implemented in `notebooks/06_goldset_llm_labeling.ipynb`.
 
 **doc_match**: if any run says `yes` → `yes`; else if any says `no` → `no`; else `unclear`.
 
-**evidence_level**: if any run says `abstract_supports_detail` → `abstract_supports_detail`; else if any says `abstract_supports_core` → `abstract_supports_core`; else `needs_fulltext`.
+**evidence_level**: if any run says `abstract_supports_detail` → `abstract_supports_detail`; else if any says `abstract_supports_core` → `abstract_supports_core`; else `abstract_insufficient`.
 
 ### Label distribution (full agreement, 2,028 pairs)
 
@@ -605,7 +605,7 @@ Implemented in `notebooks/06_goldset_llm_labeling.ipynb`.
 | --- | --- | --- |
 | abstract_supports_core | 762 | 654 |
 | abstract_supports_detail | 631 | 619 |
-| needs_fulltext | 262 | 251 |
+| abstract_insufficient | 262 | 251 |
 | not_applicable | 158 | 150 |
 
 ### Outputs
