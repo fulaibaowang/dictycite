@@ -1214,11 +1214,11 @@ plt.show()
 #   third column of the multi-panel plot below) to argue that abstract-only
 #   retrieval plateaus on claims requiring full-text evidence — motivating
 #   the PDF-chunk extension as future work.
-# - **Supplement Fig S4** is the full multi-panel layout (all three evidence
-#   levels × MAP@K / Recall@K / MRR@K), kept here to give the complete
-#   evidence-level breakdown reviewers may want.
+# - **Supplement Fig S4** is the Recall@K / MRR@K multi-panel layout (all three
+#   evidence levels), kept here to give the complete evidence-level breakdown
+#   reviewers may want.
 #
-# Figure **12**: MAP@K, Recall@K, and MRR@K (one neutral line color). Figure **12b**: Recall@K and MRR@K only.
+# Figure **12b**: Recall@K and MRR@K only (one neutral line color).
 
 # %%
 EVIDENCE_LEVEL_ORDER = [
@@ -1327,81 +1327,12 @@ for split in splits:
         rec_by_level[lvl] = rec_vals
         mrr_by_level[lvl] = mrr_vals
 
-    all_map_vals = [v for vals in map_by_level.values() for v in vals]
     all_rec_vals = [v for vals in rec_by_level.values() for v in vals]
     all_mrr_vals = [v for vals in mrr_by_level.values() for v in vals]
-    y_min_m = max(0.0, min(all_map_vals) - 0.02) if all_map_vals else 0.0
-    y_max_m = min(1.0, max(all_map_vals) + 0.02) if all_map_vals else 1.0
     y_min_r = max(0.0, min(all_rec_vals) - 0.02) if all_rec_vals else 0.0
     y_max_r = min(1.0, max(all_rec_vals) + 0.02) if all_rec_vals else 1.0
     y_min_mrr = max(0.0, min(all_mrr_vals) - 0.02) if all_mrr_vals else 0.0
     y_max_mrr = min(1.0, max(all_mrr_vals) + 0.02) if all_mrr_vals else 1.0
-
-    fig, axes = plt.subplots(3, 3, figsize=(16, 11), sharex=True)
-    axes_flat = axes.flatten()
-
-    for idx, lvl in enumerate(levels):
-        col_title = EVIDENCE_LEVEL_LABELS.get(lvl, lvl)
-        n_q = n_by_level.get(lvl, 0)
-
-        ax_map = axes_flat[idx]
-        ax_map.plot(
-            ks_evidence, map_by_level[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8
-        )
-        ax_map.set_title(f"{col_title} (n={n_q})", fontweight="bold")
-        ax_map.set_ylim(y_min_m, y_max_m)
-        ax_map.set_ylabel("MAP@K" if idx == 0 else "")
-        if idx != 0:
-            ax_map.tick_params(axis="y", labelleft=False)
-        ax_map.grid(True, axis="y")
-        ax_map.grid(True, axis="x")
-
-        ax_rec = axes_flat[idx + 3]
-        ax_rec.plot(
-            ks_evidence, rec_by_level[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8
-        )
-        ax_rec.set_ylim(y_min_r, y_max_r)
-        ax_rec.set_ylabel("Recall@K" if idx == 0 else "")
-        if idx != 0:
-            ax_rec.tick_params(axis="y", labelleft=False)
-        ax_rec.grid(True, axis="y")
-        ax_rec.grid(True, axis="x")
-
-        ax_mrr = axes_flat[idx + 6]
-        ax_mrr.plot(
-            ks_evidence, mrr_by_level[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8
-        )
-        ax_mrr.set_ylim(y_min_mrr, y_max_mrr)
-        ax_mrr.set_ylabel("MRR@K" if idx == 0 else "")
-        if idx != 0:
-            ax_mrr.tick_params(axis="y", labelleft=False)
-        ax_mrr.set_xlabel("K")
-        ax_mrr.grid(True, axis="y")
-        ax_mrr.grid(True, axis="x")
-
-    for j in range(len(levels), 3):
-        axes_flat[j].set_visible(False)
-        axes_flat[j + 3].set_visible(False)
-        axes_flat[j + 6].set_visible(False)
-
-    for ax in axes_flat:
-        ax.set_xlim(0, 100)
-
-    fig.suptitle(
-        _suptitle_n("Post-rerank Fusion – MAP@K, Recall@K and MRR@K by Evidence Level"),
-        fontsize=16,
-        fontweight="bold",
-        y=0.98,
-    )
-    _ev_rect = [0, 0, 1, 0.94] if _N_SPLIT_COLS <= 1 else [0, 0, 1, 0.96]
-    plt.tight_layout(rect=_ev_rect)
-    fig_path = (
-        output_dir
-        / f"12_post_rerank_fusion_map_recall_mrr_by_evidence_level_{split_labels.get(split, split)}.png"
-    )
-    plt.savefig(fig_path, dpi=150, bbox_inches="tight")
-    print("Saved:", fig_path)
-    plt.show()
 
     # Recall + MRR only (same layout width, two metric rows).
     fig_b, axes_b = plt.subplots(2, 3, figsize=(16, 7.2), sharex=True)
@@ -1448,6 +1379,7 @@ for split in splits:
         fontweight="bold",
         y=0.98,
     )
+    _ev_rect = [0, 0, 1, 0.94] if _N_SPLIT_COLS <= 1 else [0, 0, 1, 0.96]
     plt.tight_layout(rect=_ev_rect)
     fig_path_b = (
         output_dir
@@ -1466,7 +1398,7 @@ for split in splits:
 # methods still fail (`abstract_insufficient` queries) and motivating the PDF-chunk
 # extension as future work.
 #
-# Single-panel design (vs Fig S4's 3×3 grid) chosen to make the gap between
+# Single-panel design (vs supplement's 2×3 Recall/MRR grid) chosen to make the gap between
 # `abstract_insufficient` and the abstract-resolvable levels visible at a glance.
 # Uses MRR@K (not Recall@K) because qrels are document-level — the same PMIDs
 # would be retrieved across evidence levels; what differs is whether the
@@ -1547,6 +1479,172 @@ for lvl in levels:
     if lvl in rec_by_level and 100 in ks_evidence:
         v = rec_by_level[lvl][ks_evidence.index(100)]
         n = n_by_level.get(lvl, 0)
+        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  Recall@100={v:.4f}")
+
+
+# %% [markdown]
+# ## 13b. Has-PDF Subset — Companion Plots
+#
+# *Paper role:* supplementary view that re-runs §12b-style and §13 metric stratification
+# on the subset of claims whose gold PMID is in the v2 chunked corpus
+# (`in_chunks_v2 == "yes"` in `output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv`).
+#
+# Why a second view: the full-cohort plots above include claims whose gold
+# PMID has no PDF (~13% of 7a). Those claims can't move when full-text is
+# added to the index, so they dilute any baseline-vs-full-text comparison
+# toward zero. Restricting to has-PDF claims gives the upper-bound effect
+# of the full-text extension on the queries it can actually act on.
+#
+# Companion figures use the `*_haspdf.png` suffix.
+
+# %%
+import csv
+
+coverage_tsv = base_dir / "output" / "dicty_gold_build" / "7a_dicty_gold_pdf_coverage.tsv"
+
+chunked_pmids_v2: set[str] = set()
+with coverage_tsv.open("r", encoding="utf-8") as f:
+    for row in csv.DictReader(f, delimiter="\t"):
+        if row.get("in_chunks_v2") == "yes":
+            chunked_pmids_v2.add(str(row["pmid"]))
+print(f"Has-PDF subset: {len(chunked_pmids_v2)} unique chunked PMIDs from coverage TSV")
+
+# Filter level_qrels to keep only (qid, pmid) pairs where the pmid is chunked.
+level_qrels_haspdf: dict[str, dict[str, set[str]]] = {}
+for _lvl, q_to_pmids in level_qrels.items():
+    new_q: dict[str, set[str]] = {}
+    for qid, pmids in q_to_pmids.items():
+        keep = pmids & chunked_pmids_v2
+        if keep:
+            new_q[qid] = keep
+    if new_q:
+        level_qrels_haspdf[_lvl] = new_q
+
+# Re-run the same Recall/MRR loop as §12b with the filtered qrels.
+rec_by_level_haspdf: dict[str, list[float]] = {lvl: [] for lvl in levels}
+mrr_by_level_haspdf: dict[str, list[float]] = {lvl: [] for lvl in levels}
+n_by_level_haspdf: dict[str, int] = {lvl: 0 for lvl in levels}
+
+for lvl in levels:
+    lvl_qrels = level_qrels_haspdf.get(lvl, {})
+    qids_lvl = [qid for qid in lvl_qrels if qid in run_docs]
+    if not qids_lvl:
+        rec_by_level_haspdf[lvl] = [0.0] * len(ks_evidence)
+        mrr_by_level_haspdf[lvl] = [0.0] * len(ks_evidence)
+        continue
+    n_by_level_haspdf[lvl] = len(qids_lvl)
+    rec_vals: list[float] = []
+    mrr_vals: list[float] = []
+    for k in ks_evidence:
+        rec_scores: list[float] = []
+        mrr_scores: list[float] = []
+        for qid in qids_lvl:
+            rels_set = lvl_qrels[qid]
+            if not rels_set:
+                continue
+            docs = run_docs[qid]
+            rec_scores.append(_recall_at_k(docs, rels_set, k))
+            mrr_scores.append(_mrr_at_k(docs, rels_set, k))
+        rec_vals.append(float(np.mean(rec_scores)) if rec_scores else 0.0)
+        mrr_vals.append(float(np.mean(mrr_scores)) if mrr_scores else 0.0)
+    rec_by_level_haspdf[lvl] = rec_vals
+    mrr_by_level_haspdf[lvl] = mrr_vals
+
+# §12b mirror: 2×3 (Recall / MRR rows × evidence-level columns), has-PDF subset.
+_all_rec = [v for vals in rec_by_level_haspdf.values() for v in vals]
+_all_mrr = [v for vals in mrr_by_level_haspdf.values() for v in vals]
+_y_min_r = max(0.0, min(_all_rec) - 0.02) if _all_rec else 0.0
+_y_max_r = min(1.0, max(_all_rec) + 0.02) if _all_rec else 1.0
+_y_min_mrr = max(0.0, min(_all_mrr) - 0.02) if _all_mrr else 0.0
+_y_max_mrr = min(1.0, max(_all_mrr) + 0.02) if _all_mrr else 1.0
+
+fig_hp, axes_hp = plt.subplots(2, 3, figsize=(16, 7.2), sharex=True)
+axes_hp_flat = axes_hp.flatten()
+
+for idx, lvl in enumerate(levels):
+    col_title = EVIDENCE_LEVEL_LABELS.get(lvl, lvl)
+    n_q = n_by_level_haspdf.get(lvl, 0)
+
+    ax_r = axes_hp_flat[idx]
+    ax_r.plot(ks_evidence, rec_by_level_haspdf[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8)
+    ax_r.set_title(f"{col_title} (n={n_q})", fontweight="bold")
+    ax_r.set_ylim(_y_min_r, _y_max_r)
+    ax_r.set_ylabel("Recall@K" if idx == 0 else "")
+    if idx != 0:
+        ax_r.tick_params(axis="y", labelleft=False)
+    ax_r.grid(True, axis="y")
+    ax_r.grid(True, axis="x")
+
+    ax_mm = axes_hp_flat[idx + 3]
+    ax_mm.plot(ks_evidence, mrr_by_level_haspdf[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8)
+    ax_mm.set_ylim(_y_min_mrr, _y_max_mrr)
+    ax_mm.set_ylabel("MRR@K" if idx == 0 else "")
+    if idx != 0:
+        ax_mm.tick_params(axis="y", labelleft=False)
+    ax_mm.set_xlabel("K")
+    ax_mm.grid(True, axis="y")
+    ax_mm.grid(True, axis="x")
+
+for j in range(len(levels), 3):
+    axes_hp_flat[j].set_visible(False)
+    axes_hp_flat[j + 3].set_visible(False)
+for ax in axes_hp_flat:
+    ax.set_xlim(0, 100)
+
+fig_hp.suptitle(
+    _suptitle_n("Post-rerank Fusion – Recall@K and MRR@K by Evidence Level (has-PDF subset)"),
+    fontsize=16, fontweight="bold", y=0.98,
+)
+_ev_rect = [0, 0, 1, 0.94] if _N_SPLIT_COLS <= 1 else [0, 0, 1, 0.96]
+plt.tight_layout(rect=_ev_rect)
+fig_hp_path = (
+    output_dir
+    / f"12b_post_rerank_fusion_recall_mrr_by_evidence_level_{split_labels.get(split, split)}_haspdf.png"
+)
+plt.savefig(fig_hp_path, dpi=150, bbox_inches="tight")
+print("Saved:", fig_hp_path)
+plt.show()
+
+# Fig 3 mirror: single-panel MRR@K overlay, has-PDF subset.
+fig3_hp, ax3_hp = plt.subplots(figsize=(7.5, 5))
+for lvl in levels:
+    if lvl not in mrr_by_level_haspdf:
+        continue
+    color = EVIDENCE_FIG3_COLORS.get(lvl, "#888888")
+    marker = EVIDENCE_FIG3_MARKERS.get(lvl, "o")
+    lw = EVIDENCE_FIG3_LW.get(lvl, 1.8)
+    label = f"{EVIDENCE_FIG3_LABELS.get(lvl, lvl)} (n={n_by_level_haspdf.get(lvl, 0)})"
+    vals = [mrr_by_level_haspdf[lvl][i] for i in fig3_ks_idx]
+    ax3_hp.plot(fig3_ks, vals, marker=marker, markersize=7, linewidth=lw, color=color, label=label)
+ax3_hp.set_xlabel("K")
+ax3_hp.set_ylabel("Mean MRR@K")
+ax3_hp.set_xticks(fig3_ks)
+ax3_hp.set_xticklabels([str(k) for k in fig3_ks])
+ax3_hp.grid(True, axis="y", alpha=0.4)
+ax3_hp.grid(True, axis="x", alpha=0.3)
+ax3_hp.legend(fontsize=11, loc="lower right", title="Evidence level")
+fig3_hp.suptitle(
+    "Post-rerank Fusion — MRR@K by evidence level (has-PDF subset)",
+    fontsize=13, fontweight="bold",
+)
+plt.tight_layout()
+fig3_hp_path = output_dir / "fig3_candidate_evidence_level_mrr_haspdf.png"
+plt.savefig(fig3_hp_path, dpi=150, bbox_inches="tight")
+print("Saved:", fig3_hp_path)
+plt.show()
+
+# Numbers for the has-PDF subset
+print("\nHas-PDF subset MRR@10 by evidence level:")
+for lvl in levels:
+    if lvl in mrr_by_level_haspdf and 10 in ks_evidence:
+        v = mrr_by_level_haspdf[lvl][ks_evidence.index(10)]
+        n = n_by_level_haspdf.get(lvl, 0)
+        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  MRR@10={v:.4f}")
+print("\nHas-PDF subset Recall@100 by evidence level:")
+for lvl in levels:
+    if lvl in rec_by_level_haspdf and 100 in ks_evidence:
+        v = rec_by_level_haspdf[lvl][ks_evidence.index(100)]
+        n = n_by_level_haspdf.get(lvl, 0)
         print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  Recall@100={v:.4f}")
 
 

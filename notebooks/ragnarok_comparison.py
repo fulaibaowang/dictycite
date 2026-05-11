@@ -18,7 +18,7 @@
 # Ranker comparison on the dicty goldset. Includes BGE-reranker-v2-m3 (our
 # main cross-encoder) and three alternates loaded as rerank-only swaps on the
 # shared first-stage retrieval pool: MS-MARCO MiniLM-L12 (lightweight),
-# MedCPT (domain-specific biomedical), and BGE Gemma (strong LLM reranker).
+# MedCPT (domain-specific biomedical), and bge-reranker-v2-gemma (strong LLM reranker).
 # The Ragnarok BM25 + RankZephyr baseline is included as an external reference.
 #
 # **Goldset:** `7a_dicty_gold_llm_public` (n=1,656 queries, full public split).
@@ -92,7 +92,7 @@ LABELS = {
     "ours_ce":                  "Ours: BGE-reranker-v2-m3",
     "ours_postfusion":          "Ours: Post-rerank Fusion",
     "vega_medcpt_ce":           "Ours: MedCPT (rerank-only)",
-    "frida_gemma_ce":           "Ours: BGE Gemma (rerank-only)",
+    "frida_gemma_ce":           "Ours: bge-reranker-v2-gemma (rerank-only)",
     "frida_ms_marco_minilm_ce": "Ours: MS MARCO MiniLM (rerank-only)",
     "rag_bm25":                 "Ragnarok: BM25",
     "rag_rerank":               "Ragnarok: BM25 + RankZephyr",
@@ -297,7 +297,7 @@ summary_df.to_csv(output_dir / "summary_table.csv", index=False)
 # Ours BM25+Dense fusion vs Ragnarok BM25. Ragnarok BM25 retrieves top-100, so
 # the curve is plotted up to K=100.
 #
-# *Note:* Alternate CE rerankers (MedCPT, BGE Gemma, MS MARCO MiniLM) are
+# *Note:* Alternate CE rerankers (MedCPT, bge-reranker-v2-gemma, MS MARCO MiniLM) are
 # rerank-only and reuse the same first-stage retrieval pool — they do not change
 # Recall@K, only the ordering within the pool. Recall@K is therefore a property
 # of the first stage alone.
@@ -425,7 +425,7 @@ plt.show()
 # Two figures generated from the same data:
 #
 # - **Paper main (Fig 3 candidate)** — 5 lines: BM25 + 4 cross-encoder rerankers
-#   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, BGE Gemma). The headline:
+#   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma). The headline:
 #   ranker choice in domain RAG matters — a lightweight CE *hurts*, a mid-tier
 #   CE barely helps, domain/strong CEs help meaningfully.
 # - **Paper supplement (Fig S2 candidate)** — same 5 lines plus first-stage
@@ -438,14 +438,82 @@ plt.show()
 fig9_ks = [1, 2, 3, 5, 10]
 
 # Method styles (one place; both figures pick subsets).
-ALL_METHOD_STYLE = {
-    "ours_bm25":                ("#1f77b4", 1.6, "-",  0.85, "Ours: BM25"),
-    "ours_fusion":              ("#2ca02c", 1.8, "-",  0.75, "Ours: BM25+Dense Fusion"),
-    "frida_ms_marco_minilm_ce": ("#e377c2", 2.2, "-",  1.00, "MS-MARCO MiniLM-L12"),
-    "ours_ce":                  ("#d62728", 2.2, "-",  1.00, "BGE-reranker-v2-m3"),
-    "vega_medcpt_ce":           ("#8c564b", 2.4, "-",  1.00, "MedCPT"),
-    "frida_gemma_ce":           ("#ff7f0e", 2.6, "-",  1.00, "BGE Gemma"),
-    "rag_rerank":               ("#17becf", 1.8, "--", 0.85, "Ragnarok: BM25 + RankZephyr (ref.)"),
+# Tuple linestyle (0, (on, off, ...)) reads reliably in the legend (short handlelength makes "--" look solid).
+# Same marker shape for every series (circles). BM25 and BM25+Dense fusion share one dash pattern; Ragnarok
+# is purple with a different rhythm (dotted vs dashed) plus z-order so it stays visible when curves cross fusion.
+_DASH_RETRIEVAL = (0, (6, 4))
+
+ALL_METHOD_STYLE: dict[str, dict] = {
+    "ours_bm25": {
+        "color": "#1f77b4",
+        "linewidth": 1.6,
+        "linestyle": _DASH_RETRIEVAL,
+        "alpha": 0.88,
+        "zorder": 2,
+        "marker": "o",
+        "markersize": 5,
+        "label": "Retrieval: BM25",
+    },
+    "ours_fusion": {
+        "color": "#2e7d32",
+        "linewidth": 2.5,
+        "linestyle": _DASH_RETRIEVAL,
+        "alpha": 0.82,
+        "zorder": 3,
+        "marker": "o",
+        "markersize": 5,
+        "label": "Retrieval: BM25+Dense Fusion",
+    },
+    "frida_ms_marco_minilm_ce": {
+        "color": "#e377c2",
+        "linewidth": 2.2,
+        "linestyle": "-",
+        "alpha": 1.0,
+        "zorder": 4,
+        "marker": "o",
+        "markersize": 5,
+        "label": "MS-MARCO MiniLM-L12",
+    },
+    "ours_ce": {
+        "color": "#d62728",
+        "linewidth": 2.2,
+        "linestyle": "-",
+        "alpha": 1.0,
+        "zorder": 4,
+        "marker": "o",
+        "markersize": 5,
+        "label": "BGE-reranker-v2-m3",
+    },
+    "vega_medcpt_ce": {
+        "color": "#8c564b",
+        "linewidth": 2.4,
+        "linestyle": "-",
+        "alpha": 1.0,
+        "zorder": 4,
+        "marker": "o",
+        "markersize": 5,
+        "label": "MedCPT",
+    },
+    "frida_gemma_ce": {
+        "color": "#ff7f0e",
+        "linewidth": 2.6,
+        "linestyle": "-",
+        "alpha": 1.0,
+        "zorder": 4,
+        "marker": "o",
+        "markersize": 5,
+        "label": "bge-reranker-v2-gemma",
+    },
+    "rag_rerank": {
+        "color": "#7b1fa2",
+        "linewidth": 2.6,
+        "linestyle": ":",
+        "alpha": 1.0,
+        "zorder": 5,
+        "marker": "o",
+        "markersize": 5,
+        "label": "Ragnarok: BM25 + RankZephyr (ext ref.)",
+    },
 }
 
 FIG3_MAIN_KEYS = [
@@ -458,18 +526,22 @@ FIG_S2_KEYS = [
 ]
 
 
-def _plot_mrr_curves(method_keys: list[str], out_path: Path, title: str):
+def _plot_mrr_curves(
+    method_keys: list[str],
+    out_path: Path,
+    title: str,
+    *,
+    legend_outside_right: bool = False,
+):
     keys = [k for k in method_keys if k in runs]
     mrr = {m: mean_at_ks(runs[m], qrels, fig9_ks, mrr_at_k) for m in keys}
 
-    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    fig_w = 6.2 if legend_outside_right else 6.0
+    fig, ax = plt.subplots(figsize=(fig_w, 4.8))
     for m in keys:
-        color, lw, ls, alpha, label = ALL_METHOD_STYLE[m]
-        ax.plot(
-            fig9_ks, [mrr[m][k] for k in fig9_ks],
-            marker="o", markersize=5, linewidth=lw, linestyle=ls,
-            color=color, alpha=alpha, label=label,
-        )
+        style = dict(ALL_METHOD_STYLE[m])
+        label = style.pop("label")
+        ax.plot(fig9_ks, [mrr[m][k] for k in fig9_ks], label=label, **style)
 
     all_vals = [mrr[m][k] for m in keys for k in fig9_ks]
     y_lo = max(0.0, min(all_vals) - 0.02)
@@ -482,9 +554,23 @@ def _plot_mrr_curves(method_keys: list[str], out_path: Path, title: str):
     ax.set_xticklabels([str(k) for k in fig9_ks])
     ax.grid(True, axis="y", alpha=0.4)
     ax.grid(True, axis="x", alpha=0.3)
-    ax.legend(fontsize=10, loc="lower right")
+    if legend_outside_right:
+        ax.legend(
+            fontsize=9,
+            loc="center left",
+            bbox_to_anchor=(1.02, 0.5),
+            borderaxespad=0,
+            frameon=True,
+            handlelength=4.8,
+            handletextpad=0.6,
+        )
+    else:
+        ax.legend(fontsize=10, loc="lower right", handlelength=3.8, handletextpad=0.5)
     fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
-    plt.tight_layout()
+    if legend_outside_right:
+        plt.tight_layout(rect=[0, 0, 0.58, 0.93])
+    else:
+        plt.tight_layout()
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
     print("Saved:", out_path)
     plt.show()
@@ -494,13 +580,14 @@ def _plot_mrr_curves(method_keys: list[str], out_path: Path, title: str):
 fig3_mrr = _plot_mrr_curves(
     FIG3_MAIN_KEYS,
     output_dir / "fig3_main_ranker_comparison.png",
-    "Ranker choice — MRR@K",
+    "Ranker choice",
 )
 
 fig_s2_mrr = _plot_mrr_curves(
     FIG_S2_KEYS,
     output_dir / "fig_s2_full_ranker_comparison.png",
-    "Full ranker comparison incl. fusion + RankZephyr",
+    "Full ranker comparison",
+    legend_outside_right=True,
 )
 
 # Numerical deltas vs BM25 for caption-writing.
@@ -516,10 +603,10 @@ for m in FIG_S2_KEYS:
 # %% [markdown]
 # ## 10. Results paragraph — TBD pending combo results & framing
 #
-# *Placeholder.* Prose is held until the QE × {MedCPT, BGE Gemma} combo runs
+# *Placeholder.* Prose is held until the QE × {MedCPT, bge-reranker-v2-gemma} combo runs
 # are in and the paper framing is locked. The previous "stage upgrades plateau"
 # paragraph rested on BGE-reranker-v2-m3 alone and is no longer accurate now
-# that the four rerankers (MiniLM, BGE-v2-m3, MedCPT, BGE Gemma) are loaded
+# that the four rerankers (MiniLM, BGE-v2-m3, MedCPT, bge-reranker-v2-gemma) are loaded
 # above.
 
 
@@ -527,9 +614,10 @@ for m in FIG_S2_KEYS:
 # ## 11. Fig S3 — Per-query rerank impact: MRR@10 delta vs BM25
 #
 # *Paper role:* supplement Fig S3. One panel per loaded reranker (MS-MARCO
-# MiniLM, BGE-reranker-v2-m3, MedCPT, BGE Gemma), sharing y-axis and x-bins.
+# MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma), sharing y-axis and x-bins.
 # Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
-# hurt / unchanged per query. The 4 panels show that lightweight CE produces
+# hurt / unchanged per query. Panel identity is on the x-axis (no per-panel title).
+# The 4 panels show that lightweight CE produces
 # many hurt queries while domain/strong CEs are increasingly asymmetric in
 # favor of helped — depth behind the Fig 3 main-paper claim.
 #
@@ -554,7 +642,7 @@ fig1b_panels_all = [
     ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
     ("ours_ce",                  "BGE-reranker-v2-m3"),
     ("vega_medcpt_ce",           "MedCPT"),
-    ("frida_gemma_ce",           "BGE Gemma"),
+    ("frida_gemma_ce",           "bge-reranker-v2-gemma"),
 ]
 fig1b_panels = [(k, l) for k, l in fig1b_panels_all if k in runs]
 
@@ -606,7 +694,6 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
     ax.set_xlim(-1.05, 1.05)
     ax.grid(True, axis="y", alpha=0.4)
     ax.legend(fontsize=9, loc="upper left")
-    ax.set_title(short_label, fontsize=12)
 
 axes[0].set_ylabel("# queries")
 fig.suptitle(
@@ -682,9 +769,9 @@ print(f"Wrote {len(hurt_ranked)} BGE-v2-m3-hurt queries (sorted worst-first): {h
 # ## 12. Results paragraph (continued) — TBD pending combo results & framing
 #
 # *Placeholder.* With MS-MARCO MiniLM-L12, BGE-reranker-v2-m3, MedCPT, and
-# BGE Gemma now in §11, the per-query distribution differs substantially across
+# bge-reranker-v2-gemma now in §11, the per-query distribution differs substantially across
 # rerankers — lightweight CE has many hurt queries, domain/strong CEs are
 # asymmetrically helpful. The paragraph for the paper will be drafted once the
-# QE × {MedCPT, BGE Gemma} combo runs land and the paper framing is locked.
+# QE × {MedCPT, bge-reranker-v2-gemma} combo runs land and the paper framing is locked.
 
 # %%

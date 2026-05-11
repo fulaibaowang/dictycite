@@ -61,7 +61,7 @@ def _resolve_rerank_sweep_root(cfg: dict) -> Path:
 #
 # *Research artifact + paper supp source.* Loads each `RERANK_PANEL_CONFIGS`
 # entry (tag × reranker sweep) and builds **one** supplementary-style figure:
-# **1×3 panels** (BGE-reranker-v2-m3 | MedCPT | BGE Gemma), each titled by
+# **1×3 panels** (BGE-reranker-v2-m3 | MedCPT | BGE-reranker-v2-gemma), each titled by
 # reranker, same MRR@K curves per panel (QE variants + optional fusion). Used
 # as Fig S4 (QE reranker panels). Saves
 # `figures/fig_s4_qe_reranker_mrr_panels.png` (under the `7d` BGE-v2-m3 sweep
@@ -191,10 +191,10 @@ _rc_rr = {
 _TAG_TO_RERANKER_TITLE = {
     "7d": "BGE-reranker-v2-m3",
     "7d_medcpt": "MedCPT",
-    "7d_gemma": "BGE Gemma",
+    "7d_gemma": "BGE-reranker-v2-gemma",
     "7e": "BGE-reranker-v2-m3",
     "7e_medcpt": "MedCPT",
-    "7e_gemma": "BGE Gemma",
+    "7e_gemma": "BGE-reranker-v2-gemma",
 }
 
 # Fig S4 column order (left → right): v2-m3 first for comparison with Fig 4 panel (c).
@@ -284,7 +284,6 @@ s4_panel_specs.sort(key=lambda p: _s4_tag_sort_key.get(p["tag"], 99))
 if s4_panel_specs:
     n_p = len(s4_panel_specs)
     any_hybrid = any(p["include_hybrid"] for p in s4_panel_specs)
-    n_q = s4_panel_specs[0]["n_queries"]
 
     out_dir = next(
         (p["figures_dir"] for p in s4_panel_specs if p["tag"] == "7d"),
@@ -301,7 +300,6 @@ if s4_panel_specs:
         else:
             axes_list = list(axes)
 
-        panel_letters = "abcdefghij"
         for i, (ax, spec) in enumerate(zip(axes_list, s4_panel_specs)):
             curves = spec["mrr_curves"]
             for qf in ["body", "synonyms", "long"]:
@@ -333,7 +331,7 @@ if s4_panel_specs:
                     alpha=fs["alpha"],
                 )
             ax.set_title(
-                f"({panel_letters[i]}) {spec['reranker_title']}",
+                spec["reranker_title"],
                 fontsize=13,
                 fontweight="bold",
                 pad=8,
@@ -386,12 +384,6 @@ if s4_panel_specs:
             fancybox=False,
             edgecolor="0.85",
         )
-        fig.suptitle(
-            f"Fig S4 — Mean MRR@K vs K under each query-expansion variant (by reranker)  |  n={n_q}",
-            fontsize=13,
-            fontweight="bold",
-            y=1.02,
-        )
         plt.tight_layout()
         fig.subplots_adjust(bottom=0.22)
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -403,7 +395,7 @@ else:
     print("Fig S4: no rerank panel data collected — check rerank dirs and run TSVs.")
 
 # %% [markdown]
-# Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE Gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
+# Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE-reranker-v2-gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
 
 # %% [markdown]
 # # Fig 4 Candidate — Main Paper (QE main result)
@@ -417,7 +409,7 @@ else:
 # - Panel (a): BM25 Recall@K, 3 QE variants — body / synonyms / long
 # - Panel (b): Dense Recall@K, same 3 QE variants
 # - Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant
-# - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE Gemma}
+# - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE-reranker-v2-gemma}
 #
 # Full per-reranker MRR@K curves (paper supp Fig S4) are produced by the
 # *"Rerank MRR@K under each QE variant"* cell above as
@@ -566,7 +558,7 @@ print("MRR@10 by panel-c method:", {m: round(v[fig2_ks_mrr.index(10)], 4) for m,
 RERANKER_DIRS_INSET: dict[str, Path] = {
     "BGE-reranker-v2-m3": _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d" / "fixed_long_rerank_sweep",
     "MedCPT":             _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_medcpt" / "fixed_long_rerank_sweep",
-    "BGE Gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
+    "BGE-reranker-v2-gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
 }
 
 cross_reranker_mrr10: dict[str, dict[str, float]] = {}
@@ -609,7 +601,14 @@ FUSION_STYLE = {
 
 n_q = len(fig2_gold)
 
-fig, axes = plt.subplots(1, 4, figsize=(18, 4.7), gridspec_kw={"width_ratios": [0.95, 0.95, 0.95, 1.20]})
+fig, axes = plt.subplots(
+    1,
+    4,
+    # Taller figure so four set_box_aspect(1) panels fit in one row without overlap/clipping.
+    figsize=(17.0, 5.45),
+    layout="constrained",
+    gridspec_kw={"width_ratios": [1, 1, 1, 1], "wspace": 0.08},
+)
 ax_a, ax_b, ax_c, ax_d = axes
 
 
@@ -642,6 +641,13 @@ ax_b.set_ylabel("")
 ax_b.grid(True, axis="y", alpha=0.35)
 ax_b.grid(True, axis="x", alpha=0.35)
 
+_ya = ax_a.get_ylim()
+_yb = ax_b.get_ylim()
+_recall_ymin = min(_ya[0], _yb[0])
+_recall_ymax = max(_ya[1], _yb[1])
+ax_a.set_ylim(_recall_ymin, _recall_ymax)
+ax_b.set_ylim(_recall_ymin, _recall_ymax)
+
 
 # Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant. The retrieval-fusion
 # line (no rerank) was deliberately dropped to keep the panel clean; that
@@ -653,7 +659,7 @@ for qf in ["body", "synonyms", "long"]:
     ax_c.plot(fig2_ks_mrr, mrr_curves[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
 
-ax_c.set_title("(c) BGE-reranker-v2-m3 — MRR@K", fontsize=13, fontweight="bold")
+ax_c.set_title("(c) BGE-reranker-v2-m3", fontsize=13, fontweight="bold")
 ax_c.set_xscale("log")
 ax_c.set_xlabel("K")
 ax_c.set_ylabel("Mean MRR@K")
@@ -666,8 +672,8 @@ ax_c.grid(True, axis="x", alpha=0.35)
 # blue gradient as panels (a)–(c) so QE intensity is visually consistent.
 # The diminishing bar height across the row tells the orthogonality story:
 # QE compounds with weaker rerankers; with a strong enough reranker
-# (BGE Gemma) the marginal QE benefit shrinks.
-inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE Gemma"]
+# (BGE-reranker-v2-gemma) the marginal QE benefit shrinks.
+inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE-reranker-v2-gemma"]
 inset_qf_pair = ["synonyms", "long"]
 
 inset_data: dict[str, dict[str, float]] = {}
@@ -710,7 +716,6 @@ ax_d.set_xticks(xpos)
 ax_d.set_xticklabels(inset_reranker_order, rotation=15, ha="right", fontsize=10)
 ax_d.set_ylabel("Δ MRR@10 (vs body QE)")
 ax_d.set_title("(d) QE lift across rerankers", fontsize=13, fontweight="bold")
-ax_d.legend(fontsize=9, loc="upper right", frameon=True, edgecolor="0.85")
 ax_d.grid(True, axis="y", alpha=0.35)
 
 if all_deltas:
@@ -726,16 +731,17 @@ for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     legend_handles.append(Line2D([0], [0], color=s["color"], marker="o",
                                  linewidth=s["lw"], label=s["label"]))
-fig.legend(handles=legend_handles, loc="lower center", bbox_to_anchor=(0.5, -0.02),
-           ncol=3, fontsize=11, frameon=True, edgecolor="0.85")
-
-fig.suptitle(
-    f"QE improves retrieval recall (a, b), lifts BGE-reranker-v2-m3 MRR (c), "
-    f"and the lift carries — with diminishing returns — across rerankers (d)  |  n={n_q}",
-    fontsize=13, fontweight="bold", y=1.02,
+fig.legend(
+    handles=legend_handles,
+    loc="lower center",
+    bbox_to_anchor=(0.5, -0.06),
+    ncol=3,
+    fontsize=11,
+    frameon=True,
+    edgecolor="0.85",
 )
-plt.tight_layout()
-fig.subplots_adjust(bottom=0.18)
+for _ax in (ax_a, ax_b, ax_c, ax_d):
+    _ax.set_box_aspect(1)
 
 fig2_path = fig2_out_dir / "fig4_candidate_qe_main.png"
 fig.savefig(fig2_path, dpi=150, bbox_inches="tight")
@@ -783,7 +789,7 @@ for m in panel_c_order:
 # - That recall gain carries through to MRR@10 on the standard reranker
 #   (BGE-reranker-v2-m3, panel c).
 # - The QE lift is **not uniform across rerankers** (panel d):
-#   BGE-reranker-v2-m3 ≈ +4.6 pp, MedCPT ≈ +5.7 pp, BGE Gemma ≈ +0.9 pp.
+#   BGE-reranker-v2-m3 ≈ +4.6 pp, MedCPT ≈ +5.7 pp, BGE-reranker-v2-gemma ≈ +0.9 pp.
 #   With a strong enough reranker (Gemma), the marginal QE benefit shrinks —
 #   the strong reranker can recover the gold doc even from a less-precise
 #   query, so query-side and ranker-side improvements partially substitute
@@ -808,8 +814,8 @@ for m in panel_c_order:
 # | BGE-reranker-v2-m3 on long-form expansion                   | 0.622  | —          |
 # | MedCPT on original query                                    | 0.624  | —          |
 # | MedCPT on synonyms expansion                                | 0.681  | —          |
-# | BGE Gemma on original query                                 | 0.694  | —          |
-# | BGE Gemma on synonyms expansion                             | 0.703  | —          |
+# | BGE-reranker-v2-gemma on original query                                 | 0.694  | —          |
+# | BGE-reranker-v2-gemma on synonyms expansion                             | 0.703  | —          |
 
 
 # %% [markdown]
