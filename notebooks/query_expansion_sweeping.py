@@ -59,16 +59,13 @@ def _resolve_rerank_sweep_root(cfg: dict) -> Path:
 # %% [markdown]
 # ### Rerank MRR@K under each QE variant — paper supp Fig S4 source
 #
-# *Research artifact + paper supp source.* Produces a single MRR@K line plot
-# per `RERANK_PANEL_CONFIGS` entry — one for each (tag, reranker) combo where
-# we have rerank-only runs against the same QE variants. Used to populate
-# Fig S4 (QE × {MedCPT, BGE Gemma}) and the QE × BGE-reranker-v2-m3 reference
-# in Fig 4 main.
-#
-# This cell loads gold JSONL + run TSVs from `rerank_body` / `rerank_synonyms`
-# / `rerank_long` and optional `retrieval/fusion`, plots MRR@K like the
-# right-hand panel of the per-batch figure above, and saves
-# `figures/rerank_mrr_panel_{tag}.png` next to the sweep root.
+# *Research artifact + paper supp source.* Loads each `RERANK_PANEL_CONFIGS`
+# entry (tag × reranker sweep) and builds **one** supplementary-style figure:
+# **1×3 panels** (BGE-reranker-v2-m3 | MedCPT | BGE Gemma), each titled by
+# reranker, same MRR@K curves per panel (QE variants + optional fusion). Used
+# as Fig S4 (QE reranker panels). Saves
+# `figures/fig_s4_qe_reranker_mrr_panels.png` (under the `7d` BGE-v2-m3 sweep
+# `figures/` when that panel is present, otherwise the first loaded sweep).
 
 # %%
 # CE rerank MRR@K only — run TSVs; no combined_sweep_metrics / retrieval sweep.
@@ -94,11 +91,23 @@ RERANK_PANEL_CONFIGS = [
     },
 ]
 
-KS_MAP_RR = [1, 5, 10, 20, 50, 100, 200]
-_rr_colors = {"body": "#8e44ad", "synonyms": "#16a085", "long": "#d35400", "hybrid": "#2980b9"}
-_rr_markers = {"body": "o", "synonyms": "s", "long": "^", "hybrid": "D"}
-_display_to_qf_rr = {v: k for k, v in RERANK_DISPLAY.items()}
-_method_order_rr = list(RERANK_DISPLAY.values())
+# Same K grid as Fig 4 panel (c) (`fig2_ks_mrr`).
+KS_MAP_RR = [1, 5, 10, 20, 50, 100]
+
+# Match Fig 4 `QE_STYLE` (panel c): blue intensity + grey baseline.
+QE_STYLE_S4 = {
+    "body":     {"color": "#888888", "label": "Original Query",        "lw": 1.6, "ls": "-",  "alpha": 0.85},
+    "synonyms": {"color": "#5499c7", "label": "+ Gene Synonyms",       "lw": 1.8, "ls": "-",  "alpha": 0.95},
+    "long":     {"color": "#1f4e79", "label": "+ Synonyms & Products", "lw": 2.2, "ls": "-",  "alpha": 1.00},
+}
+# Panel (c) omits fusion; use a hue outside the QE blue/grey ramp plus dashed style.
+FUSION_S4 = {
+    "color": "#c0392b",
+    "label": "Retrieval fusion (long QE)",
+    "lw": 2.4,
+    "ls": "--",
+    "alpha": 1.0,
+}
 
 
 def _rp_load_gold(path: Path) -> dict[str, list[str]]:
@@ -171,14 +180,6 @@ def _rp_mean_mrr_at_k(gold: dict[str, list[str]], run: dict[str, list[str]], k: 
     return sum(scores) / len(scores) if scores else 0.0
 
 
-def _rp_ylim_from_vals(vals: list[float], hi_clip: float) -> tuple[float, float]:
-    if not vals:
-        return 0.5, hi_clip
-    lo, hi = min(vals), max(vals)
-    pad = (hi - lo) * 0.05 if hi > lo else 0.02
-    return max(0.0, lo - pad), min(hi_clip, hi + pad)
-
-
 _rc_rr = {
     "figure.figsize": (6.5, 4.8),
     "axes.titlesize": 13,
@@ -186,6 +187,21 @@ _rc_rr = {
     "xtick.labelsize": 11,
     "ytick.labelsize": 11,
 }
+
+_TAG_TO_RERANKER_TITLE = {
+    "7d": "BGE-reranker-v2-m3",
+    "7d_medcpt": "MedCPT",
+    "7d_gemma": "BGE Gemma",
+    "7e": "BGE-reranker-v2-m3",
+    "7e_medcpt": "MedCPT",
+    "7e_gemma": "BGE Gemma",
+}
+
+# Fig S4 column order (left → right): v2-m3 first for comparison with Fig 4 panel (c).
+_S4_PANEL_TAG_ORDER = ["7d", "7d_medcpt", "7d_gemma", "7e", "7e_medcpt", "7e_gemma"]
+_s4_tag_sort_key = {t: i for i, t in enumerate(_S4_PANEL_TAG_ORDER)}
+
+s4_panel_specs: list[dict] = []
 
 for cfg in RERANK_PANEL_CONFIGS:
     rerank_root = _resolve_rerank_sweep_root(cfg)
@@ -250,89 +266,141 @@ for cfg in RERANK_PANEL_CONFIGS:
 
     figures_dir = rerank_root / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
-
     include_hybrid = RERANK_DISPLAY["hybrid"] in mrr_curves
+    s4_panel_specs.append(
+        {
+            "tag": cfg["tag"],
+            "figures_dir": figures_dir,
+            "mrr_curves": mrr_curves,
+            "include_hybrid": include_hybrid,
+            "n_queries": len(gold_bench),
+            "reranker_title": _TAG_TO_RERANKER_TITLE.get(cfg["tag"], "Reranker"),
+        }
+    )
+
+s4_panel_specs.sort(key=lambda p: _s4_tag_sort_key.get(p["tag"], 99))
+
+# Fig S4: one row × one column per reranker (QE curves + optional fusion).
+if s4_panel_specs:
+    n_p = len(s4_panel_specs)
+    any_hybrid = any(p["include_hybrid"] for p in s4_panel_specs)
+    n_q = s4_panel_specs[0]["n_queries"]
+
+    out_dir = next(
+        (p["figures_dir"] for p in s4_panel_specs if p["tag"] == "7d"),
+        s4_panel_specs[0]["figures_dir"],
+    )
+    out_path = out_dir / "fig_s4_qe_reranker_mrr_panels.png"
 
     with plt.rc_context(_rc_rr):
-        _, ax = plt.subplots(figsize=(6.5, 4.85))
-        for method in _method_order_rr:
-            if method not in mrr_curves:
-                continue
-            qf = _display_to_qf_rr.get(method, method)
-            ax.plot(
-                KS_MAP_RR,
-                mrr_curves[method],
-                marker=_rr_markers.get(qf, "o"),
-                color=_rr_colors.get(qf, "#333333"),
-                linewidth=1.8,
-                markersize=6,
+        # Narrower columns, slightly taller than wide per axis for a compact “almost square” look.
+        _s4_col_w, _s4_row_h = 3.75, 3.95
+        fig, axes = plt.subplots(1, n_p, figsize=(_s4_col_w * n_p, _s4_row_h), sharey=True)
+        if n_p == 1:
+            axes_list = [axes]
+        else:
+            axes_list = list(axes)
+
+        panel_letters = "abcdefghij"
+        for i, (ax, spec) in enumerate(zip(axes_list, s4_panel_specs)):
+            curves = spec["mrr_curves"]
+            for qf in ["body", "synonyms", "long"]:
+                method_label = RERANK_DISPLAY[qf]
+                if method_label not in curves:
+                    continue
+                s = QE_STYLE_S4[qf]
+                ax.plot(
+                    KS_MAP_RR,
+                    curves[method_label],
+                    marker="o",
+                    markersize=5,
+                    color=s["color"],
+                    linewidth=s["lw"],
+                    linestyle=s["ls"],
+                    alpha=s["alpha"],
+                )
+            hybrid_label = RERANK_DISPLAY["hybrid"]
+            if hybrid_label in curves:
+                fs = FUSION_S4
+                ax.plot(
+                    KS_MAP_RR,
+                    curves[hybrid_label],
+                    marker="D",
+                    markersize=5,
+                    color=fs["color"],
+                    linewidth=fs["lw"],
+                    linestyle=fs["ls"],
+                    alpha=fs["alpha"],
+                )
+            ax.set_title(
+                f"({panel_letters[i]}) {spec['reranker_title']}",
+                fontsize=13,
+                fontweight="bold",
+                pad=8,
             )
-        mrr_flat = [v for vals in mrr_curves.values() for v in vals]
-        if mrr_flat:
-            lo, hi = _rp_ylim_from_vals(mrr_flat, 1.0)
-            ax.set_ylim(lo, hi)
-        # Title is reranker-aware: tag drives the model name shown.
-        _title_model = {
-            "7d": "BGE-reranker-v2-m3",
-            "7d_medcpt": "MedCPT",
-            "7d_gemma": "BGE Gemma",
-            "7e": "BGE-reranker-v2-m3",
-            "7e_medcpt": "MedCPT",
-            "7e_gemma": "BGE Gemma",
-        }.get(cfg["tag"], "Reranker")
-        ax.set_title(f"{_title_model} vs fusion[long] (n={len(gold_bench)})", fontsize=13, fontweight="bold")
-        ax.set_xlabel("K")
-        ax.set_xscale("log")
-        ax.set_ylabel("MRR@K")
-        ax.grid(True, axis="y", alpha=0.35)
-        ax.grid(True, axis="x", alpha=0.35)
+            ax.set_xlabel("K")
+            ax.set_xscale("log")
+            if i == 0:
+                ax.set_ylabel("Mean MRR@K")
+            ax.grid(True, axis="y", alpha=0.35)
+            ax.grid(True, axis="x", alpha=0.35)
 
         leg_handles = []
-        for q in ["body", "synonyms", "long"]:
+        for qf in ["body", "synonyms", "long"]:
+            s = QE_STYLE_S4[qf]
             leg_handles.append(
                 Line2D(
                     [0],
                     [0],
-                    color=_rr_colors[q],
-                    marker=_rr_markers[q],
-                    linestyle="-",
-                    linewidth=1.8,
-                    markersize=6,
-                    label=QF_DISPLAY[q],
+                    color=s["color"],
+                    marker="o",
+                    linestyle=s["ls"],
+                    linewidth=s["lw"],
+                    markersize=5,
+                    alpha=s["alpha"],
+                    label=s["label"],
                 )
             )
-        if include_hybrid:
+        if any_hybrid:
+            fs = FUSION_S4
             leg_handles.append(
                 Line2D(
                     [0],
                     [0],
-                    color=_rr_colors["hybrid"],
-                    marker=_rr_markers["hybrid"],
-                    linestyle="-",
-                    linewidth=1.8,
-                    markersize=6,
-                    label=RERANK_DISPLAY["hybrid"],
+                    color=fs["color"],
+                    marker="D",
+                    linestyle=fs["ls"],
+                    linewidth=fs["lw"],
+                    markersize=5,
+                    alpha=fs["alpha"],
+                    label=fs["label"],
                 )
             )
-        fig = ax.get_figure()
         fig.legend(
             handles=leg_handles,
-            loc="upper center",
+            loc="lower center",
             bbox_to_anchor=(0.5, -0.02),
-            ncol=4 if include_hybrid else 3,
-            fontsize=10,
+            ncol=4 if any_hybrid else 3,
+            fontsize=11,
             frameon=True,
             fancybox=False,
             edgecolor="0.85",
         )
-        fig.suptitle(f"Rerank MRR@K — [{cfg['tag']}]", fontsize=14, fontweight="bold", y=1.02)
+        fig.suptitle(
+            f"Fig S4 — Mean MRR@K vs K under each query-expansion variant (by reranker)  |  n={n_q}",
+            fontsize=13,
+            fontweight="bold",
+            y=1.02,
+        )
         plt.tight_layout()
-        out_path = figures_dir / f"rerank_mrr_panel_{cfg['tag']}.png"
+        fig.subplots_adjust(bottom=0.22)
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
         plt.show()
         plt.close(fig)
 
-    print(f"[{cfg['tag']}] Saved rerank-only figure: {out_path}")
+    print(f"Saved Fig S4 (1×{n_p} reranker panels): {out_path}")
+else:
+    print("Fig S4: no rerank panel data collected — check rerank dirs and run TSVs.")
 
 # %% [markdown]
 # Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE Gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
@@ -351,8 +419,9 @@ for cfg in RERANK_PANEL_CONFIGS:
 # - Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant
 # - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE Gemma}
 #
-# Full per-reranker MRR@K curves (paper supp Fig S4 source) are produced by the
-# *"Rerank MRR@K under each QE variant"* cell above.
+# Full per-reranker MRR@K curves (paper supp Fig S4) are produced by the
+# *"Rerank MRR@K under each QE variant"* cell above as
+# `figures/fig_s4_qe_reranker_mrr_panels.png` (1×3 reranker panels).
 #
 # Sample size: n=563 (7d expanded-query benchmark). The ranker-comparison
 # Fig 3 uses n=1,656 (default-query full goldset) — the caption must flag the
