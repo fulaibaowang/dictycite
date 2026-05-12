@@ -1210,43 +1210,36 @@ print("Saved:", fig_path)
 plt.show()
 
 # %% [markdown]
-# ## 12. Supplement Fig S4 / Source for Main Fig 3 — Post-rerank Fusion Metrics by Evidence Level
+# ## 12. Evidence-level setup — qrels + has-PDF subset (source for Fig 5 / Fig S5)
 #
-# *Paper role:*
-# - **Main Fig 3** uses the `abstract_insufficient` panel from this section (the
-#   third column of the multi-panel plot below) to argue that abstract-only
-#   retrieval plateaus on claims requiring full-text evidence — motivating
-#   the PDF-chunk extension as future work.
-# - **Supplement Fig S4** is the Recall@K / MRR@K multi-panel layout (all three
-#   evidence levels), kept here to give the complete evidence-level breakdown
-#   reviewers may want.
-#
-# Figure **12b**: Recall@K and MRR@K only (one neutral line color).
+# Loads per-evidence-level qrels from the goldset JSONL and the has-PDF subset
+# filter from `output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv`. Both
+# are consumed by §13 (Fig 5 / Fig S5).
 
 # %%
+import csv
+
 EVIDENCE_LEVEL_ORDER = [
-    "abstract_support_details",
-    "supports_core",
+    "abstract_supports_detail",
+    "abstract_supports_core",
     "abstract_insufficient",
 ]
-
-EVIDENCE_LEVEL_LABELS = {
-    "abstract_support_details": "Abstract support details",
-    "supports_core": "Supports core",
-    "abstract_insufficient": "Abstract insufficient",
+EVIDENCE_FIG3_COLORS = {
+    "abstract_supports_detail":   "#1f77b4",
+    "abstract_supports_core":     "#2ca02c",
+    "abstract_insufficient":      "#d62728",
 }
-
-ks_evidence = [1, 5, 10, 20, 30,  50, 75, 100]
-
-# Single color for evidence-level curves (rows differ by metric label, not hue).
-EVIDENCE_CURVE_COLOR = "#333333"
+EVIDENCE_FIG3_LABELS = {
+    "abstract_supports_detail":   "Abstract supports detail",
+    "abstract_supports_core":     "Abstract supports core",
+    "abstract_insufficient":      "Abstract insufficient",
+}
 
 
 def _load_qrels_by_evidence_level(gold_jsonl: Path) -> dict[str, dict[str, set[str]]]:
     """Return {evidence_level: {qid: {pmid, ...}}} where each pmid belongs only to
-    the level assigned to it in the docs list.  A single qid can appear in multiple
-    levels if its gold docs carry different evidence labels.
-    """
+    the level assigned to it in the docs list. A single qid can appear in multiple
+    levels if its gold docs carry different evidence labels."""
     level_qrels: dict[str, dict[str, set[str]]] = {}
     with gold_jsonl.open("r", encoding="utf-8") as f:
         for line in f:
@@ -1263,396 +1256,38 @@ def _load_qrels_by_evidence_level(gold_jsonl: Path) -> dict[str, dict[str, set[s
     return level_qrels
 
 
-for split in splits:
-    print(f"Building evidence-level curves for split={split} ...")
-    if not qrels_by_split.get(split):
-        print("  No qrels for this split; skipping.")
-        continue
-
-    # Per-level filtered qrels: {level: {qid: {pmids with that level}}}
-    level_qrels = _load_qrels_by_evidence_level(qrels_paths[split])
-
-    fusion_runs_dir = rerank_dir / "post_rerank_fusion_snippet" / "runs"
-    fusion_candidates = list(
-        fusion_runs_dir.glob(f"best_rrf_{split}_top5000_rrf_poolR200_poolH200_k60.tsv")
-    )
-    if not fusion_candidates:
-        print("  No post-rerank fusion run found; skipping.")
-        continue
-    fusion_run_df = _load_run(fusion_candidates[0])
-    qid_col, doc_col = fusion_run_df.columns.tolist()
-
-    run_docs: dict[str, list[str]] = {}
-    for qid, group in fusion_run_df.groupby(qid_col, sort=False):
-        run_docs[str(qid)] = group[doc_col].tolist()
-
-    levels_present = sorted({lvl for lvl, lvl_q in level_qrels.items() if any(q in run_docs for q in lvl_q)})
-    levels = [lvl for lvl in EVIDENCE_LEVEL_ORDER if lvl in levels_present]
-    levels += [lvl for lvl in levels_present if lvl not in levels]
-    if not levels:
-        print("  No overlapping qids with evidence_level; skipping.")
-        continue
-
-    map_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
-    rec_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
-    mrr_by_level: dict[str, list[float]] = {lvl: [] for lvl in levels}
-    n_by_level: dict[str, int] = {lvl: 0 for lvl in levels}
-
-    for lvl in levels:
-        # qrels filtered to only the pmids carrying this evidence level
-        lvl_qrels = level_qrels.get(lvl, {})
-        qids_lvl = [qid for qid in lvl_qrels if qid in run_docs]
-        if not qids_lvl:
-            map_by_level[lvl] = [0.0] * len(ks_evidence)
-            rec_by_level[lvl] = [0.0] * len(ks_evidence)
-            mrr_by_level[lvl] = [0.0] * len(ks_evidence)
-            continue
-        n_by_level[lvl] = len(qids_lvl)
-        map_vals: list[float] = []
-        rec_vals: list[float] = []
-        mrr_vals: list[float] = []
-        for k in ks_evidence:
-            ap_scores: list[float] = []
-            rec_scores: list[float] = []
-            mrr_scores: list[float] = []
-            for qid in qids_lvl:
-                rels_set = lvl_qrels[qid]   # only pmids with this level
-                if not rels_set:
-                    continue
-                docs = run_docs[qid]
-                ap_scores.append(_ap_at_k(docs, rels_set, k))
-                rec_scores.append(_recall_at_k(docs, rels_set, k))
-                mrr_scores.append(_mrr_at_k(docs, rels_set, k))
-            map_vals.append(float(np.mean(ap_scores)) if ap_scores else 0.0)
-            rec_vals.append(float(np.mean(rec_scores)) if rec_scores else 0.0)
-            mrr_vals.append(float(np.mean(mrr_scores)) if mrr_scores else 0.0)
-        map_by_level[lvl] = map_vals
-        rec_by_level[lvl] = rec_vals
-        mrr_by_level[lvl] = mrr_vals
-
-    all_rec_vals = [v for vals in rec_by_level.values() for v in vals]
-    all_mrr_vals = [v for vals in mrr_by_level.values() for v in vals]
-    y_min_r = max(0.0, min(all_rec_vals) - 0.02) if all_rec_vals else 0.0
-    y_max_r = min(1.0, max(all_rec_vals) + 0.02) if all_rec_vals else 1.0
-    y_min_mrr = max(0.0, min(all_mrr_vals) - 0.02) if all_mrr_vals else 0.0
-    y_max_mrr = min(1.0, max(all_mrr_vals) + 0.02) if all_mrr_vals else 1.0
-
-    # Recall + MRR only (same layout width, two metric rows).
-    fig_b, axes_b = plt.subplots(2, 3, figsize=(16, 7.2), sharex=True)
-    axes_b_flat = axes_b.flatten()
-
-    for idx, lvl in enumerate(levels):
-        col_title = EVIDENCE_LEVEL_LABELS.get(lvl, lvl)
-        n_q = n_by_level.get(lvl, 0)
-
-        ax_r = axes_b_flat[idx]
-        ax_r.plot(
-            ks_evidence, rec_by_level[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8
-        )
-        ax_r.set_title(f"{col_title} (n={n_q})", fontweight="bold")
-        ax_r.set_ylim(y_min_r, y_max_r)
-        ax_r.set_ylabel("Recall@K" if idx == 0 else "")
-        if idx != 0:
-            ax_r.tick_params(axis="y", labelleft=False)
-        ax_r.grid(True, axis="y")
-        ax_r.grid(True, axis="x")
-
-        ax_mm = axes_b_flat[idx + 3]
-        ax_mm.plot(
-            ks_evidence, mrr_by_level[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8
-        )
-        ax_mm.set_ylim(y_min_mrr, y_max_mrr)
-        ax_mm.set_ylabel("MRR@K" if idx == 0 else "")
-        if idx != 0:
-            ax_mm.tick_params(axis="y", labelleft=False)
-        ax_mm.set_xlabel("K")
-        ax_mm.grid(True, axis="y")
-        ax_mm.grid(True, axis="x")
-
-    for j in range(len(levels), 3):
-        axes_b_flat[j].set_visible(False)
-        axes_b_flat[j + 3].set_visible(False)
-
-    for ax in axes_b_flat:
-        ax.set_xlim(0, 100)
-
-    fig_b.suptitle(
-        _suptitle_n("Post-rerank Fusion – Recall@K and MRR@K by Evidence Level"),
-        fontsize=16,
-        fontweight="bold",
-        y=0.98,
-    )
-    _ev_rect = [0, 0, 1, 0.94] if _N_SPLIT_COLS <= 1 else [0, 0, 1, 0.96]
-    plt.tight_layout(rect=_ev_rect)
-    fig_path_b = (
-        output_dir
-        / f"12b_post_rerank_fusion_recall_mrr_by_evidence_level_{split_labels.get(split, split)}.png"
-    )
-    plt.savefig(fig_path_b, dpi=150, bbox_inches="tight")
-    print("Saved:", fig_path_b)
-    plt.show()
-
-
-# %% [markdown]
-# ## 13. Fig 3 Candidate — Main Paper
-#
-# *Paper role:* main-paper Fig 3. Single-panel overlay of MRR@K curves for
-# each evidence level, paying off the §3.2 QE story by showing where current
-# methods still fail (`abstract_insufficient` queries) and motivating the PDF-chunk
-# extension as future work.
-#
-# Single-panel design (vs supplement's 2×3 Recall/MRR grid) chosen to make the gap between
-# `abstract_insufficient` and the abstract-resolvable levels visible at a glance.
-# Uses MRR@K (not Recall@K) because qrels are document-level — the same PMIDs
-# would be retrieved across evidence levels; what differs is whether the
-# abstract surfaces the claim well enough to rank highly.
-
-# %%
-# Reuse mrr_by_level / n_by_level / levels / ks_evidence from Section 12 above.
-EVIDENCE_FIG3_COLORS = {
-    "abstract_supports_core":     "#2ca02c",  # green — abstract sufficient, best
-    "abstract_supports_detail":   "#1f77b4",  # blue — abstract sufficient, secondary
-    "abstract_insufficient":             "#d62728",  # red — abstract insufficient, the ceiling
-}
-EVIDENCE_FIG3_MARKERS = {
-    "abstract_supports_core":     "o",
-    "abstract_supports_detail":   "s",
-    "abstract_insufficient":             "D",
-}
-EVIDENCE_FIG3_LW = {
-    "abstract_supports_core":     1.8,
-    "abstract_supports_detail":   1.8,
-    "abstract_insufficient":             2.6,  # bold the focal level
-}
-# Fig-3-specific pretty labels (Section 12's EVIDENCE_LEVEL_LABELS dict uses
-# different keys than the data, leaving most levels unlabeled; override here).
-EVIDENCE_FIG3_LABELS = {
-    "abstract_supports_core":     "Abstract supports core",
-    "abstract_supports_detail":   "Abstract supports detail",
-    "abstract_insufficient":             "Abstract insufficient",
-}
-
-# Compact x-axis: K up to 100 (where the message lives — top-of-list quality)
-fig3_ks = [k for k in ks_evidence if k <= 100]
-fig3_ks_idx = [ks_evidence.index(k) for k in fig3_ks]
-
-fig3, ax3 = plt.subplots(figsize=(7.5, 5))
-
+# Per-evidence-level qrels for the primary split.
+split = splits[0]
+level_qrels = _load_qrels_by_evidence_level(qrels_paths[split])
+levels_present = sorted(level_qrels.keys())
+levels = [lvl for lvl in EVIDENCE_LEVEL_ORDER if lvl in levels_present]
+levels += [lvl for lvl in levels_present if lvl not in levels]
+print(f"Evidence levels (split={split}):")
 for lvl in levels:
-    if lvl not in mrr_by_level:
-        continue
-    color = EVIDENCE_FIG3_COLORS.get(lvl, "#888888")
-    marker = EVIDENCE_FIG3_MARKERS.get(lvl, "o")
-    lw = EVIDENCE_FIG3_LW.get(lvl, 1.8)
-    label = f"{EVIDENCE_FIG3_LABELS.get(lvl, lvl)} (n={n_by_level.get(lvl, 0)})"
-    vals = [mrr_by_level[lvl][i] for i in fig3_ks_idx]
-    ax3.plot(
-        fig3_ks, vals,
-        marker=marker, markersize=7, linewidth=lw,
-        color=color, label=label,
-    )
+    print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n_queries={len(level_qrels.get(lvl, {}))}")
 
-ax3.set_xlabel("K")
-ax3.set_ylabel("Mean MRR@K")
-ax3.set_xticks(fig3_ks)
-ax3.set_xticklabels([str(k) for k in fig3_ks])
-ax3.grid(True, axis="y", alpha=0.4)
-ax3.grid(True, axis="x", alpha=0.3)
-ax3.legend(fontsize=11, loc="lower right", title="Evidence level")
-fig3.suptitle(
-    f"Post-rerank Fusion — MRR@K stratified by evidence level",
-    fontsize=13, fontweight="bold",
-)
-plt.tight_layout()
-fig3_path = output_dir / "fig3_candidate_evidence_level_mrr.png"
-plt.savefig(fig3_path, dpi=150, bbox_inches="tight")
-print("Saved:", fig3_path)
-plt.show()
-
-# Numbers for §3.3
-print("\nMRR@10 by evidence level:")
-for lvl in levels:
-    if lvl in mrr_by_level and 10 in ks_evidence:
-        v = mrr_by_level[lvl][ks_evidence.index(10)]
-        n = n_by_level.get(lvl, 0)
-        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  MRR@10={v:.4f}")
-
-print("\nRecall@100 by evidence level (to argue 'same docs retrieved, different surfacing'):")
-for lvl in levels:
-    if lvl in rec_by_level and 100 in ks_evidence:
-        v = rec_by_level[lvl][ks_evidence.index(100)]
-        n = n_by_level.get(lvl, 0)
-        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  Recall@100={v:.4f}")
-
-
-# %% [markdown]
-# ## 13b. Has-PDF Subset — Companion Plots
-#
-# *Paper role:* supplementary view that re-runs §12b-style and §13 metric stratification
-# on the subset of claims whose gold PMID is in the v2 chunked corpus
-# (`in_chunks_v2 == "yes"` in `output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv`).
-#
-# Why a second view: the full-cohort plots above include claims whose gold
-# PMID has no PDF (~13% of 7a). Those claims can't move when full-text is
-# added to the index, so they dilute any baseline-vs-full-text comparison
-# toward zero. Restricting to has-PDF claims gives the upper-bound effect
-# of the full-text extension on the queries it can actually act on.
-#
-# Companion figures use the `*_haspdf.png` suffix.
-
-# %%
-import csv
-
+# Has-PDF subset filter (claims whose gold PMID is in the v2 chunked corpus).
 coverage_tsv = base_dir / "output" / "dicty_gold_build" / "7a_dicty_gold_pdf_coverage.tsv"
-
 chunked_pmids_v2: set[str] = set()
 with coverage_tsv.open("r", encoding="utf-8") as f:
     for row in csv.DictReader(f, delimiter="\t"):
         if row.get("in_chunks_v2") == "yes":
             chunked_pmids_v2.add(str(row["pmid"]))
-print(f"Has-PDF subset: {len(chunked_pmids_v2)} unique chunked PMIDs from coverage TSV")
+print(f"\nHas-PDF subset: {len(chunked_pmids_v2)} unique chunked PMIDs from coverage TSV")
 
-# Filter level_qrels to keep only (qid, pmid) pairs where the pmid is chunked.
 level_qrels_haspdf: dict[str, dict[str, set[str]]] = {}
 for _lvl, q_to_pmids in level_qrels.items():
-    new_q: dict[str, set[str]] = {}
-    for qid, pmids in q_to_pmids.items():
-        keep = pmids & chunked_pmids_v2
-        if keep:
-            new_q[qid] = keep
+    new_q = {qid: (pmids & chunked_pmids_v2) for qid, pmids in q_to_pmids.items()}
+    new_q = {qid: p for qid, p in new_q.items() if p}
     if new_q:
         level_qrels_haspdf[_lvl] = new_q
-
-# Re-run the same Recall/MRR loop as §12b with the filtered qrels.
-rec_by_level_haspdf: dict[str, list[float]] = {lvl: [] for lvl in levels}
-mrr_by_level_haspdf: dict[str, list[float]] = {lvl: [] for lvl in levels}
-n_by_level_haspdf: dict[str, int] = {lvl: 0 for lvl in levels}
-
+print("Has-PDF level_qrels:")
 for lvl in levels:
-    lvl_qrels = level_qrels_haspdf.get(lvl, {})
-    qids_lvl = [qid for qid in lvl_qrels if qid in run_docs]
-    if not qids_lvl:
-        rec_by_level_haspdf[lvl] = [0.0] * len(ks_evidence)
-        mrr_by_level_haspdf[lvl] = [0.0] * len(ks_evidence)
-        continue
-    n_by_level_haspdf[lvl] = len(qids_lvl)
-    rec_vals: list[float] = []
-    mrr_vals: list[float] = []
-    for k in ks_evidence:
-        rec_scores: list[float] = []
-        mrr_scores: list[float] = []
-        for qid in qids_lvl:
-            rels_set = lvl_qrels[qid]
-            if not rels_set:
-                continue
-            docs = run_docs[qid]
-            rec_scores.append(_recall_at_k(docs, rels_set, k))
-            mrr_scores.append(_mrr_at_k(docs, rels_set, k))
-        rec_vals.append(float(np.mean(rec_scores)) if rec_scores else 0.0)
-        mrr_vals.append(float(np.mean(mrr_scores)) if mrr_scores else 0.0)
-    rec_by_level_haspdf[lvl] = rec_vals
-    mrr_by_level_haspdf[lvl] = mrr_vals
-
-# §12b mirror: 2×3 (Recall / MRR rows × evidence-level columns), has-PDF subset.
-_all_rec = [v for vals in rec_by_level_haspdf.values() for v in vals]
-_all_mrr = [v for vals in mrr_by_level_haspdf.values() for v in vals]
-_y_min_r = max(0.0, min(_all_rec) - 0.02) if _all_rec else 0.0
-_y_max_r = min(1.0, max(_all_rec) + 0.02) if _all_rec else 1.0
-_y_min_mrr = max(0.0, min(_all_mrr) - 0.02) if _all_mrr else 0.0
-_y_max_mrr = min(1.0, max(_all_mrr) + 0.02) if _all_mrr else 1.0
-
-fig_hp, axes_hp = plt.subplots(2, 3, figsize=(16, 7.2), sharex=True)
-axes_hp_flat = axes_hp.flatten()
-
-for idx, lvl in enumerate(levels):
-    col_title = EVIDENCE_LEVEL_LABELS.get(lvl, lvl)
-    n_q = n_by_level_haspdf.get(lvl, 0)
-
-    ax_r = axes_hp_flat[idx]
-    ax_r.plot(ks_evidence, rec_by_level_haspdf[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8)
-    ax_r.set_title(f"{col_title} (n={n_q})", fontweight="bold")
-    ax_r.set_ylim(_y_min_r, _y_max_r)
-    ax_r.set_ylabel("Recall@K" if idx == 0 else "")
-    if idx != 0:
-        ax_r.tick_params(axis="y", labelleft=False)
-    ax_r.grid(True, axis="y")
-    ax_r.grid(True, axis="x")
-
-    ax_mm = axes_hp_flat[idx + 3]
-    ax_mm.plot(ks_evidence, mrr_by_level_haspdf[lvl], marker="o", color=EVIDENCE_CURVE_COLOR, linewidth=1.8)
-    ax_mm.set_ylim(_y_min_mrr, _y_max_mrr)
-    ax_mm.set_ylabel("MRR@K" if idx == 0 else "")
-    if idx != 0:
-        ax_mm.tick_params(axis="y", labelleft=False)
-    ax_mm.set_xlabel("K")
-    ax_mm.grid(True, axis="y")
-    ax_mm.grid(True, axis="x")
-
-for j in range(len(levels), 3):
-    axes_hp_flat[j].set_visible(False)
-    axes_hp_flat[j + 3].set_visible(False)
-for ax in axes_hp_flat:
-    ax.set_xlim(0, 100)
-
-fig_hp.suptitle(
-    _suptitle_n("Post-rerank Fusion – Recall@K and MRR@K by Evidence Level (has-PDF subset)"),
-    fontsize=16, fontweight="bold", y=0.98,
-)
-_ev_rect = [0, 0, 1, 0.94] if _N_SPLIT_COLS <= 1 else [0, 0, 1, 0.96]
-plt.tight_layout(rect=_ev_rect)
-fig_hp_path = (
-    output_dir
-    / f"12b_post_rerank_fusion_recall_mrr_by_evidence_level_{split_labels.get(split, split)}_haspdf.png"
-)
-plt.savefig(fig_hp_path, dpi=150, bbox_inches="tight")
-print("Saved:", fig_hp_path)
-plt.show()
-
-# Fig 3 mirror: single-panel MRR@K overlay, has-PDF subset.
-fig3_hp, ax3_hp = plt.subplots(figsize=(7.5, 5))
-for lvl in levels:
-    if lvl not in mrr_by_level_haspdf:
-        continue
-    color = EVIDENCE_FIG3_COLORS.get(lvl, "#888888")
-    marker = EVIDENCE_FIG3_MARKERS.get(lvl, "o")
-    lw = EVIDENCE_FIG3_LW.get(lvl, 1.8)
-    label = f"{EVIDENCE_FIG3_LABELS.get(lvl, lvl)} (n={n_by_level_haspdf.get(lvl, 0)})"
-    vals = [mrr_by_level_haspdf[lvl][i] for i in fig3_ks_idx]
-    ax3_hp.plot(fig3_ks, vals, marker=marker, markersize=7, linewidth=lw, color=color, label=label)
-ax3_hp.set_xlabel("K")
-ax3_hp.set_ylabel("Mean MRR@K")
-ax3_hp.set_xticks(fig3_ks)
-ax3_hp.set_xticklabels([str(k) for k in fig3_ks])
-ax3_hp.grid(True, axis="y", alpha=0.4)
-ax3_hp.grid(True, axis="x", alpha=0.3)
-ax3_hp.legend(fontsize=11, loc="lower right", title="Evidence level")
-fig3_hp.suptitle(
-    "Post-rerank Fusion — MRR@K by evidence level (has-PDF subset)",
-    fontsize=13, fontweight="bold",
-)
-plt.tight_layout()
-fig3_hp_path = output_dir / "fig3_candidate_evidence_level_mrr_haspdf.png"
-plt.savefig(fig3_hp_path, dpi=150, bbox_inches="tight")
-print("Saved:", fig3_hp_path)
-plt.show()
-
-# Numbers for the has-PDF subset
-print("\nHas-PDF subset MRR@10 by evidence level:")
-for lvl in levels:
-    if lvl in mrr_by_level_haspdf and 10 in ks_evidence:
-        v = mrr_by_level_haspdf[lvl][ks_evidence.index(10)]
-        n = n_by_level_haspdf.get(lvl, 0)
-        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  MRR@10={v:.4f}")
-print("\nHas-PDF subset Recall@100 by evidence level:")
-for lvl in levels:
-    if lvl in rec_by_level_haspdf and 100 in ks_evidence:
-        v = rec_by_level_haspdf[lvl][ks_evidence.index(100)]
-        n = n_by_level_haspdf.get(lvl, 0)
-        print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n:4d}  Recall@100={v:.4f}")
+    print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n_queries={len(level_qrels_haspdf.get(lvl, {}))}")
 
 
 # %% [markdown]
-# ## 14. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
+# ## 13. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
 #
 # *Paper role:* main-paper Fig 5 (has-PDF subset) and supplementary Fig S5
 # (all claims). Two-row 2×3 layout per evidence level:
@@ -1670,6 +1305,7 @@ for lvl in levels:
 # we aggregate to PMID by max-pool (first occurrence per query wins). qid sets
 # are intersected across the two systems so the per-bucket n matches for both
 # overlays.
+
 
 # %%
 chunked_workflow_dir = base_dir / "output" / "workflow_frida_7a_public_goldset_chunked_v2"
@@ -1870,7 +1506,7 @@ else:
 
 
 # %% [markdown]
-# ## 15. Draft Results Text — §3.3 Where current methods still fail
+# ## 14. Draft Results Text — §3.3 Where current methods still fail
 #
 # *Numbers populated from the cell above. Goldset n=1,656 (same as §3.1);
 # subset counts per evidence level appear in the figure legend.*
@@ -1883,7 +1519,7 @@ else:
 # > detail for the claim), and `abstract_insufficient` (the supporting passage
 # > appears only in the body of the paper). Stratifying our best pipeline
 # > configuration (Post-rerank Fusion) by evidence level reveals a sharp
-# > divide (**Fig 3**): on the abstract-resolvable levels, MRR@10 reaches
+# > divide (**Fig 5**): on the abstract-resolvable levels, MRR@10 reaches
 # > 0.80 (`abstract_supports_detail`, n=816) and 0.50
 # > (`abstract_supports_core`, n=654), with Recall@100 above 0.92 in both
 # > cases. On `abstract_insufficient` queries (n=387), MRR@10 collapses to 0.16
@@ -1891,9 +1527,11 @@ else:
 # > not merely a ranking issue: roughly 40% of these queries fail to
 # > retrieve the gold paper anywhere in the top-100, indicating that the
 # > abstract content is too misaligned with the claim wording to surface
-# > the relevant document. Improving these queries thus requires content
-# > beyond the abstract; we describe ongoing work on full-text passage
-# > indexing in §5.
+# > the relevant document. Adding chunked full-text to the index (Fig 5,
+# > dashed curves) closes most of the retrieval-recall gap on
+# > `abstract_insufficient` (R@1000 ≈ 0.99) but only partially closes the
+# > post-rerank MRR gap, leaving room for stronger cross-encoders / chunk
+# > caps as future work.
 #
 # **Notes for the discussion:**
 #
