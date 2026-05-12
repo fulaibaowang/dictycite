@@ -65,6 +65,9 @@ hybrid_metrics["method"] = "BM25 Dense Fusion"
 
 output_dir = workflow_dir / "figures"
 output_dir.mkdir(parents=True, exist_ok=True)
+# Consolidated paper figures land here; diagnostic plots stay under output_dir.
+paper_figures_dir = base_dir / "output" / "paper_figures"
+paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 splits = ["7a_dicty_gold_llm_public"]
 split_labels = {"7a_dicty_gold_llm_public": "7a full public"}
@@ -1649,7 +1652,225 @@ for lvl in levels:
 
 
 # %% [markdown]
-# ## 14. Draft Results Text — §3.3 Where current methods still fail
+# ## 14. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
+#
+# *Paper role:* main-paper Fig 5 (has-PDF subset) and supplementary Fig S5
+# (all claims). Two-row 2×3 layout per evidence level:
+#
+# - **Upper row — first-stage retrieval Recall@K** (BM25+Dense hybrid fusion run,
+#   `retrieval/fusion`). Shows how often the gold paper is anywhere in the
+#   retrieved candidate set up to K.
+# - **Lower row — post-rerank-fusion MRR@K** (cross-encoder + post-rerank
+#   fusion). Shows how high the gold paper is ranked after reranking.
+#
+# Together this exposes the "retrieval finds it / rerank can't surface it"
+# bottleneck on `abstract_insufficient` claims when chunked full-text is added.
+#
+# Chunked-v2 run docids are chunk-level (`{pmid}#abstract`, `{pmid}#body_NNN`);
+# we aggregate to PMID by max-pool (first occurrence per query wins). qid sets
+# are intersected across the two systems so the per-bucket n matches for both
+# overlays.
+
+# %%
+chunked_workflow_dir = base_dir / "output" / "workflow_frida_7a_public_goldset_chunked_v2"
+chunked_rerank_path = (
+    chunked_workflow_dir
+    / "rerank" / "post_rerank_fusion_snippet" / "runs"
+    / f"best_rrf_{splits[0]}_top5000_rrf_poolR200_poolH200_k60.tsv"
+)
+chunked_retrieval_path = (
+    chunked_workflow_dir
+    / "retrieval" / "fusion" / "runs"
+    / f"best_rrf_{splits[0]}_top5000.tsv"
+)
+baseline_retrieval_path = (
+    workflow_dir
+    / "retrieval" / "fusion" / "runs"
+    / f"best_rrf_{splits[0]}_top5000.tsv"
+)
+
+_missing = [p for p in (chunked_rerank_path, chunked_retrieval_path, baseline_retrieval_path) if not p.exists()]
+if _missing:
+    for p in _missing:
+        print(f"Missing run for Fig 5: {p}")
+    print("Skipping Fig 5 / Fig S5.")
+else:
+    def _load_pmid_dedup(path: Path) -> dict[str, list[str]]:
+        """Load run TSV, split docno on '#' to get PMID, dedupe per qid (first wins)."""
+        run_df = _load_run(path)
+        qcol, dcol = run_df.columns.tolist()
+        out: dict[str, list[str]] = {}
+        for qid, group in run_df.groupby(qcol, sort=False):
+            seen: set[str] = set()
+            ordered: list[str] = []
+            for docno in group[dcol]:
+                pmid = str(docno).split("#", 1)[0]
+                if pmid in seen:
+                    continue
+                seen.add(pmid)
+                ordered.append(pmid)
+            out[str(qid)] = ordered
+        return out
+
+    # Retrieval-stage hybrid fusion runs (top of pipeline, before CE).
+    run_retrieval_base    = _load_pmid_dedup(baseline_retrieval_path)
+    run_retrieval_chunked = _load_pmid_dedup(chunked_retrieval_path)
+    # Post-rerank-fusion run (after CE + RRF). Baseline already in run_docs from §12;
+    # rebuild via the same dedup helper so the two paths share preprocessing.
+    run_rerank_base    = _load_pmid_dedup(
+        rerank_dir / "post_rerank_fusion_snippet" / "runs"
+        / f"best_rrf_{splits[0]}_top5000_rrf_poolR200_poolH200_k60.tsv"
+    )
+    run_rerank_chunked = _load_pmid_dedup(chunked_rerank_path)
+
+    print(
+        f"Loaded runs (qids): "
+        f"retrieval base={len(run_retrieval_base)}  chunked={len(run_retrieval_chunked)};  "
+        f"rerank base={len(run_rerank_base)}  chunked={len(run_rerank_chunked)}"
+    )
+
+    KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000, 2000, 5000]
+    KS_MRR_RERANK = [1, 2, 3, 5, 10, 20, 50, 100]
+
+    def _per_level_curve(
+        per_level_qrels: dict[str, dict[str, set[str]]],
+        run_a: dict[str, list[str]],
+        run_b: dict[str, list[str]],
+        ks: list[int],
+        metric: str,  # "recall" or "mrr"
+    ) -> tuple[dict[str, list[float]], dict[str, list[float]], dict[str, int]]:
+        score_fn = _recall_at_k if metric == "recall" else _mrr_at_k
+        curve_a: dict[str, list[float]] = {lvl: [] for lvl in levels}
+        curve_b: dict[str, list[float]] = {lvl: [] for lvl in levels}
+        n_per: dict[str, int] = {lvl: 0 for lvl in levels}
+        for lvl in levels:
+            lvl_qrels = per_level_qrels.get(lvl, {})
+            qids_lvl = [qid for qid in lvl_qrels if qid in run_a and qid in run_b]
+            if not qids_lvl:
+                curve_a[lvl] = [0.0] * len(ks)
+                curve_b[lvl] = [0.0] * len(ks)
+                continue
+            n_per[lvl] = len(qids_lvl)
+            for k in ks:
+                va, vb = [], []
+                for qid in qids_lvl:
+                    rels_set = lvl_qrels[qid]
+                    if not rels_set:
+                        continue
+                    va.append(score_fn(run_a[qid], rels_set, k))
+                    vb.append(score_fn(run_b[qid], rels_set, k))
+                curve_a[lvl].append(float(np.mean(va)) if va else 0.0)
+                curve_b[lvl].append(float(np.mean(vb)) if vb else 0.0)
+        return curve_a, curve_b, n_per
+
+    BASELINE_LABEL = "Abstract-only (baseline)"
+    CHUNKED_LABEL  = "+ Full-text chunks (v2)"
+    BASELINE_STYLE = {"linestyle": "-",  "linewidth": 1.8, "marker": "o", "markersize": 6}
+    CHUNKED_STYLE  = {"linestyle": "--", "linewidth": 2.2, "marker": "D", "markersize": 6}
+
+    def _plot_retrieval_rerank_overlay(
+        per_level_qrels: dict[str, dict[str, set[str]]],
+        suptitle: str, out_path: Path,
+    ) -> dict[str, int]:
+        rec_base, rec_chk, n_per = _per_level_curve(
+            per_level_qrels, run_retrieval_base, run_retrieval_chunked,
+            KS_RECALL_RETRIEVAL, metric="recall",
+        )
+        mrr_base, mrr_chk, _ = _per_level_curve(
+            per_level_qrels, run_rerank_base, run_rerank_chunked,
+            KS_MRR_RERANK, metric="mrr",
+        )
+
+        all_rec = [v for d in (rec_base, rec_chk) for vals in d.values() for v in vals]
+        all_mrr = [v for d in (mrr_base, mrr_chk) for vals in d.values() for v in vals]
+        y_min_r = max(0.0, min(all_rec) - 0.02) if all_rec else 0.0
+        y_max_r = min(1.0, max(all_rec) + 0.02) if all_rec else 1.0
+        y_min_m = max(0.0, min(all_mrr) - 0.02) if all_mrr else 0.0
+        y_max_m = min(1.0, max(all_mrr) + 0.02) if all_mrr else 1.0
+
+        fig, axes = plt.subplots(2, 3, figsize=(16, 7.8))
+        for idx, lvl in enumerate(levels):
+            color = EVIDENCE_FIG3_COLORS.get(lvl, "#444444")
+            col_title = EVIDENCE_FIG3_LABELS.get(lvl, lvl)
+            n_q = n_per.get(lvl, 0)
+
+            ax_r = axes[0, idx]
+            ax_r.plot(KS_RECALL_RETRIEVAL, rec_base[lvl], color=color, **BASELINE_STYLE)
+            ax_r.plot(KS_RECALL_RETRIEVAL, rec_chk[lvl],  color=color, **CHUNKED_STYLE)
+            ax_r.set_title(f"{col_title} (n={n_q})", fontweight="bold")
+            ax_r.set_ylim(y_min_r, y_max_r)
+            ax_r.set_ylabel("Retrieval Recall@K" if idx == 0 else "")
+            if idx != 0:
+                ax_r.tick_params(axis="y", labelleft=False)
+            ax_r.set_xlabel("K (retrieval depth)")
+            ax_r.grid(True, axis="y", alpha=0.4)
+            ax_r.grid(True, axis="x", alpha=0.3)
+
+            ax_m = axes[1, idx]
+            ax_m.plot(KS_MRR_RERANK, mrr_base[lvl], color=color, **BASELINE_STYLE)
+            ax_m.plot(KS_MRR_RERANK, mrr_chk[lvl],  color=color, **CHUNKED_STYLE)
+            ax_m.set_ylim(y_min_m, y_max_m)
+            ax_m.set_ylabel("Post-rerank MRR@K" if idx == 0 else "")
+            if idx != 0:
+                ax_m.tick_params(axis="y", labelleft=False)
+            ax_m.set_xlabel("K (distinct PMIDs in reranked list)")
+            ax_m.grid(True, axis="y", alpha=0.4)
+            ax_m.grid(True, axis="x", alpha=0.3)
+
+        legend_handles = [
+            Line2D([0], [0], color="#444444", label=BASELINE_LABEL, **BASELINE_STYLE),
+            Line2D([0], [0], color="#444444", label=CHUNKED_LABEL,  **CHUNKED_STYLE),
+        ]
+        fig.legend(
+            handles=legend_handles, loc="lower center",
+            bbox_to_anchor=(0.5, -0.02), ncol=2, fontsize=11, frameon=True, edgecolor="0.85",
+        )
+        fig.suptitle(suptitle, fontsize=15, fontweight="bold", y=0.98)
+        plt.tight_layout(rect=[0, 0.04, 1, 0.95])
+        plt.savefig(out_path, dpi=150, bbox_inches="tight")
+        print("Saved:", out_path)
+        plt.show()
+        return n_per
+
+    n_hp = _plot_retrieval_rerank_overlay(
+        level_qrels_haspdf,
+        suptitle="Retrieval Recall@K and Post-rerank MRR@K by Evidence Level — has-PDF subset (baseline vs +chunked v2)",
+        out_path=paper_figures_dir / "fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png",
+    )
+    n_all = _plot_retrieval_rerank_overlay(
+        level_qrels,
+        suptitle="Retrieval Recall@K and Post-rerank MRR@K by Evidence Level — all claims (baseline vs +chunked v2)",
+        out_path=paper_figures_dir / "fig_s5_evidence_level_retrieval_recall_rerank_mrr_all.png",
+    )
+
+    # Caption numbers: retrieval Recall@1000 + rerank MRR@10, per evidence level.
+    def _caption_table(per_level_qrels, n_per, label):
+        rec_base, rec_chk, _ = _per_level_curve(
+            per_level_qrels, run_retrieval_base, run_retrieval_chunked,
+            [100, 1000], metric="recall",
+        )
+        mrr_base, mrr_chk, _ = _per_level_curve(
+            per_level_qrels, run_rerank_base, run_rerank_chunked,
+            [10], metric="mrr",
+        )
+        print(f"\n{label} — by evidence level:")
+        print(f"  {'Level':28s} {'n':>4s}  "
+              f"{'R@100 base':>11s}  {'R@100 +chk':>11s}  "
+              f"{'R@1000 base':>12s}  {'R@1000 +chk':>12s}  "
+              f"{'MRR@10 base':>11s}  {'MRR@10 +chk':>11s}")
+        for lvl in levels:
+            n = n_per.get(lvl, 0)
+            print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):28s} {n:4d}  "
+                  f"{rec_base[lvl][0]:11.4f}  {rec_chk[lvl][0]:11.4f}  "
+                  f"{rec_base[lvl][1]:12.4f}  {rec_chk[lvl][1]:12.4f}  "
+                  f"{mrr_base[lvl][0]:11.4f}  {mrr_chk[lvl][0]:11.4f}")
+
+    _caption_table(level_qrels_haspdf, n_hp, "Fig 5 (has-PDF)")
+    _caption_table(level_qrels,        n_all, "Fig S5 (all claims)")
+
+
+# %% [markdown]
+# ## 15. Draft Results Text — §3.3 Where current methods still fail
 #
 # *Numbers populated from the cell above. Goldset n=1,656 (same as §3.1);
 # subset counts per evidence level appear in the figure legend.*

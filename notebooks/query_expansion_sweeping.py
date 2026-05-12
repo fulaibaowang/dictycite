@@ -40,6 +40,19 @@ RERANK_DISPLAY = {
 # Path setup + workflow-root resolver shared by the rerank cells below.
 root = Path(os.environ.get("DICTYCITE_ROOT", "../"))
 
+# Consolidated paper figures land here; diagnostic plots stay in per-workflow figures/ dirs.
+def _resolve_paper_figures_dir() -> Path:
+    candidates = [root / "output" / "paper_figures", Path("../output/paper_figures")]
+    for c in candidates:
+        if c.parent.exists():
+            c.mkdir(parents=True, exist_ok=True)
+            return c
+    candidates[0].mkdir(parents=True, exist_ok=True)
+    return candidates[0]
+
+
+paper_figures_dir = _resolve_paper_figures_dir()
+
 
 def _resolve_rerank_sweep_root(cfg: dict) -> Path:
     """Directory that contains rerank_body/ (and bm25/, …). Handles outer workflow dir + nested sweep."""
@@ -285,11 +298,7 @@ if s4_panel_specs:
     n_p = len(s4_panel_specs)
     any_hybrid = any(p["include_hybrid"] for p in s4_panel_specs)
 
-    out_dir = next(
-        (p["figures_dir"] for p in s4_panel_specs if p["tag"] == "7d"),
-        s4_panel_specs[0]["figures_dir"],
-    )
-    out_path = out_dir / "fig_s4_qe_reranker_mrr_panels.png"
+    out_path = paper_figures_dir / "fig_s4_qe_reranker_mrr_panels.png"
 
     with plt.rc_context(_rc_rr):
         # Narrower columns, slightly taller than wide per axis for a compact “almost square” look.
@@ -743,7 +752,7 @@ fig.legend(
 for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.set_box_aspect(1)
 
-fig2_path = fig2_out_dir / "fig4_candidate_qe_main.png"
+fig2_path = paper_figures_dir / "fig4_candidate_qe_main.png"
 fig.savefig(fig2_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig2_path)
 plt.show()

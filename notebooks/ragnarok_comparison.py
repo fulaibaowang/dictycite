@@ -69,6 +69,9 @@ baseline_dir = base_dir / "output" / "ragnarok_baseline"
 goldset_jsonl = base_dir / "output" / "dicty_gold_build" / "7a_dicty_gold_llm_public.jsonl"
 output_dir = baseline_dir / "figures"
 output_dir.mkdir(parents=True, exist_ok=True)
+# Consolidated paper figures land here; diagnostic plots stay under output_dir.
+paper_figures_dir = base_dir / "output" / "paper_figures"
+paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 SPLIT = "7a_dicty_gold_llm_public"
 
@@ -579,13 +582,13 @@ def _plot_mrr_curves(
 
 fig3_mrr = _plot_mrr_curves(
     FIG3_MAIN_KEYS,
-    output_dir / "fig3_main_ranker_comparison.png",
+    paper_figures_dir / "fig3_main_ranker_comparison.png",
     "Ranker choice",
 )
 
 fig_s2_mrr = _plot_mrr_curves(
     FIG_S2_KEYS,
-    output_dir / "fig_s2_full_ranker_comparison.png",
+    paper_figures_dir / "fig_s2_full_ranker_comparison.png",
     "Full ranker comparison",
     legend_outside_right=True,
 )
@@ -701,7 +704,7 @@ fig.suptitle(
     fontsize=13, fontweight="bold",
 )
 plt.tight_layout()
-fig1b_path = output_dir / "fig_s3_per_query_rerank_delta.png"
+fig1b_path = paper_figures_dir / "fig_s3_per_query_rerank_delta.png"
 plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig1b_path)
 plt.show()
