@@ -6,7 +6,7 @@
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --gres=gpu:A100:1
+#SBATCH --gres=gpu:A100_80GB:1
 #
 # Full 7a public goldset on v2 chunked full-text with ncbi/MedCPT-Cross-Encoder reranker.
 # Config: scripts/private_scripts/hpc_scripts/frida/config_frida_7a_public_goldset_chunked_fulltext_v2_rerank_medcpt.env
