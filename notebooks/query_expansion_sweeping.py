@@ -412,8 +412,9 @@ else:
 # *Paper role:* main-paper figure for the query-expansion contribution.
 # Showcases QE on the standard pipeline (BGE-reranker-v2-m3): retrieval recall
 # improves substantially with QE, that gain carries through the rerank stage,
-# and the inset (panel d) shows the QE lift shrinks as the reranker gets
-# stronger — orthogonality with diminishing returns.
+# and panel (d) shows the QE lift shrinks as the reranker gets stronger —
+# orthogonality with diminishing returns. Layout: **2×2 panels** with a shared
+# legend above the grid.
 #
 # - Panel (a): BM25 Recall@K, 3 QE variants — body / synonyms / long
 # - Panel (b): Dense Recall@K, same 3 QE variants
@@ -610,15 +611,22 @@ FUSION_STYLE = {
 
 n_q = len(fig2_gold)
 
+# Fig 4 typography — slightly enlarged for print / slides
+_FIG4_FS_TITLE = 15
+_FIG4_FS_LABEL = 14
+_FIG4_FS_TICK = 13
+_FIG4_FS_LEGEND = 14
+_FIG4_FS_D_BAR = 12  # Δ MRR labels on bars in panel (d)
+
 fig, axes = plt.subplots(
-    1,
-    4,
-    # Taller figure so four set_box_aspect(1) panels fit in one row without overlap/clipping.
-    figsize=(17.0, 5.45),
-    layout="constrained",
-    gridspec_kw={"width_ratios": [1, 1, 1, 1], "wspace": 0.08},
+    2,
+    2,
+    figsize=(10.8, 10.2),
+    # Tight grid: small w/h space; tight_layout pad/h_pad/w_pad shrink outer + inter-panel gaps.
+    gridspec_kw={"wspace": 0.06, "hspace": 0.22},
 )
-ax_a, ax_b, ax_c, ax_d = axes
+ax_a, ax_b = axes[0, 0], axes[0, 1]
+ax_c, ax_d = axes[1, 0], axes[1, 1]
 
 
 # Panel (a): BM25 Recall@K
@@ -628,10 +636,10 @@ for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     ax_a.plot(fig2_ks_recall, bm25_recall[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
-ax_a.set_title("(a) BM25 retrieval", fontsize=13, fontweight="bold")
+ax_a.set_title("(a) BM25 retrieval", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_a.set_xscale("log")
-ax_a.set_xlabel("K")
-ax_a.set_ylabel("Mean Recall@K")
+ax_a.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
+ax_a.set_ylabel("Mean Recall@K", fontsize=_FIG4_FS_LABEL)
 ax_a.grid(True, axis="y", alpha=0.35)
 ax_a.grid(True, axis="x", alpha=0.35)
 
@@ -643,9 +651,9 @@ for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     ax_b.plot(fig2_ks_recall, dense_recall[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
-ax_b.set_title("(b) Dense retrieval", fontsize=13, fontweight="bold")
+ax_b.set_title("(b) Dense retrieval", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_b.set_xscale("log")
-ax_b.set_xlabel("K")
+ax_b.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
 ax_b.set_ylabel("")
 ax_b.grid(True, axis="y", alpha=0.35)
 ax_b.grid(True, axis="x", alpha=0.35)
@@ -668,18 +676,18 @@ for qf in ["body", "synonyms", "long"]:
     ax_c.plot(fig2_ks_mrr, mrr_curves[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
 
-ax_c.set_title("(c) BGE-reranker-v2-m3", fontsize=13, fontweight="bold")
+ax_c.set_title("(c) BGE-reranker-v2-m3", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_c.set_xscale("log")
-ax_c.set_xlabel("K")
-ax_c.set_ylabel("Mean MRR@K")
+ax_c.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
+ax_c.set_ylabel("Mean MRR@K", fontsize=_FIG4_FS_LABEL)
 ax_c.grid(True, axis="y", alpha=0.35)
 ax_c.grid(True, axis="x", alpha=0.35)
 
 
-# Panel (d): QE lift across rerankers. Two nested bars per reranker —
-# Δ MRR@10 (synonyms − body) and Δ MRR@10 (long − body) — using the same
-# blue gradient as panels (a)–(c) so QE intensity is visually consistent.
-# The diminishing bar height across the row tells the orthogonality story:
+# Panel (d): Δ MRR@10 vs baseline (no QE) — metric named in title; y-axis label omitted.
+# Two nested bars per reranker — Δ MRR@10 (synonyms − body) and Δ MRR@10 (long − body) —
+# same blue gradient as panels (a)–(c) so QE intensity is visually consistent.
+# The diminishing bar height left-to-right tells the orthogonality story:
 # QE compounds with weaker rerankers; with a strong enough reranker
 # (BGE-reranker-v2-gemma) the marginal QE benefit shrinks.
 inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE-reranker-v2-gemma"]
@@ -716,15 +724,17 @@ for i, qf in enumerate(inset_qf_pair):
             bar.get_x() + bar.get_width() / 2,
             h + (0.0015 if h >= 0 else -0.0015),
             f"{delta:+.3f}",
-            ha="center", va="bottom" if h >= 0 else "top",
-            fontsize=8, fontweight="bold",
+            ha="center",
+            va="bottom" if h >= 0 else "top",
+            fontsize=_FIG4_FS_D_BAR,
+            rotation=45,
         )
 
 ax_d.axhline(0, color="black", linewidth=0.6)
 ax_d.set_xticks(xpos)
-ax_d.set_xticklabels(inset_reranker_order, rotation=15, ha="right", fontsize=10)
-ax_d.set_ylabel("Δ MRR@10 (vs body QE)")
-ax_d.set_title("(d) QE lift across rerankers", fontsize=13, fontweight="bold")
+ax_d.set_xticklabels(inset_reranker_order, rotation=15, ha="right", fontsize=_FIG4_FS_TICK)
+ax_d.set_ylabel("")
+ax_d.set_title("(d) Δ MRR@10 vs no QE", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_d.grid(True, axis="y", alpha=0.35)
 
 if all_deltas:
@@ -734,23 +744,31 @@ if all_deltas:
     ax_d.set_ylim(y_min - pad * 0.3, y_max + pad)
 
 
-# Shared legend
+# Shared legend (above panels)
 legend_handles = []
 for qf in ["body", "synonyms", "long"]:
     s = QE_STYLE[qf]
     legend_handles.append(Line2D([0], [0], color=s["color"], marker="o",
                                  linewidth=s["lw"], label=s["label"]))
+for _ax in (ax_a, ax_b, ax_c, ax_d):
+    _ax.tick_params(axis="both", which="major", labelsize=_FIG4_FS_TICK)
+    _ax.set_box_aspect(1)
+
+fig.tight_layout(
+    rect=(0.1, 0.1, 0.99, 0.92),
+    pad=0.35,
+    h_pad=0.45,
+    w_pad=0.35,
+)
 fig.legend(
     handles=legend_handles,
     loc="lower center",
-    bbox_to_anchor=(0.5, -0.06),
+    bbox_to_anchor=(0.5, 0.9),
     ncol=3,
-    fontsize=11,
+    prop={"size": _FIG4_FS_LEGEND, "weight": "bold"},
     frameon=True,
     edgecolor="0.85",
 )
-for _ax in (ax_a, ax_b, ax_c, ax_d):
-    _ax.set_box_aspect(1)
 
 fig2_path = paper_figures_dir / "fig4_candidate_qe_main.png"
 fig.savefig(fig2_path, dpi=150, bbox_inches="tight")

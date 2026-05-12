@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH -J dicty_pipe_7a_gold_v2_rerank_gemma
 #SBATCH -p frida
-#SBATCH --time=36:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
-#SBATCH --gres=gpu:A100_80GB:2
+#SBATCH --gres=gpu:A100_80GB:3
 #
 # Full 7a public goldset on v2 chunked full-text (bm25_chunked_v2 / medembed_chunked_v2 +
 # dicty_fulltext_corpus/v2/corpus.jsonl) with BAAI/bge-reranker-v2-gemma (LLM reranker).

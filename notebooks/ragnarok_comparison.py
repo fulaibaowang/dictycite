@@ -617,9 +617,10 @@ for m in FIG_S2_KEYS:
 # ## 11. Fig S3 — Per-query rerank impact: MRR@10 delta vs BM25
 #
 # *Paper role:* supplement Fig S3. One panel per loaded reranker (MS-MARCO
-# MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma), sharing y-axis and x-bins.
+# MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma), 2×2 grid, sharing y-axis and x-bins.
 # Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
-# hurt / unchanged per query. Panel identity is on the x-axis (no per-panel title).
+# hurt / unchanged per query. Each panel uses the reranker name as the x-axis label;
+# MRR@10 vs BM25 is stated in the suptitle.
 # The 4 panels show that lightweight CE produces
 # many hurt queries while domain/strong CEs are increasingly asymmetric in
 # favor of helped — depth behind the Fig 3 main-paper claim.
@@ -637,9 +638,13 @@ def _delta_arrays(rerank_run: dict[str, list[str]], k: int = 10):
 
 
 bins = np.concatenate([
-    np.array([-1.05, -0.75, -0.5, -0.35, -0.25, -0.18, -0.12, -0.07, -0.025]),
-    np.array([0.025, 0.07, 0.12, 0.18, 0.25, 0.35, 0.5, 0.75, 1.05]),
+    # Edges at exactly ±1: MRR deltas lie in [-1, 1]; wider edges (e.g. -1.05) draw bars past ±1.
+    np.array([-1.0, -0.75, -0.5, -0.35, -0.25, -0.18, -0.12, -0.07, -0.025]),
+    np.array([0.025, 0.07, 0.12, 0.18, 0.25, 0.35, 0.5, 0.75, 1.0]),
 ])
+
+# Horizontal range for ΔMRR: slightly wider left than bins gives margin so upper-left legend clears the x≈0 spike.
+FIG_S3_XLIM = (-1.75, 1.0)
 
 fig1b_panels_all = [
     ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
@@ -650,9 +655,21 @@ fig1b_panels_all = [
 fig1b_panels = [(k, l) for k, l in fig1b_panels_all if k in runs]
 
 n_panels = len(fig1b_panels)
-fig, axes = plt.subplots(1, n_panels, figsize=(5.0 * n_panels, 4.5), sharey=True)
-if n_panels == 1:
-    axes = [axes]
+# 2×2 when four rerankers are present; fall back to a flat row if fewer.
+if n_panels <= 1:
+    fig, axes = plt.subplots(1, max(n_panels, 1), figsize=(5.5, 4.5), sharey=True)
+    axes = np.atleast_1d(axes).ravel().tolist()
+elif n_panels == 4:
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8), sharey=True)
+    axes = axes.ravel().tolist()
+else:
+    ncols = min(2, n_panels)
+    nrows = int(np.ceil(n_panels / ncols))
+    fig, axes_arr = plt.subplots(nrows, ncols, figsize=(5.5 * ncols, 4.5 * nrows), sharey=True)
+    axes_flat = np.atleast_1d(axes_arr).ravel()
+    for j in range(n_panels, len(axes_flat)):
+        axes_flat[j].set_visible(False)
+    axes = axes_flat[:n_panels].tolist()
 
 print("Per-query MRR@10 Δ (rerank − BM25):")
 for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
@@ -691,19 +708,21 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
         label=f"Unchanged (n={n_neutral}, {n_neutral/n_total:.0%})",
     )
     ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
-    ax.axvline(mean_overall, color="black", linestyle=":", linewidth=1.4,
-               label=f"mean Δ = {mean_overall:+.3f}")
-    ax.set_xlabel(f"MRR@10 Δ ({short_label} − BM25)")
-    ax.set_xlim(-1.05, 1.05)
+    ax.axvline(
+        mean_overall, color="black", linestyle=":", linewidth=1.4,
+        label=f"mean Δ = {mean_overall:+.3f}",
+    )
+    ax.set_xlabel(short_label, fontsize=12)
+    ax.set_xlim(*FIG_S3_XLIM)
     ax.grid(True, axis="y", alpha=0.4)
-    ax.legend(fontsize=9, loc="upper left")
+    ax.legend(fontsize=11, loc="upper left")
 
 axes[0].set_ylabel("# queries")
 fig.suptitle(
     f"Per-query rerank impact on MRR@10 vs BM25  (n={len(qrels)})",
     fontsize=13, fontweight="bold",
 )
-plt.tight_layout()
+plt.tight_layout(rect=[0, 0, 1, 0.96])
 fig1b_path = paper_figures_dir / "fig_s3_per_query_rerank_delta.png"
 plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig1b_path)

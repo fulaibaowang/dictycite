@@ -671,7 +671,78 @@ print("Saved:", fig_path_mrr_rr)
 plt.show()
 
 # %% [markdown]
-# ## 7. Gold Count Histogram per Query (7a full public)
+# ## Fig S1 (paper): Stage-1 recall + rerank MRR@K (1×2)
+# Same data as `01_stage1_recall_per_split.png` and `04c_hybrid_rerank_mrrk_per_split_no_post_fusion.png`, redrawn side-by-side for the paper. Left panel uses **linear** K from **x = 0** (unlike the standalone stage-1 PNG, which uses log-scaled K). Right panel shows MRR@K with **K ≤ 50** on the x-axis.
+
+# %%
+fig_s1, axes_s1 = plt.subplots(1, 2, figsize=(10.8, 4.85), squeeze=False)
+axes_s1 = axes_s1.ravel()
+
+# Left: stage-1 mean recall@K (linear x)
+ax_l = axes_s1[0]
+_s1_recall_max = 0.0
+for split in splits:
+    for method_name, cfg in methods_cfg.items():
+        row = cfg["df"][cfg["df"]["split"] == split]
+        if row.empty:
+            continue
+        vals = [row.iloc[0][c] for c in recall_cols]
+        _s1_recall_max = max(_s1_recall_max, max(vals))
+        ax_l.plot(
+            k_values,
+            vals,
+            marker=cfg["marker"],
+            color=cfg["color"],
+            label=method_name,
+            markersize=6,
+            linewidth=1.8,
+        )
+    _axis_split_title(ax_l, split)
+
+_s1_y_top = min(1.12, _s1_recall_max + 0.06)
+ax_l.set_ylim(global_ymin, max(_s1_y_top, global_ymin + 0.02))
+ax_l.set_ylabel("Mean Recall")
+ax_l.set_xlabel("K")
+_k_hi = max(k_values)
+_k_lo = min(k_values)
+ax_l.set_xlim(0, _k_hi + 0.04 * (_k_hi - _k_lo))
+_ticks_s1 = sorted({0, *tick_values})
+ax_l.set_xticks(_ticks_s1)
+ax_l.set_xticklabels([str(t) for t in _ticks_s1], rotation=90)
+ax_l.grid(True, axis="y")
+ax_l.grid(True, axis="x")
+ax_l.set_title(_suptitle_n("Retrieval"), fontsize=13, fontweight="bold", pad=6)
+ax_l.legend(loc="lower right", fontsize=14)
+
+# Right: MRR@K (no post-fusion); x-axis to K=50 for Fig S1
+map_ks_s1 = [k for k in map_ks if k <= 50]
+ax_r = axes_s1[1]
+for idx, split in enumerate(splits):
+    for method_name, method_dict in mrr_curves_rr.items():
+        if split not in method_dict:
+            continue
+        vals = [method_dict[split].get(k, 0.0) for k in map_ks_s1]
+        ax_r.plot(map_ks_s1, vals, marker="o", color=colors_map_rr.get(method_name), label=method_name, linewidth=1.8)
+    _axis_split_title(ax_r, split)
+    ax_r.set_ylim(y_min_mrr_rr, y_max_mrr_rr)
+    ax_r.set_ylabel("MRR@K" if idx == 0 else "")
+    ax_r.set_xlabel("K")
+    ax_r.set_xticks(map_ks_s1)
+    ax_r.set_xticklabels([str(k) for k in map_ks_s1], rotation=90)
+    ax_r.set_xlim(0, 52)
+    ax_r.grid(True, axis="y")
+    ax_r.grid(True, axis="x")
+ax_r.set_title(_suptitle_n("Reranking"), fontsize=13, fontweight="bold", pad=6)
+ax_r.legend(loc="lower right", fontsize=14)
+
+plt.tight_layout(w_pad=1.6)
+fig_s1_out = paper_figures_dir / "fig_s1.png"
+plt.savefig(fig_s1_out, dpi=150, bbox_inches="tight")
+print("Saved:", fig_s1_out)
+plt.show()
+
+# %% [markdown]
+# ## 8. Gold Count Histogram per Query (7a full public)
 
 # %%
 gold_split = splits[0]
@@ -695,7 +766,7 @@ print("Saved:", fig_path)
 plt.show()
 
 # %% [markdown]
-# ## 8. MAP@K Stratified by Gold Count (7a; |gold| = 1, >1)
+# ## 9. MAP@K Stratified by Gold Count (7a; |gold| = 1, >1)
 
 # %%
 bucket_order = ["1", ">1"]
@@ -897,7 +968,7 @@ print("Saved:", fig_path)
 plt.show()
 
 # %% [markdown]
-# ## 10. Snippet Rerank vs Rerank Hybrid 200 – MAP@K Curves
+# ## 11. Snippet Rerank vs Rerank Hybrid 200 – MAP@K Curves
 
 # %%
 snippet_run_dirs = {
@@ -1029,7 +1100,7 @@ print("Saved:", fig_path_s_mrr)
 plt.show()
 
 # %% [markdown]
-# ## 11. RRF Fusion Sweep: MAP@10 vs Weight (rerank_hybrid_200 + snippet_rerank)
+# ## 12. RRF Fusion Sweep: MAP@10 vs Weight (rerank_hybrid_200 + snippet_rerank)
 
 # %%
 RUN_TOP = 100
@@ -1210,7 +1281,7 @@ print("Saved:", fig_path)
 plt.show()
 
 # %% [markdown]
-# ## 12. Evidence-level setup — qrels + has-PDF subset (source for Fig 5 / Fig S5)
+# ## 13. Evidence-level setup — qrels + has-PDF subset (source for Fig 5 / Fig S5)
 #
 # Loads per-evidence-level qrels from the goldset JSONL and the has-PDF subset
 # filter from `output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv`. Both
@@ -1287,7 +1358,7 @@ for lvl in levels:
 
 
 # %% [markdown]
-# ## 13. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
+# ## 14. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
 #
 # *Paper role:* main-paper Fig 5 (has-PDF subset) and supplementary Fig S5
 # (all claims). Two-row 2×3 layout per evidence level:
@@ -1365,7 +1436,8 @@ else:
         f"rerank base={len(run_rerank_base)}  chunked={len(run_rerank_chunked)}"
     )
 
-    KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000, 2000, 5000]
+    # Upper row: cap K at 2000 — recall plateaus and K=5000 only flattens the x-axis.
+    KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000, 2000]
     KS_MRR_RERANK = [1, 2, 3, 5, 10, 20, 50, 100]
 
     def _per_level_curve(
@@ -1420,7 +1492,11 @@ else:
         all_rec = [v for d in (rec_base, rec_chk) for vals in d.values() for v in vals]
         all_mrr = [v for d in (mrr_base, mrr_chk) for vals in d.values() for v in vals]
         y_min_r = max(0.0, min(all_rec) - 0.02) if all_rec else 0.0
-        y_max_r = min(1.0, max(all_rec) + 0.02) if all_rec else 1.0
+        _top_r = max(all_rec) if all_rec else 1.0
+        if _top_r > 0.94:
+            y_max_r = min(1.12, _top_r + 0.05)
+        else:
+            y_max_r = min(1.0, _top_r + 0.02)
         y_min_m = max(0.0, min(all_mrr) - 0.02) if all_mrr else 0.0
         y_max_m = min(1.0, max(all_mrr) + 0.02) if all_mrr else 1.0
 
@@ -1506,7 +1582,7 @@ else:
 
 
 # %% [markdown]
-# ## 14. Draft Results Text — §3.3 Where current methods still fail
+# ## 15. Draft Results Text — §3.3 Where current methods still fail
 #
 # *Numbers populated from the cell above. Goldset n=1,656 (same as §3.1);
 # subset counts per evidence level appear in the figure legend.*
