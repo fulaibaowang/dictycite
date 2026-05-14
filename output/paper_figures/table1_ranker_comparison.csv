@@ -1,0 +1,8 @@
+system,reranker_type,mrr_at_10,delta_vs_bm25_pp,ci_lo_pp,ci_hi_pp,ci_crosses_zero
+BM25,lexical baseline,0.593,,,,
+BM25 + Dense fusion,"fusion, no rerank",0.568,-2.6,-4.1,-1.0,False
+Ragnarok BM25 + RankZephyr,external listwise reference,0.566,-2.7,-4.8,-0.8,False
+MS-MARCO MiniLM-L12,general-domain cross-encoder,0.541,-5.2,-7.0,-3.4,False
+BGE-reranker-v2-m3,general-purpose cross-encoder,0.605,1.2,-0.5,2.8,True
+MedCPT,biomedical cross-encoder,0.650,5.7,4.2,7.2,False
+BGE-reranker-v2-Gemma,LLM-based cross-encoder / reranker,0.707,11.4,9.8,13.0,False
