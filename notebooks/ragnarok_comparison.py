@@ -18,7 +18,7 @@
 # Ranker comparison on the dicty goldset. Includes BGE-reranker-v2-m3 (our
 # main cross-encoder) and three alternates loaded as rerank-only swaps on the
 # shared first-stage retrieval pool: MS-MARCO MiniLM-L12 (lightweight),
-# MedCPT (domain-specific biomedical), and bge-reranker-v2-gemma (strong LLM reranker).
+# MedCPT (domain-specific biomedical), and BGE-reranker-v2-Gemma (strong LLM reranker).
 # The Ragnarok BM25 + RankZephyr baseline is included as an external reference.
 #
 # **Goldset:** `7a_dicty_gold_llm_public` (n=1,656 queries, full public split).
@@ -95,7 +95,7 @@ LABELS = {
     "ours_ce":                  "Ours: BGE-reranker-v2-m3",
     "ours_postfusion":          "Ours: Post-rerank Fusion",
     "vega_medcpt_ce":           "Ours: MedCPT (rerank-only)",
-    "frida_gemma_ce":           "Ours: bge-reranker-v2-gemma (rerank-only)",
+    "frida_gemma_ce":           "Ours: BGE-reranker-v2-Gemma (rerank-only)",
     "frida_ms_marco_minilm_ce": "Ours: MS MARCO MiniLM (rerank-only)",
     "rag_bm25":                 "Ragnarok: BM25",
     "rag_rerank":               "Ragnarok: BM25 + RankZephyr",
@@ -300,7 +300,7 @@ summary_df.to_csv(output_dir / "summary_table.csv", index=False)
 # Ours BM25+Dense fusion vs Ragnarok BM25. Ragnarok BM25 retrieves top-100, so
 # the curve is plotted up to K=100.
 #
-# *Note:* Alternate CE rerankers (MedCPT, bge-reranker-v2-gemma, MS MARCO MiniLM) are
+# *Note:* Alternate CE rerankers (MedCPT, BGE-reranker-v2-Gemma, MS MARCO MiniLM) are
 # rerank-only and reuse the same first-stage retrieval pool — they do not change
 # Recall@K, only the ordering within the pool. Recall@K is therefore a property
 # of the first stage alone.
@@ -428,7 +428,7 @@ plt.show()
 # Two figures generated from the same data:
 #
 # - **Paper main (Fig 3 candidate)** — 5 lines: BM25 + 4 cross-encoder rerankers
-#   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma). The headline:
+#   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma). The headline:
 #   ranker choice in domain RAG matters — a lightweight CE *hurts*, a mid-tier
 #   CE barely helps, domain/strong CEs help meaningfully.
 # - **Paper supplement (Fig S2 candidate)** — same 5 lines plus first-stage
@@ -505,7 +505,7 @@ ALL_METHOD_STYLE: dict[str, dict] = {
         "zorder": 4,
         "marker": "o",
         "markersize": 5,
-        "label": "bge-reranker-v2-gemma",
+        "label": "BGE-reranker-v2-Gemma",
     },
     "rag_rerank": {
         "color": "#7b1fa2",
@@ -559,7 +559,7 @@ def _plot_mrr_curves(
     ax.grid(True, axis="x", alpha=0.3)
     if legend_outside_right:
         ax.legend(
-            fontsize=9,
+            fontsize=10,
             loc="center left",
             bbox_to_anchor=(1.02, 0.5),
             borderaxespad=0,
@@ -604,12 +604,80 @@ for m in FIG_S2_KEYS:
 
 
 # %% [markdown]
+# ## 9b. Paired bootstrap 95% CIs on MRR@10 deltas vs BM25
+#
+# Per-query MRR@10 deltas (system − BM25), paired bootstrap with B=10,000 over
+# queries. CIs back the small-delta claims in §6.1 of the paper
+# (BGE-reranker-v2-m3 ≈ +1.2 pp; BM25+Dense fusion ≈ −2.6 pp; Ragnarok
+# BM25+RankZephyr ≈ −2.7 pp); also tabulated for the larger deltas for completeness
+# in Table 1.
+
+# %%
+def _paired_bootstrap_ci_delta_mrr(
+    run_a: dict[str, list[str]],
+    run_b: dict[str, list[str]],
+    qrels_: dict[str, set[str]],
+    k: int = 10,
+    n_boot: int = 10000,
+    seed: int = 42,
+) -> tuple[float, float, float, int]:
+    """Paired bootstrap 95% CI on per-query MRR@k delta (A − B). Returns (mean, ci_lo, ci_hi, n)."""
+    common = [q for q in qrels_ if q in run_a and q in run_b]
+    deltas = np.array([
+        mrr_at_k(run_a[q], qrels_[q], k) - mrr_at_k(run_b[q], qrels_[q], k)
+        for q in common
+    ])
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(deltas), size=(n_boot, len(deltas)))
+    boot_means = deltas[idx].mean(axis=1)
+    return (
+        float(deltas.mean()),
+        float(np.percentile(boot_means, 2.5)),
+        float(np.percentile(boot_means, 97.5)),
+        len(deltas),
+    )
+
+
+_BOOT_PAIRS = [
+    "frida_ms_marco_minilm_ce",
+    "ours_ce",
+    "vega_medcpt_ce",
+    "frida_gemma_ce",
+    "ours_fusion",
+    "rag_rerank",
+]
+
+print("Paired bootstrap 95% CI on MRR@10 delta vs BM25 (B=10,000):")
+boot_rows = []
+for m in _BOOT_PAIRS:
+    if m not in runs:
+        continue
+    obs, lo, hi, n = _paired_bootstrap_ci_delta_mrr(runs[m], runs["ours_bm25"], qrels, k=10)
+    crosses_zero = lo < 0.0 < hi
+    flag = "  (CI crosses 0)" if crosses_zero else ""
+    print(
+        f"  {LABELS[m]:50s}  Δ={obs:+.4f}  95% CI [{lo:+.4f}, {hi:+.4f}]{flag}  n={n}"
+    )
+    boot_rows.append({
+        "system": LABELS[m],
+        "delta_mrr10": obs,
+        "ci_lo": lo,
+        "ci_hi": hi,
+        "ci_crosses_zero": crosses_zero,
+        "n": n,
+    })
+boot_df = pd.DataFrame(boot_rows)
+boot_df.to_csv(output_dir / "mrr10_bootstrap_ci_vs_bm25.csv", index=False)
+print(f"\nSaved: {output_dir / 'mrr10_bootstrap_ci_vs_bm25.csv'}")
+
+
+# %% [markdown]
 # ## 10. Results paragraph — TBD pending combo results & framing
 #
-# *Placeholder.* Prose is held until the QE × {MedCPT, bge-reranker-v2-gemma} combo runs
+# *Placeholder.* Prose is held until the QE × {MedCPT, BGE-reranker-v2-Gemma} combo runs
 # are in and the paper framing is locked. The previous "stage upgrades plateau"
 # paragraph rested on BGE-reranker-v2-m3 alone and is no longer accurate now
-# that the four rerankers (MiniLM, BGE-v2-m3, MedCPT, bge-reranker-v2-gemma) are loaded
+# that the four rerankers (MiniLM, BGE-v2-m3, MedCPT, BGE-reranker-v2-Gemma) are loaded
 # above.
 
 
@@ -617,9 +685,11 @@ for m in FIG_S2_KEYS:
 # ## 11. Fig S3 — Per-query rerank impact: MRR@10 delta vs BM25
 #
 # *Paper role:* supplement Fig S3. One panel per loaded reranker (MS-MARCO
-# MiniLM, BGE-reranker-v2-m3, MedCPT, bge-reranker-v2-gemma), 2×2 grid, sharing y-axis and x-bins.
+# MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma), 2×2 grid, sharing y-axis and x-bins.
 # Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
-# hurt / unchanged per query. Each panel uses the reranker name as the x-axis label;
+# hurt / near-tie bins for plotting (|Δ|>0.025 vs |Δ|≤0.025). The console print
+# line still reports strict helped/hurt/unchanged (Δ>0 / Δ<0 / Δ==0), which
+# partition n and sum to n. Each panel uses the reranker name as the x-axis label;
 # MRR@10 vs BM25 is stated in the suptitle.
 # The 4 panels show that lightweight CE produces
 # many hurt queries while domain/strong CEs are increasingly asymmetric in
@@ -650,7 +720,7 @@ fig1b_panels_all = [
     ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
     ("ours_ce",                  "BGE-reranker-v2-m3"),
     ("vega_medcpt_ce",           "MedCPT"),
-    ("frida_gemma_ce",           "bge-reranker-v2-gemma"),
+    ("frida_gemma_ce",           "BGE-reranker-v2-Gemma"),
 ]
 fig1b_panels = [(k, l) for k, l in fig1b_panels_all if k in runs]
 
@@ -693,19 +763,25 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
     hurt_m = deltas < -0.025
     help_m = deltas > 0.025
     neutral_m = ~(hurt_m | help_m)
+    # Legend counts must match what is plotted: red/green histograms use |Δ|>0.025
+    # only; the gray bar is all remaining queries in [-0.025, 0.025]. Do not mix
+    # those with n_hurt/n_helped (any Δ<0 / Δ>0) or the three legend counts sum
+    # to more than n (small-|Δ| queries would be double-counted).
+    n_hurt_plot = int(hurt_m.sum())
+    n_helped_plot = int(help_m.sum())
+    n_neutral = int(neutral_m.sum())
 
     ax.hist(
         deltas[hurt_m], bins=bins, color="#d62728", alpha=0.85,
-        label=f"Hurt (n={n_hurt}, {n_hurt/n_total:.0%})",
+        label=f"Hurt (n={n_hurt_plot}, {n_hurt_plot/n_total:.0%})",
     )
     ax.hist(
         deltas[help_m], bins=bins, color="#2ca02c", alpha=0.85,
-        label=f"Helped (n={n_helped}, {n_helped/n_total:.0%})",
+        label=f"Helped (n={n_helped_plot}, {n_helped_plot/n_total:.0%})",
     )
-    n_neutral = int(neutral_m.sum())
     ax.bar(
         [0], [n_neutral], width=0.05, color="#888888", alpha=0.95,
-        label=f"Unchanged (n={n_neutral}, {n_neutral/n_total:.0%})",
+        label=f"Near tie |Δ|≤0.025 (n={n_neutral}, {n_neutral/n_total:.0%})",
     )
     ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
     ax.axvline(
@@ -791,9 +867,9 @@ print(f"Wrote {len(hurt_ranked)} BGE-v2-m3-hurt queries (sorted worst-first): {h
 # ## 12. Results paragraph (continued) — TBD pending combo results & framing
 #
 # *Placeholder.* With MS-MARCO MiniLM-L12, BGE-reranker-v2-m3, MedCPT, and
-# bge-reranker-v2-gemma now in §11, the per-query distribution differs substantially across
+# BGE-reranker-v2-Gemma now in §11, the per-query distribution differs substantially across
 # rerankers — lightweight CE has many hurt queries, domain/strong CEs are
 # asymmetrically helpful. The paragraph for the paper will be drafted once the
-# QE × {MedCPT, bge-reranker-v2-gemma} combo runs land and the paper framing is locked.
+# QE × {MedCPT, BGE-reranker-v2-Gemma} combo runs land and the paper framing is locked.
 
 # %%

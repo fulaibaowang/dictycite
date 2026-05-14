@@ -74,7 +74,7 @@ def _resolve_rerank_sweep_root(cfg: dict) -> Path:
 #
 # *Research artifact + paper supp source.* Loads each `RERANK_PANEL_CONFIGS`
 # entry (tag × reranker sweep) and builds **one** supplementary-style figure:
-# **1×3 panels** (BGE-reranker-v2-m3 | MedCPT | BGE-reranker-v2-gemma), each titled by
+# **1×3 panels** (BGE-reranker-v2-m3 | MedCPT | BGE-reranker-v2-Gemma), each titled by
 # reranker, same MRR@K curves per panel (QE variants + optional fusion). Used
 # as Fig S4 (QE reranker panels). Saves
 # `figures/fig_s4_qe_reranker_mrr_panels.png` (under the `7d` BGE-v2-m3 sweep
@@ -204,10 +204,10 @@ _rc_rr = {
 _TAG_TO_RERANKER_TITLE = {
     "7d": "BGE-reranker-v2-m3",
     "7d_medcpt": "MedCPT",
-    "7d_gemma": "BGE-reranker-v2-gemma",
+    "7d_gemma": "BGE-reranker-v2-Gemma",
     "7e": "BGE-reranker-v2-m3",
     "7e_medcpt": "MedCPT",
-    "7e_gemma": "BGE-reranker-v2-gemma",
+    "7e_gemma": "BGE-reranker-v2-Gemma",
 }
 
 # Fig S4 column order (left → right): v2-m3 first for comparison with Fig 4 panel (c).
@@ -404,7 +404,7 @@ else:
     print("Fig S4: no rerank panel data collected — check rerank dirs and run TSVs.")
 
 # %% [markdown]
-# Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE-reranker-v2-gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
+# Rerank MRR@K from run TSVs: see the **Rerank MRR@K under each QE variant** cell above (BGE-reranker-v2-m3 / MedCPT / BGE-reranker-v2-Gemma). In the diagnostic **per-batch query-field sweep** loop near the top, rerank appears as the third panel when TSVs exist under each benchmark's `rerank_dir`.
 
 # %% [markdown]
 # # Fig 4 Candidate — Main Paper (QE main result)
@@ -419,7 +419,7 @@ else:
 # - Panel (a): BM25 Recall@K, 3 QE variants — body / synonyms / long
 # - Panel (b): Dense Recall@K, same 3 QE variants
 # - Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant
-# - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE-reranker-v2-gemma}
+# - Panel (d): QE Δ MRR@10 (synonyms − body) across {BGE-v2-m3, MedCPT, BGE-reranker-v2-Gemma}
 #
 # Full per-reranker MRR@K curves (paper supp Fig S4) are produced by the
 # *"Rerank MRR@K under each QE variant"* cell above as
@@ -568,7 +568,7 @@ print("MRR@10 by panel-c method:", {m: round(v[fig2_ks_mrr.index(10)], 4) for m,
 RERANKER_DIRS_INSET: dict[str, Path] = {
     "BGE-reranker-v2-m3": _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d" / "fixed_long_rerank_sweep",
     "MedCPT":             _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_medcpt" / "fixed_long_rerank_sweep",
-    "BGE-reranker-v2-gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
+    "BGE-reranker-v2-Gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
 }
 
 cross_reranker_mrr10: dict[str, dict[str, float]] = {}
@@ -595,6 +595,85 @@ for rname, qf_mrr in cross_reranker_mrr10.items():
         f"  {rname:22s}  body={body:.4f}  synonyms={syn:.4f}  long={long:.4f}  "
         f"Δ(long−body)={delta_long_body:+.4f}  Δ(syn−body)={delta_syn_body:+.4f}"
     )
+
+
+# %% [markdown]
+# ### Paired bootstrap 95% CIs on QE × reranker MRR@10 deltas
+#
+# Per-query MRR@10 deltas vs the original-query ("body") baseline within each
+# reranker, paired bootstrap with B=10,000 over queries. The load-bearing
+# claim is BGE-reranker-v2-Gemma's small +0.9 / +0.7 pp QE lift in §6.2 —
+# the CI tells us whether the lift survives or saturates.
+
+# %%
+def _qe_per_query_mrr_at_k(run: dict[str, list[str]], gold: dict[str, set[str]], k: int) -> dict[str, float]:
+    return {q: _fig2_mrr_at_k(run.get(q, []), rels, k) for q, rels in gold.items()}
+
+
+def _qe_paired_bootstrap_ci(
+    run_a: dict[str, list[str]],
+    run_b: dict[str, list[str]],
+    gold: dict[str, set[str]],
+    k: int = 10,
+    n_boot: int = 10000,
+    seed: int = 42,
+) -> tuple[float, float, float, int]:
+    pq_a = _qe_per_query_mrr_at_k(run_a, gold, k)
+    pq_b = _qe_per_query_mrr_at_k(run_b, gold, k)
+    common = [q for q in gold if q in pq_a and q in pq_b]
+    deltas = np.array([pq_a[q] - pq_b[q] for q in common])
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(deltas), size=(n_boot, len(deltas)))
+    boot_means = deltas[idx].mean(axis=1)
+    return (
+        float(deltas.mean()),
+        float(np.percentile(boot_means, 2.5)),
+        float(np.percentile(boot_means, 97.5)),
+        len(deltas),
+    )
+
+
+# Re-load reranker run TSVs (qf × reranker) so per-query deltas are available for bootstrap.
+cross_reranker_runs: dict[str, dict[str, dict[str, list[str]]]] = {}
+for rname, rdir in RERANKER_DIRS_INSET.items():
+    cross_reranker_runs[rname] = {}
+    for qf in ["body", "synonyms", "long"]:
+        runs_dir = rdir / f"rerank_{qf}" / "runs"
+        if not runs_dir.is_dir():
+            continue
+        candidates = list(runs_dir.glob(f"*{FIG2_TAG}*.tsv"))
+        if not candidates:
+            continue
+        cross_reranker_runs[rname][qf] = _fig2_load_run(candidates[0])
+
+print("Paired bootstrap 95% CI on QE Δ MRR@10 vs original 'body' (B=10,000):")
+qe_boot_rows = []
+for rname, rmap in cross_reranker_runs.items():
+    body_run = rmap.get("body")
+    if body_run is None:
+        continue
+    for qf in ("synonyms", "long"):
+        run_qf = rmap.get(qf)
+        if run_qf is None:
+            continue
+        obs, lo, hi, n = _qe_paired_bootstrap_ci(run_qf, body_run, fig2_gold, k=10)
+        crosses_zero = lo < 0.0 < hi
+        flag = "  (CI crosses 0)" if crosses_zero else ""
+        print(
+            f"  {rname:25s}  Δ({qf}−body)={obs:+.4f}  95% CI [{lo:+.4f}, {hi:+.4f}]{flag}  n={n}"
+        )
+        qe_boot_rows.append({
+            "reranker": rname,
+            "qe": qf,
+            "delta_mrr10": obs,
+            "ci_lo": lo,
+            "ci_hi": hi,
+            "ci_crosses_zero": crosses_zero,
+            "n": n,
+        })
+qe_boot_df = pd.DataFrame(qe_boot_rows)
+qe_boot_df.to_csv(fig2_out_dir / "qe_mrr10_bootstrap_ci_vs_body.csv", index=False)
+print(f"\nSaved: {fig2_out_dir / 'qe_mrr10_bootstrap_ci_vs_body.csv'}")
 
 
 # %%
@@ -689,8 +768,8 @@ ax_c.grid(True, axis="x", alpha=0.35)
 # same blue gradient as panels (a)–(c) so QE intensity is visually consistent.
 # The diminishing bar height left-to-right tells the orthogonality story:
 # QE compounds with weaker rerankers; with a strong enough reranker
-# (BGE-reranker-v2-gemma) the marginal QE benefit shrinks.
-inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE-reranker-v2-gemma"]
+# (BGE-reranker-v2-Gemma) the marginal QE benefit shrinks.
+inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE-reranker-v2-Gemma"]
 inset_qf_pair = ["synonyms", "long"]
 
 inset_data: dict[str, dict[str, float]] = {}
@@ -816,7 +895,7 @@ for m in panel_c_order:
 # - That recall gain carries through to MRR@10 on the standard reranker
 #   (BGE-reranker-v2-m3, panel c).
 # - The QE lift is **not uniform across rerankers** (panel d):
-#   BGE-reranker-v2-m3 ≈ +4.6 pp, MedCPT ≈ +5.7 pp, BGE-reranker-v2-gemma ≈ +0.9 pp.
+#   BGE-reranker-v2-m3 ≈ +4.6 pp, MedCPT ≈ +5.7 pp, BGE-reranker-v2-Gemma ≈ +0.9 pp.
 #   With a strong enough reranker (Gemma), the marginal QE benefit shrinks —
 #   the strong reranker can recover the gold doc even from a less-precise
 #   query, so query-side and ranker-side improvements partially substitute
@@ -841,8 +920,8 @@ for m in panel_c_order:
 # | BGE-reranker-v2-m3 on long-form expansion                   | 0.622  | —          |
 # | MedCPT on original query                                    | 0.624  | —          |
 # | MedCPT on synonyms expansion                                | 0.681  | —          |
-# | BGE-reranker-v2-gemma on original query                                 | 0.694  | —          |
-# | BGE-reranker-v2-gemma on synonyms expansion                             | 0.703  | —          |
+# | BGE-reranker-v2-Gemma on original query                                 | 0.694  | —          |
+# | BGE-reranker-v2-Gemma on synonyms expansion                             | 0.703  | —          |
 
 
 # %% [markdown]
