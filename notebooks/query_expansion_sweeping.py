@@ -936,39 +936,39 @@ for m in panel_c_order:
 # plateau" framing this figure was built to support).
 
 # %%
-fig_s3, ax_s3 = plt.subplots(figsize=(6.5, 4.5))
+fig_diag, ax_diag = plt.subplots(figsize=(6.5, 4.5))
 
 # Two lines: CE+long (best CE+QE configuration) vs retrieval fusion (long QE, no rerank)
 if "long" in mrr_curves:
     s = QE_STYLE["long"]
-    ax_s3.plot(fig2_ks_mrr, mrr_curves["long"], marker="o", markersize=6,
+    ax_diag.plot(fig2_ks_mrr, mrr_curves["long"], marker="o", markersize=6,
                color=s["color"], linewidth=2.4, label="BGE-reranker-v2-m3 + long-form QE")
 
 if "fusion_long" in mrr_curves:
-    ax_s3.plot(fig2_ks_mrr, mrr_curves["fusion_long"], marker="D", markersize=6,
+    ax_diag.plot(fig2_ks_mrr, mrr_curves["fusion_long"], marker="D", markersize=6,
                color="#2ca02c", linewidth=2.4, linestyle="--",
                label="Retrieval Fusion (long QE) — no rerank")
 
 # Default reference (CE+body) for context
 if "body" in mrr_curves:
-    ax_s3.plot(fig2_ks_mrr, mrr_curves["body"], marker="o", markersize=4,
+    ax_diag.plot(fig2_ks_mrr, mrr_curves["body"], marker="o", markersize=4,
                color="#888888", linewidth=1.4, alpha=0.85,
                label="BGE-reranker-v2-m3 + original query (reference)")
 
-ax_s3.set_xscale("log")
-ax_s3.set_xlabel("K")
-ax_s3.set_ylabel("Mean MRR@K")
-ax_s3.grid(True, axis="y", alpha=0.35)
-ax_s3.grid(True, axis="x", alpha=0.35)
-ax_s3.legend(fontsize=10, loc="lower right")
-fig_s3.suptitle(
+ax_diag.set_xscale("log")
+ax_diag.set_xlabel("K")
+ax_diag.set_ylabel("Mean MRR@K")
+ax_diag.grid(True, axis="y", alpha=0.35)
+ax_diag.grid(True, axis="x", alpha=0.35)
+ax_diag.legend(fontsize=10, loc="lower right")
+fig_diag.suptitle(
     f"Diagnostic — Retrieval-only long-QE matches BGE-v2-m3 + long-QE  |  n={n_q}",
     fontsize=12, fontweight="bold",
 )
 plt.tight_layout()
-fig_s3_path = fig2_out_dir / "diag_retrieval_only_qe_vs_bge_v2_m3.png"
-fig_s3.savefig(fig_s3_path, dpi=150, bbox_inches="tight")
-print("Saved:", fig_s3_path)
+fig_diag_path = fig2_out_dir / "diag_retrieval_only_qe_vs_bge_v2_m3.png"
+fig_diag.savefig(fig_diag_path, dpi=150, bbox_inches="tight")
+print("Saved:", fig_diag_path)
 plt.show()
 
 # %%
