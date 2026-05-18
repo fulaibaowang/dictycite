@@ -503,10 +503,12 @@ if all_maps:
 else:
     y_min, y_max = 0.0, 1.0
 
+# v2-m3: same purple as `04_hybrid_rerank_mapk_per_split_no_post_fusion.png` (colors_map_rr).
+# Post-fusion: `#d62728` appears elsewhere in this report (e.g. evidence / S6) but not in `01_stage1_recall_per_split.png`.
 colors_map = {
     "BM25 Dense Fusion": "#2ca02c",
-    "BGE-reranker-v2-m3": "#1f77b4",
-    "Post-rerank fusion": "#ff7f0e",
+    "BGE-reranker-v2-m3": "#9467bd",
+    "Post-rerank fusion": "#d62728",
 }
 
 for idx, split in enumerate(splits):
@@ -672,7 +674,7 @@ plt.show()
 
 # %% [markdown]
 # ## Fig S1 (paper): Stage-1 recall + rerank MRR@K (1×2)
-# Same data as `01_stage1_recall_per_split.png` and `04c_hybrid_rerank_mrrk_per_split_no_post_fusion.png`, redrawn side-by-side for the paper. Left panel uses **linear** K from **x = 0** (unlike the standalone stage-1 PNG, which uses log-scaled K). Right panel shows MRR@K with **K ≤ 50** on the x-axis.
+# Same data as `01_stage1_recall_per_split.png` and `04b_hybrid_rerank_fusion_mrrk_per_split.png`, redrawn side-by-side for the paper. Left panel uses **linear** K from **x = 0** (unlike the standalone stage-1 PNG, which uses log-scaled K). Right panel matches the fusion MRR@K figure (three methods, same K and colors).
 
 # %%
 fig_s1, axes_s1 = plt.subplots(1, 2, figsize=(10.8, 4.85), squeeze=False)
@@ -714,22 +716,28 @@ ax_l.grid(True, axis="x")
 ax_l.set_title(_suptitle_n("Retrieval"), fontsize=13, fontweight="bold", pad=6)
 ax_l.legend(loc="lower right", fontsize=14)
 
-# Right: MRR@K (no post-fusion); x-axis to K=50 for Fig S1
-map_ks_s1 = [k for k in map_ks if k <= 50]
+# Right: same MRR@K curves as `04b_hybrid_rerank_fusion_mrrk_per_split.png` (incl. post-rerank fusion).
 ax_r = axes_s1[1]
 for idx, split in enumerate(splits):
-    for method_name, method_dict in mrr_curves_rr.items():
+    for method_name, method_dict in mrr_curves.items():
         if split not in method_dict:
             continue
-        vals = [method_dict[split].get(k, 0.0) for k in map_ks_s1]
-        ax_r.plot(map_ks_s1, vals, marker="o", color=colors_map_rr.get(method_name), label=method_name, linewidth=1.8)
+        vals = [method_dict[split].get(k, 0.0) for k in map_ks]
+        ax_r.plot(
+            map_ks,
+            vals,
+            marker="o",
+            color=colors_map.get(method_name),
+            label=method_name,
+            linewidth=1.8,
+        )
     _axis_split_title(ax_r, split)
-    ax_r.set_ylim(y_min_mrr_rr, y_max_mrr_rr)
+    ax_r.set_ylim(y_min_mrr, y_max_mrr)
     ax_r.set_ylabel("MRR@K" if idx == 0 else "")
     ax_r.set_xlabel("K")
-    ax_r.set_xticks(map_ks_s1)
-    ax_r.set_xticklabels([str(k) for k in map_ks_s1], rotation=90)
-    ax_r.set_xlim(0, 52)
+    ax_r.set_xticks(map_ks)
+    ax_r.set_xticklabels([str(k) for k in map_ks], rotation=90)
+    ax_r.set_xlim(0, 100)
     ax_r.grid(True, axis="y")
     ax_r.grid(True, axis="x")
 ax_r.set_title(_suptitle_n("Reranking"), fontsize=13, fontweight="bold", pad=6)
@@ -1465,8 +1473,9 @@ else:
         f"rerank base={len(run_rerank_base)}  chunked={len(run_rerank_chunked)}"
     )
 
-    # Upper row: cap K at 2000 — recall plateaus and K=5000 only flattens the x-axis.
-    KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000, 2000]
+    # ----- Fig 5 / Fig S5: x-axis K grids (retrieval recall vs rerank MRR) -----
+    # Upper row stops at max K listed; extend/cap the list as needed.
+    KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000]
     KS_MRR_RERANK = [1, 2, 3, 5, 10, 20, 50, 100]
 
     def _per_level_curve(
@@ -1505,6 +1514,42 @@ else:
     BASELINE_STYLE = {"linestyle": "-",  "linewidth": 1.8, "marker": "o", "markersize": 6}
     CHUNKED_STYLE  = {"linestyle": "--", "linewidth": 2.2, "marker": "D", "markersize": 6}
 
+    # ----- Fig 5 / Fig S5: 2×3 retrieval + rerank overlay — layout knobs (edit here) -----
+    # Figure size (inches, width × height).
+    FIG5_OVERLAY_FIGSIZE = (13.0, 7.8)
+    # Column titles = evidence level labels on the top row only. `pad` = extra space below
+    # that title before the plot (matplotlib points; larger ⇒ more “air” under the title).
+    FIG5_OVERLAY_COL_TITLE_FONTSIZE = 16
+    FIG5_OVERLAY_COL_TITLE_PAD = 16.0
+    # Fig S5 only: `suptitle` string is passed in code; these control its look and clearance.
+    # Lower `FIG5_OVERLAY_RECT_TOP_WITH_SUPTITLE` ⇒ more vertical gap between suptitle and panels.
+    FIG5_OVERLAY_SUPTITLE_FONTSIZE = 17
+    FIG5_OVERLAY_SUPTITLE_Y = 0.995
+    # `tight_layout(..., rect=[left, bottom, right, top])`: subplot area inside the figure.
+    FIG5_OVERLAY_RECT_LEFT = 0.0
+    FIG5_OVERLAY_RECT_BOTTOM = 0.16
+    FIG5_OVERLAY_RECT_RIGHT = 1.0
+    FIG5_OVERLAY_RECT_TOP_NO_SUPTITLE = 0.98
+    FIG5_OVERLAY_RECT_TOP_WITH_SUPTITLE = 0.90
+    # `h_pad` / `pad` = extra spacing between subplot rows/cols (matplotlib “padding” units).
+    FIG5_OVERLAY_H_PAD = 3.6
+    FIG5_OVERLAY_PAD = 1.2
+    # Shared x-axis semantics (one label per row; drawn after `tight_layout`).
+    FIG5_OVERLAY_LABEL_UPPER = "First-stage candidate depth K"
+    FIG5_OVERLAY_LABEL_UPPER_FONTSIZE = 15
+    FIG5_OVERLAY_LABEL_LOWER = "Final rank cutoff K"
+    FIG5_OVERLAY_LABEL_LOWER_FONTSIZE = 15
+    # `supxlabel(..., y=…)`: vertical position in figure coordinates (raise/lower vs tick labels).
+    FIG5_OVERLAY_SUPXLABEL_Y = 0.15
+    # Figure-level legend under the bottom row.
+    FIG5_OVERLAY_LEGEND_FONTSIZE = 17
+    FIG5_OVERLAY_LEGEND_HANDLELENGTH = 4.5
+    FIG5_OVERLAY_LEGEND_BBOX_X = 0.5
+    FIG5_OVERLAY_LEGEND_BBOX_Y = 0.04
+    FIG5_OVERLAY_LEGEND_NCOL = 2
+    # Raster export.
+    FIG5_OVERLAY_DPI = 150
+
     def _plot_retrieval_rerank_overlay(
         per_level_qrels: dict[str, dict[str, set[str]]],
         suptitle: str | None,
@@ -1514,7 +1559,7 @@ else:
         r_ret_chunked: dict[str, list[str]],
         r_rr_base: dict[str, list[str]],
         r_rr_chunked: dict[str, list[str]],
-        legend_fontsize: int = 14,
+        legend_fontsize: int = FIG5_OVERLAY_LEGEND_FONTSIZE,
     ) -> dict[str, int]:
         rec_base, rec_chk, n_per = _per_level_curve(
             per_level_qrels, r_ret_base, r_ret_chunked,
@@ -1536,21 +1581,24 @@ else:
         y_min_m = max(0.0, min(all_mrr) - 0.02) if all_mrr else 0.0
         y_max_m = min(1.0, max(all_mrr) + 0.02) if all_mrr else 1.0
 
-        fig, axes = plt.subplots(2, 3, figsize=(16, 7.8))
+        fig, axes = plt.subplots(2, 3, figsize=FIG5_OVERLAY_FIGSIZE)
         for idx, lvl in enumerate(levels):
             color = EVIDENCE_FIG3_COLORS.get(lvl, "#444444")
             col_title = EVIDENCE_FIG3_LABELS.get(lvl, lvl)
-            n_q = n_per.get(lvl, 0)
 
             ax_r = axes[0, idx]
             ax_r.plot(KS_RECALL_RETRIEVAL, rec_base[lvl], color=color, **BASELINE_STYLE)
             ax_r.plot(KS_RECALL_RETRIEVAL, rec_chk[lvl],  color=color, **CHUNKED_STYLE)
-            ax_r.set_title(f"{col_title} (n={n_q})", fontweight="bold")
+            ax_r.set_title(
+                col_title,
+                fontweight="bold",
+                fontsize=FIG5_OVERLAY_COL_TITLE_FONTSIZE,
+                pad=FIG5_OVERLAY_COL_TITLE_PAD,
+            )
             ax_r.set_ylim(y_min_r, y_max_r)
             ax_r.set_ylabel("Retrieval Recall@K" if idx == 0 else "")
             if idx != 0:
                 ax_r.tick_params(axis="y", labelleft=False)
-            ax_r.set_xlabel("K (retrieval depth)")
             ax_r.grid(True, axis="y", alpha=0.4)
             ax_r.grid(True, axis="x", alpha=0.3)
 
@@ -1561,50 +1609,101 @@ else:
             ax_m.set_ylabel("Post-rerank MRR@K" if idx == 0 else "")
             if idx != 0:
                 ax_m.tick_params(axis="y", labelleft=False)
-            ax_m.set_xlabel("K (distinct PMIDs in reranked list)")
             ax_m.grid(True, axis="y", alpha=0.4)
             ax_m.grid(True, axis="x", alpha=0.3)
 
+        # Non-degenerate segments so linestyle/-- renders in the legend (single-point
+        # Line2D handles often draw as solid). Match plot dash style from *_STYLE.
         legend_handles = [
             Line2D(
-                [0],
-                [0],
+                [0, 1],
+                [0, 0],
                 color="#333333",
-                linestyle="-",
-                linewidth=2.0,
-                marker="o",
-                markersize=7,
                 label=BASELINE_LABEL,
+                linestyle=BASELINE_STYLE["linestyle"],
+                linewidth=BASELINE_STYLE["linewidth"],
+                marker=BASELINE_STYLE["marker"],
+                markersize=BASELINE_STYLE["markersize"],
             ),
             Line2D(
-                [0],
-                [0],
+                [0, 1],
+                [0, 0],
                 color="#333333",
-                linestyle=(0, (5, 4)),
-                linewidth=2.2,
-                marker="D",
-                markersize=7,
                 label=CHUNKED_LABEL,
+                linestyle=CHUNKED_STYLE["linestyle"],
+                linewidth=CHUNKED_STYLE["linewidth"],
+                marker=CHUNKED_STYLE["marker"],
+                markersize=CHUNKED_STYLE["markersize"],
             ),
         ]
         fig.legend(
             handles=legend_handles,
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.02),
-            ncol=2,
+            bbox_to_anchor=(FIG5_OVERLAY_LEGEND_BBOX_X, FIG5_OVERLAY_LEGEND_BBOX_Y),
+            ncol=FIG5_OVERLAY_LEGEND_NCOL,
             fontsize=legend_fontsize,
             frameon=True,
             edgecolor="0.85",
+            handlelength=FIG5_OVERLAY_LEGEND_HANDLELENGTH,
         )
-        _layout_top = 0.98
+        _layout_top = FIG5_OVERLAY_RECT_TOP_NO_SUPTITLE
         if suptitle:
-            fig.suptitle(suptitle, fontsize=15, fontweight="bold", y=0.98)
-            _layout_top = 0.95
-        plt.tight_layout(rect=[0, 0.04, 1, _layout_top])
-        plt.savefig(out_path, dpi=150, bbox_inches="tight")
+            fig.suptitle(
+                suptitle,
+                fontsize=FIG5_OVERLAY_SUPTITLE_FONTSIZE,
+                fontweight="bold",
+                y=FIG5_OVERLAY_SUPTITLE_Y,
+            )
+            _layout_top = FIG5_OVERLAY_RECT_TOP_WITH_SUPTITLE
+        # Extra h_pad separates rows so the between-row caption does not sit on top
+        # of the upper panels' x tick labels; larger bottom rect + supxlabel y for
+        # the lower caption vs bottom x ticks.
+        plt.tight_layout(
+            rect=[
+                FIG5_OVERLAY_RECT_LEFT,
+                FIG5_OVERLAY_RECT_BOTTOM,
+                FIG5_OVERLAY_RECT_RIGHT,
+                _layout_top,
+            ],
+            h_pad=FIG5_OVERLAY_H_PAD,
+            pad=FIG5_OVERLAY_PAD,
+        )
+        # One x-axis caption per row (avoid repeating the same label on every column).
+        pos_hi_bottom = axes[0, 1].get_position().y0
+        pos_lo_top = axes[1, 1].get_position().y1
+        y_mid_rows = (pos_hi_bottom + pos_lo_top) / 2
+        fig.text(
+            0.5,
+            y_mid_rows,
+            FIG5_OVERLAY_LABEL_UPPER,
+            ha="center",
+            va="center",
+            fontsize=FIG5_OVERLAY_LABEL_UPPER_FONTSIZE,
+        )
+        fig.supxlabel(
+            FIG5_OVERLAY_LABEL_LOWER,
+            fontsize=FIG5_OVERLAY_LABEL_LOWER_FONTSIZE,
+            y=FIG5_OVERLAY_SUPXLABEL_Y,
+        )
+        plt.savefig(out_path, dpi=FIG5_OVERLAY_DPI, bbox_inches="tight")
         print("Saved:", out_path)
         plt.show()
         return n_per
+
+    # ----- Fig 5 alt: 1×3 MRR-only panels (MedCPT / Gemma paths below) -----
+    FIG5_ALT_FIGSIZE = (14.0, 4.2)
+    FIG5_ALT_COL_TITLE_FONTSIZE = 12
+    FIG5_ALT_COL_TITLE_PAD = 12.0
+    FIG5_ALT_SUPTITLE_FONTSIZE = 15
+    FIG5_ALT_SUPTITLE_Y = 1.02
+    FIG5_ALT_RECT = (0.0, 0.08, 1.0, 0.92)  # left, bottom, right, top for tight_layout
+    FIG5_ALT_XLABEL = "K (distinct PMIDs in reranked list)"
+    FIG5_ALT_LEGEND_FONTSIZE = 12
+    FIG5_ALT_LEGEND_HANDLELENGTH = 4.5
+    FIG5_ALT_LEGEND_BBOX_X = 0.5
+    FIG5_ALT_LEGEND_BBOX_Y = -0.12
+    FIG5_ALT_LEGEND_NCOL = 2
+    FIG5_ALT_DPI = 150
 
     def _plot_alt_rerank_mrr_row_only(
         per_level_qrels: dict[str, dict[str, set[str]]],
@@ -1623,39 +1722,67 @@ else:
         y_min_m = max(0.0, min(all_mrr) - 0.02) if all_mrr else 0.0
         y_max_m = min(1.0, max(all_mrr) + 0.02) if all_mrr else 1.0
 
-        fig, axes = plt.subplots(1, 3, figsize=(14, 4.2))
+        fig, axes = plt.subplots(1, 3, figsize=FIG5_ALT_FIGSIZE)
         for idx, lvl in enumerate(levels):
             color = EVIDENCE_FIG3_COLORS.get(lvl, "#444444")
             col_title = EVIDENCE_FIG3_LABELS.get(lvl, lvl)
-            n_q = n_per.get(lvl, 0)
             ax_m = axes[idx]
             ax_m.plot(KS_MRR_RERANK, mrr_base[lvl], color=color, **BASELINE_STYLE)
             ax_m.plot(KS_MRR_RERANK, mrr_chk[lvl], color=color, **CHUNKED_STYLE)
-            ax_m.set_title(f"{col_title} (n={n_q})", fontweight="bold")
+            ax_m.set_title(
+                col_title,
+                fontweight="bold",
+                fontsize=FIG5_ALT_COL_TITLE_FONTSIZE,
+                pad=FIG5_ALT_COL_TITLE_PAD,
+            )
             ax_m.set_ylim(y_min_m, y_max_m)
             ax_m.set_ylabel("Post-rerank MRR@K" if idx == 0 else "")
             if idx != 0:
                 ax_m.tick_params(axis="y", labelleft=False)
-            ax_m.set_xlabel("K (distinct PMIDs in reranked list)")
+            ax_m.set_xlabel(FIG5_ALT_XLABEL)
             ax_m.grid(True, axis="y", alpha=0.4)
             ax_m.grid(True, axis="x", alpha=0.3)
 
         legend_handles = [
-            Line2D([0], [0], color="#444444", label=BASELINE_LABEL, **BASELINE_STYLE),
-            Line2D([0], [0], color="#444444", label=CHUNKED_LABEL, **CHUNKED_STYLE),
+            Line2D(
+                [0, 1],
+                [0, 0],
+                color="#444444",
+                label=BASELINE_LABEL,
+                linestyle=BASELINE_STYLE["linestyle"],
+                linewidth=BASELINE_STYLE["linewidth"],
+                marker=BASELINE_STYLE["marker"],
+                markersize=BASELINE_STYLE["markersize"],
+            ),
+            Line2D(
+                [0, 1],
+                [0, 0],
+                color="#444444",
+                label=CHUNKED_LABEL,
+                linestyle=CHUNKED_STYLE["linestyle"],
+                linewidth=CHUNKED_STYLE["linewidth"],
+                marker=CHUNKED_STYLE["marker"],
+                markersize=CHUNKED_STYLE["markersize"],
+            ),
         ]
         fig.legend(
             handles=legend_handles,
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.12),
-            ncol=2,
-            fontsize=12,
+            bbox_to_anchor=(FIG5_ALT_LEGEND_BBOX_X, FIG5_ALT_LEGEND_BBOX_Y),
+            ncol=FIG5_ALT_LEGEND_NCOL,
+            fontsize=FIG5_ALT_LEGEND_FONTSIZE,
             frameon=True,
             edgecolor="0.85",
+            handlelength=FIG5_ALT_LEGEND_HANDLELENGTH,
         )
-        fig.suptitle(suptitle, fontsize=15, fontweight="bold", y=1.02)
-        plt.tight_layout(rect=[0, 0.08, 1, 0.92])
-        plt.savefig(out_path, dpi=150, bbox_inches="tight")
+        fig.suptitle(
+            suptitle,
+            fontsize=FIG5_ALT_SUPTITLE_FONTSIZE,
+            fontweight="bold",
+            y=FIG5_ALT_SUPTITLE_Y,
+        )
+        plt.tight_layout(rect=list(FIG5_ALT_RECT))
+        plt.savefig(out_path, dpi=FIG5_ALT_DPI, bbox_inches="tight")
         print("Saved:", out_path)
         plt.show()
         return n_per
@@ -1671,7 +1798,7 @@ else:
     )
     n_all = _plot_retrieval_rerank_overlay(
         level_qrels,
-        suptitle="full dataset",
+        suptitle=None,
         out_path=paper_figures_dir / "fig_s5_evidence_level_retrieval_recall_rerank_mrr_all.png",
         r_ret_base=run_retrieval_base,
         r_ret_chunked=run_retrieval_chunked,
@@ -1831,7 +1958,7 @@ else:
 # ## 15. Fig S6 — Per-query Δ MRR@10 (chunked − abstract) by evidence level
 #
 # *Paper role:* supplementary Fig S6. Decomposes the aggregate MRR@10 lift in
-# Fig 5 into helped / hurt / unchanged per query, one panel per evidence level,
+# Fig 5 into helped / hurt / near tie (|Δ|≤0.025) per query, one panel per evidence level,
 # on the has-PDF subset using BGE-reranker-v2-m3 (same runs as Fig 5 lower row).
 # Shows whether the +22 pp average on `abstract_insufficient` comes from many
 # small gains or a few outliers, and whether chunks ever *hurt* on the buckets
@@ -1846,6 +1973,25 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
     ])
     FIG_S6_K = 10
     FIG_S6_XLIM = (-1.05, 1.05)
+    # Match Fig S3 styling (ragnarok_comparison §11): suptitle height + tight_layout top margin.
+    FIG_S6_SUPTITLE_Y = 0.94
+
+    def _fig_s6_legend_order(handles, labels):
+        """Grey (near tie) first, mean Δ last — same legend ordering as Fig S3."""
+
+        def _rank(lab: str) -> int:
+            if lab.startswith("Near tie"):
+                return 0
+            if lab.startswith("Hurt"):
+                return 1
+            if lab.startswith("Helped"):
+                return 2
+            if lab.startswith("mean"):
+                return 3
+            return 9
+
+        order = sorted(range(len(labels)), key=lambda i: _rank(labels[i]))
+        return [handles[i] for i in order], [labels[i] for i in order]
 
     fig_s6, axes_s6 = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
     print(f"Per-query MRR@{FIG_S6_K} Δ (chunked − abstract) by evidence level (has-PDF):")
@@ -1874,7 +2020,7 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
         print(
             f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):26s} n={n_total}  "
             f"helped {n_helped} ({n_helped/n_total:.1%}, mean Δ +{mean_help:.4f})  "
-            f"unchanged {n_neutral}  "
+            f"near tie {n_neutral}  "
             f"hurt {n_hurt} ({n_hurt/n_total:.1%}, mean Δ {mean_hurt:.4f})  "
             f"agg Δ {mean_overall:+.4f}"
         )
@@ -1889,25 +2035,34 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
         )
         ax.bar(
             [0], [n_neutral], width=0.05, color="#888888", alpha=0.95,
-            label=f"Unchanged (n={n_neutral}, {n_neutral/n_total:.0%})",
+            label=f"Near tie (n={n_neutral}, {n_neutral/n_total:.0%})",
         )
         ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
         ax.axvline(
             mean_overall, color="black", linestyle=":", linewidth=1.4,
             label=f"mean Δ = {mean_overall:+.3f}",
         )
-        ax.set_xlabel(EVIDENCE_FIG3_LABELS.get(lvl, lvl), fontsize=12)
+        ax.set_xlabel(
+            EVIDENCE_FIG3_LABELS.get(lvl, lvl),
+            fontsize=14,
+            fontweight="bold",
+        )
         ax.set_xlim(*FIG_S6_XLIM)
         ax.grid(True, axis="y", alpha=0.4)
-        ax.legend(fontsize=10, loc="upper left")
+        ax.tick_params(axis="y", labelsize=15)
+        h_leg, lab_leg = ax.get_legend_handles_labels()
+        h_ord, lab_ord = _fig_s6_legend_order(h_leg, lab_leg)
+        ax.legend(h_ord, lab_ord, fontsize=14, loc="upper left")
 
-    axes_s6[0].set_ylabel("# queries")
+    axes_s6[0].set_ylabel("# queries", fontsize=15)
     n_pairs_haspdf = sum(len(level_qrels_haspdf.get(l, {})) for l in levels)
     n_qids_haspdf = len({q for l in levels for q in level_qrels_haspdf.get(l, {})})
     fig_s6.suptitle(
-        f"Per-query Δ MRR@10 (chunked − abstract), BGE-reranker-v2-m3, has-PDF subset  "
+        f"Per-query Δ MRR@10 (chunked − abstract)  "
         f"(n_qids={n_qids_haspdf}; per-bucket sum={n_pairs_haspdf})",
-        fontsize=13, fontweight="bold",
+        fontsize=17,
+        fontweight="bold",
+        y=FIG_S6_SUPTITLE_Y,
     )
     plt.tight_layout(rect=[0, 0, 1, 0.94])
     fig_s6_path = paper_figures_dir / "fig_s6_per_query_chunked_delta_haspdf.png"

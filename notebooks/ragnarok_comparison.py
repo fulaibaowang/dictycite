@@ -535,11 +535,16 @@ def _plot_mrr_curves(
     title: str,
     *,
     legend_outside_right: bool = False,
+    show_title: bool = True,
+    fig_width: float | None = None,
 ):
     keys = [k for k in method_keys if k in runs]
     mrr = {m: mean_at_ks(runs[m], qrels, fig9_ks, mrr_at_k) for m in keys}
 
-    fig_w = 6.2 if legend_outside_right else 6.0
+    if fig_width is not None:
+        fig_w = fig_width
+    else:
+        fig_w = 6.2 if legend_outside_right else 6.0
     fig, ax = plt.subplots(figsize=(fig_w, 4.8))
     for m in keys:
         style = dict(ALL_METHOD_STYLE[m])
@@ -569,9 +574,11 @@ def _plot_mrr_curves(
         )
     else:
         ax.legend(fontsize=10, loc="lower right", handlelength=3.8, handletextpad=0.5)
-    fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
+    if show_title:
+        fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
     if legend_outside_right:
-        plt.tight_layout(rect=[0, 0, 0.58, 0.93])
+        top = 0.93 if show_title else 1.0
+        plt.tight_layout(rect=[0, 0, 0.58, top])
     else:
         plt.tight_layout()
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -583,7 +590,9 @@ def _plot_mrr_curves(
 fig3_mrr = _plot_mrr_curves(
     FIG3_MAIN_KEYS,
     paper_figures_dir / "fig3_main_ranker_comparison.png",
-    "Ranker choice",
+    "Reranker choice",
+    show_title=False,
+    fig_width=5.5,
 )
 
 fig_s2_mrr = _plot_mrr_curves(
@@ -715,6 +724,27 @@ bins = np.concatenate([
 
 # Horizontal range for ΔMRR: slightly wider left than bins gives margin so upper-left legend clears the x≈0 spike.
 FIG_S3_XLIM = (-1.75, 1.0)
+# Title vertical position in figure coordinates (0=bottom, 1=top). Raise toward 1.0 to move the suptitle up;
+# if it overlaps the panels, lower slightly (e.g. 0.97) and/or reduce tight_layout rect[3] below.
+FIG_S3_SUPTITLE_Y = 0.94
+
+
+def _fig_s3_legend_order(handles, labels):
+    """Near tie first (top of legend), mean Δ last."""
+
+    def _rank(lab: str) -> int:
+        if lab.startswith("Near tie"):
+            return 0
+        if lab.startswith("Hurt"):
+            return 1
+        if lab.startswith("Helped"):
+            return 2
+        if lab.startswith("mean"):
+            return 3
+        return 9
+
+    order = sorted(range(len(labels)), key=lambda i: _rank(labels[i]))
+    return [handles[i] for i in order], [labels[i] for i in order]
 
 fig1b_panels_all = [
     ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
@@ -781,24 +811,29 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
     )
     ax.bar(
         [0], [n_neutral], width=0.05, color="#888888", alpha=0.95,
-        label=f"Near tie |Δ|≤0.025 (n={n_neutral}, {n_neutral/n_total:.0%})",
+        label=f"Near tie (n={n_neutral}, {n_neutral/n_total:.0%})",
     )
     ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
     ax.axvline(
         mean_overall, color="black", linestyle=":", linewidth=1.4,
         label=f"mean Δ = {mean_overall:+.3f}",
     )
-    ax.set_xlabel(short_label, fontsize=12)
+    ax.set_xlabel(short_label, fontsize=14, fontweight="bold")
     ax.set_xlim(*FIG_S3_XLIM)
     ax.grid(True, axis="y", alpha=0.4)
-    ax.legend(fontsize=11, loc="upper left")
+    ax.tick_params(axis="y", labelsize=15)
+    h_leg, lab_leg = ax.get_legend_handles_labels()
+    h_ord, lab_ord = _fig_s3_legend_order(h_leg, lab_leg)
+    ax.legend(h_ord, lab_ord, fontsize=14, loc="upper left")
 
-axes[0].set_ylabel("# queries")
+axes[0].set_ylabel("# queries", fontsize=15)
 fig.suptitle(
     f"Per-query rerank impact on MRR@10 vs BM25  (n={len(qrels)})",
-    fontsize=13, fontweight="bold",
+    fontsize=15,
+    fontweight="bold",
+    y=FIG_S3_SUPTITLE_Y,
 )
-plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.tight_layout(rect=[0, 0, 1, 0.94])
 fig1b_path = paper_figures_dir / "fig_s3_per_query_rerank_delta.png"
 plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig1b_path)
