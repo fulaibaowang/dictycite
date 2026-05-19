@@ -1,4 +1,0 @@
-evidence_level,n,recall_at_1000_base,recall_at_1000_chunked,mrr_at_10_base,mrr_at_10_chunked
-Abstract supports detail,707,0.993,0.997,0.802,0.843
-Abstract supports core,585,0.986,0.998,0.505,0.635
-Abstract insufficient,350,0.784,0.972,0.161,0.385

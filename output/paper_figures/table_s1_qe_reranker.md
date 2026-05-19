@@ -1,6 +1,6 @@
-# Table 2 — Query-expansion effect on the QE subset
+# Table S1 — Query-expansion effect on the QE subset
 
-**Table 2.** Query-expansion effect on the QE subset (n = 563 queries with available dictyBase synonym / product fields). MRR@10 with paired-bootstrap Δ vs Original Query within each reranker; 95% CI (B = 10,000).
+**Table S1.** Query-expansion effect on the QE subset (n = 563 queries with available dictyBase synonym / product fields). MRR@10 with paired-bootstrap Δ vs Original Query within each reranker; 95% CI (B = 10,000).
 
 | Reranker              | Original Query | + Synonyms                       | + Synonyms & Products            |
 | --------------------- | -------------: | -------------------------------- | -------------------------------- |

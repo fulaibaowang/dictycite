@@ -744,7 +744,7 @@ ax_r.set_title(_suptitle_n("Reranking"), fontsize=13, fontweight="bold", pad=6)
 ax_r.legend(loc="lower right", fontsize=14)
 
 plt.tight_layout(w_pad=1.6)
-fig_s1_out = paper_figures_dir / "fig_s1.png"
+fig_s1_out = paper_figures_dir / "fig_s1_baseline_depths.png"
 plt.savefig(fig_s1_out, dpi=150, bbox_inches="tight")
 print("Saved:", fig_s1_out)
 plt.show()
@@ -1289,11 +1289,11 @@ print("Saved:", fig_path)
 plt.show()
 
 # %% [markdown]
-# ## 13. Evidence-level setup — qrels + has-PDF subset (source for Fig 5 / Fig S5)
+# ## 13. Evidence-level setup — qrels + has-PDF subset (source for Fig 5 / Fig S3)
 #
 # Loads per-evidence-level qrels from the goldset JSONL and the has-PDF subset
 # filter from `output/dicty_gold_build/7a_dicty_gold_pdf_coverage.tsv`. Both
-# are consumed by §13 (Fig 5 / Fig S5).
+# are consumed by §13 (Fig 5 / Fig S3).
 
 # %%
 import csv
@@ -1366,9 +1366,9 @@ for lvl in levels:
 
 
 # %% [markdown]
-# ## 14. Fig 5 / Fig S5 — Evidence-level overlay: abstract-only vs +chunked_v2
+# ## 14. Fig 5 / Fig S3 — Evidence-level overlay: abstract-only vs +chunked_v2
 #
-# *Paper role:* main-paper Fig 5 (has-PDF subset) and supplementary Fig S5
+# *Paper role:* main-paper Fig 5 (has-PDF subset) and supplementary Fig S3
 # (all claims). Two-row 2×3 layout per evidence level:
 #
 # - **Upper row — first-stage retrieval Recall@K** (BM25+Dense hybrid fusion run,
@@ -1430,7 +1430,7 @@ _missing = [p for p in (chunked_rerank_path, chunked_retrieval_path, baseline_re
 if _missing:
     for p in _missing:
         print(f"Missing run for Fig 5: {p}")
-    print("Skipping Fig 5 / Fig S5.")
+    print("Skipping Fig 5 / Fig S3.")
 else:
     def _load_pmid_dedup(path: Path) -> dict[str, list[str]]:
         """Load run TSV, split docno on '#' to get PMID, dedupe per qid (first wins)."""
@@ -1473,7 +1473,7 @@ else:
         f"rerank base={len(run_rerank_base)}  chunked={len(run_rerank_chunked)}"
     )
 
-    # ----- Fig 5 / Fig S5: x-axis K grids (retrieval recall vs rerank MRR) -----
+    # ----- Fig 5 / Fig S3: x-axis K grids (retrieval recall vs rerank MRR) -----
     # Upper row stops at max K listed; extend/cap the list as needed.
     KS_RECALL_RETRIEVAL = [50, 100, 200, 300, 500, 1000]
     KS_MRR_RERANK = [1, 2, 3, 5, 10, 20, 50, 100]
@@ -1514,14 +1514,14 @@ else:
     BASELINE_STYLE = {"linestyle": "-",  "linewidth": 1.8, "marker": "o", "markersize": 6}
     CHUNKED_STYLE  = {"linestyle": "--", "linewidth": 2.2, "marker": "D", "markersize": 6}
 
-    # ----- Fig 5 / Fig S5: 2×3 retrieval + rerank overlay — layout knobs (edit here) -----
+    # ----- Fig 5 / Fig S3: 2×3 retrieval + rerank overlay — layout knobs (edit here) -----
     # Figure size (inches, width × height).
     FIG5_OVERLAY_FIGSIZE = (13.0, 7.8)
     # Column titles = evidence level labels on the top row only. `pad` = extra space below
     # that title before the plot (matplotlib points; larger ⇒ more “air” under the title).
     FIG5_OVERLAY_COL_TITLE_FONTSIZE = 16
     FIG5_OVERLAY_COL_TITLE_PAD = 16.0
-    # Fig S5 only: `suptitle` string is passed in code; these control its look and clearance.
+    # Fig S3 only: `suptitle` string is passed in code; these control its look and clearance.
     # Lower `FIG5_OVERLAY_RECT_TOP_WITH_SUPTITLE` ⇒ more vertical gap between suptitle and panels.
     FIG5_OVERLAY_SUPTITLE_FONTSIZE = 17
     FIG5_OVERLAY_SUPTITLE_Y = 0.995
@@ -1799,7 +1799,7 @@ else:
     n_all = _plot_retrieval_rerank_overlay(
         level_qrels,
         suptitle=None,
-        out_path=paper_figures_dir / "fig_s5_evidence_level_retrieval_recall_rerank_mrr_all.png",
+        out_path=paper_figures_dir / "fig_s3_evidence_level_full_goldset.png",
         r_ret_base=run_retrieval_base,
         r_ret_chunked=run_retrieval_chunked,
         r_rr_base=run_rerank_base,
@@ -1838,7 +1838,7 @@ else:
                   f"{mrr_base[lvl][0]:11.4f}  {mrr_chk[lvl][0]:11.4f}")
 
     _caption_table(level_qrels_haspdf, n_hp, "Fig 5 (has-PDF)")
-    _caption_table(level_qrels,        n_all, "Fig S5 (all claims)")
+    _caption_table(level_qrels,        n_all, "Fig S3 (all claims)")
 
     # Same evidence layout, MedCPT post-rerank fusion (abstract vs chunked v2).
     def _fig5_pick_post_fusion_tsv(wf: Path, split: str) -> Path | None:
@@ -1878,7 +1878,7 @@ else:
                 "Post-rerank MRR@K by Evidence Level — all claims "
                 "(MedCPT post-fusion; abstract vs +chunked corpus)"
             ),
-            out_path=_med_fig_frida / "fig_s5_evidence_level_retrieval_recall_rerank_mrr_all_medcpt.png",
+            out_path=_med_fig_frida / "fig_s3_evidence_level_full_goldset_medcpt.png",
             r_rr_base=run_rerank_base_medcpt,
             r_rr_chunked=run_rerank_chunked_medcpt,
         )
@@ -1892,13 +1892,13 @@ else:
         _caption_table(
             level_qrels,
             n_all_m,
-            "Fig S5 MedCPT (all claims)",
+            "Fig S3 MedCPT (all claims)",
             rr_base=run_rerank_base_medcpt,
             rr_chunked=run_rerank_chunked_medcpt,
         )
     else:
         print(
-            "Skipping Fig 5 / Fig S5 MedCPT overlays: need post-fusion TSVs under\n"
+            "Skipping Fig 5 / Fig S3 MedCPT overlays: need post-fusion TSVs under\n"
             f"  {_wf_medcpt_vega!s}\n  {_wf_medcpt_frida!s}"
         )
 
@@ -1929,7 +1929,7 @@ else:
                 "Post-rerank MRR@K by Evidence Level — all claims "
                 "(BGE-reranker-v2-Gemma post-fusion; abstract vs +chunked corpus)"
             ),
-            out_path=_gem_fig_chunk / "fig_s5_evidence_level_retrieval_recall_rerank_mrr_all_gemma.png",
+            out_path=_gem_fig_chunk / "fig_s3_evidence_level_full_goldset_gemma.png",
             r_rr_base=run_rerank_base_gemma,
             r_rr_chunked=run_rerank_chunked_gemma,
         )
@@ -1943,21 +1943,21 @@ else:
         _caption_table(
             level_qrels,
             n_all_g,
-            "Fig S5 Gemma (all claims)",
+            "Fig S3 Gemma (all claims)",
             rr_base=run_rerank_base_gemma,
             rr_chunked=run_rerank_chunked_gemma,
         )
     else:
         print(
-            "Skipping Fig 5 / Fig S5 Gemma overlays: need post-fusion TSVs under\n"
+            "Skipping Fig 5 / Fig S3 Gemma overlays: need post-fusion TSVs under\n"
             f"  {_wf_gemma_abs!s}\n  {_wf_gemma_chunk!s}"
         )
 
 
 # %% [markdown]
-# ## 15. Fig S6 — Per-query Δ MRR@10 (chunked − abstract) by evidence level
+# ## 15. Fig S4 — Per-query Δ MRR@10 (chunked − abstract) by evidence level
 #
-# *Paper role:* supplementary Fig S6. Decomposes the aggregate MRR@10 lift in
+# *Paper role:* supplementary Fig S4. Decomposes the aggregate MRR@10 lift in
 # Fig 5 into helped / hurt / near tie (|Δ|≤0.025) per query, one panel per evidence level,
 # on the has-PDF subset using BGE-reranker-v2-m3 (same runs as Fig 5 lower row).
 # Shows whether the +22 pp average on `abstract_insufficient` comes from many
@@ -1967,17 +1967,17 @@ else:
 # %%
 if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
                                        "level_qrels_haspdf", "levels")):
-    FIG_S6_BINS = np.concatenate([
+    FIG_S4_BINS = np.concatenate([
         np.array([-1.0, -0.75, -0.5, -0.35, -0.25, -0.18, -0.12, -0.07, -0.025]),
         np.array([0.025, 0.07, 0.12, 0.18, 0.25, 0.35, 0.5, 0.75, 1.0]),
     ])
-    FIG_S6_K = 10
-    FIG_S6_XLIM = (-1.05, 1.05)
-    # Match Fig S3 styling (ragnarok_comparison §11): suptitle height + tight_layout top margin.
-    FIG_S6_SUPTITLE_Y = 0.94
+    FIG_S4_K = 10
+    FIG_S4_XLIM = (-1.05, 1.05)
+    # Match Fig S2 styling (ragnarok_comparison §11): suptitle height + tight_layout top margin.
+    FIG_S4_SUPTITLE_Y = 0.94
 
-    def _fig_s6_legend_order(handles, labels):
-        """Grey (near tie) first, mean Δ last — same legend ordering as Fig S3."""
+    def _fig_s4_legend_order(handles, labels):
+        """Grey (near tie) first, mean Δ last — same legend ordering as Fig S2."""
 
         def _rank(lab: str) -> int:
             if lab.startswith("Near tie"):
@@ -1993,17 +1993,17 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
         order = sorted(range(len(labels)), key=lambda i: _rank(labels[i]))
         return [handles[i] for i in order], [labels[i] for i in order]
 
-    fig_s6, axes_s6 = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
-    print(f"Per-query MRR@{FIG_S6_K} Δ (chunked − abstract) by evidence level (has-PDF):")
-    for ax, lvl in zip(axes_s6, levels):
+    fig_s4, axes_s4 = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
+    print(f"Per-query MRR@{FIG_S4_K} Δ (chunked − abstract) by evidence level (has-PDF):")
+    for ax, lvl in zip(axes_s4, levels):
         lvl_qrels = level_qrels_haspdf.get(lvl, {})
         qids = [q for q in lvl_qrels if q in run_rerank_base and q in run_rerank_chunked]
         if not qids:
             ax.set_visible(False)
             continue
         deltas = np.array([
-            _mrr_at_k(run_rerank_chunked[q], lvl_qrels[q], FIG_S6_K)
-            - _mrr_at_k(run_rerank_base[q], lvl_qrels[q], FIG_S6_K)
+            _mrr_at_k(run_rerank_chunked[q], lvl_qrels[q], FIG_S4_K)
+            - _mrr_at_k(run_rerank_base[q], lvl_qrels[q], FIG_S4_K)
             for q in qids
         ])
         n_total = len(deltas)
@@ -2026,11 +2026,11 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
         )
 
         ax.hist(
-            deltas[hurt_m], bins=FIG_S6_BINS, color="#d62728", alpha=0.85,
+            deltas[hurt_m], bins=FIG_S4_BINS, color="#d62728", alpha=0.85,
             label=f"Hurt (n={n_hurt}, {n_hurt/n_total:.0%})",
         )
         ax.hist(
-            deltas[help_m], bins=FIG_S6_BINS, color="#2ca02c", alpha=0.85,
+            deltas[help_m], bins=FIG_S4_BINS, color="#2ca02c", alpha=0.85,
             label=f"Helped (n={n_helped}, {n_helped/n_total:.0%})",
         )
         ax.bar(
@@ -2047,30 +2047,30 @@ if all(name in globals() for name in ("run_rerank_base", "run_rerank_chunked",
             fontsize=14,
             fontweight="bold",
         )
-        ax.set_xlim(*FIG_S6_XLIM)
+        ax.set_xlim(*FIG_S4_XLIM)
         ax.grid(True, axis="y", alpha=0.4)
         ax.tick_params(axis="y", labelsize=15)
         h_leg, lab_leg = ax.get_legend_handles_labels()
-        h_ord, lab_ord = _fig_s6_legend_order(h_leg, lab_leg)
+        h_ord, lab_ord = _fig_s4_legend_order(h_leg, lab_leg)
         ax.legend(h_ord, lab_ord, fontsize=14, loc="upper left")
 
-    axes_s6[0].set_ylabel("# queries", fontsize=15)
+    axes_s4[0].set_ylabel("# queries", fontsize=15)
     n_pairs_haspdf = sum(len(level_qrels_haspdf.get(l, {})) for l in levels)
     n_qids_haspdf = len({q for l in levels for q in level_qrels_haspdf.get(l, {})})
-    fig_s6.suptitle(
+    fig_s4.suptitle(
         f"Per-query Δ MRR@10 (chunked − abstract)  "
         f"(n_qids={n_qids_haspdf}; per-bucket sum={n_pairs_haspdf})",
         fontsize=17,
         fontweight="bold",
-        y=FIG_S6_SUPTITLE_Y,
+        y=FIG_S4_SUPTITLE_Y,
     )
     plt.tight_layout(rect=[0, 0, 1, 0.94])
-    fig_s6_path = paper_figures_dir / "fig_s6_per_query_chunked_delta_haspdf.png"
-    plt.savefig(fig_s6_path, dpi=150, bbox_inches="tight")
-    print(f"Saved: {fig_s6_path}")
+    fig_s4_path = paper_figures_dir / "fig_s4_per_query_chunked_delta_haspdf.png"
+    plt.savefig(fig_s4_path, dpi=150, bbox_inches="tight")
+    print(f"Saved: {fig_s4_path}")
     plt.show()
 else:
-    print("Skipping Fig S6: required §14 variables not in scope.")
+    print("Skipping Fig S4: required §14 variables not in scope.")
 
 
 # %% [markdown]

@@ -423,17 +423,18 @@ plt.show()
 
 
 # %% [markdown]
-# ## 9. Ranker Comparison — MRR@K (paper Fig 3 main + supp Fig S2)
+# ## 9. Ranker Comparison — MRR@K (paper Fig 3 + diagnostic full-ranker variant)
 #
 # Two figures generated from the same data:
 #
-# - **Paper main (Fig 3 candidate)** — 5 lines: BM25 + 4 cross-encoder rerankers
+# - **Paper main (Fig 3)** — 5 lines: BM25 + 4 cross-encoder rerankers
 #   (MS-MARCO MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma). The headline:
 #   ranker choice in domain RAG matters — a lightweight CE *hurts*, a mid-tier
 #   CE barely helps, domain/strong CEs help meaningfully.
-# - **Paper supplement (Fig S2 candidate)** — same 5 lines plus first-stage
-#   Fusion and Ragnarok+RankZephyr (external reference). For completeness;
-#   reviewers who want to see the full picture get one figure with everything.
+# - **Diagnostic full-ranker variant** — same 5 lines plus first-stage Fusion
+#   and Ragnarok+RankZephyr (external reference). Not in the paper any more;
+#   kept here for internal sanity checks. Saved under `output_dir` (not
+#   `paper_figures_dir`).
 #
 # All four CEs operate on the BM25+Dense fusion candidate pool.
 
@@ -522,7 +523,7 @@ ALL_METHOD_STYLE: dict[str, dict] = {
 FIG3_MAIN_KEYS = [
     "ours_bm25", "frida_ms_marco_minilm_ce", "ours_ce", "vega_medcpt_ce", "frida_gemma_ce",
 ]
-FIG_S2_KEYS = [
+FIG_FULL_RANKER_KEYS = [
     "ours_bm25", "ours_fusion",
     "frida_ms_marco_minilm_ce", "ours_ce", "vega_medcpt_ce", "frida_gemma_ce",
     "rag_rerank",
@@ -595,20 +596,22 @@ fig3_mrr = _plot_mrr_curves(
     fig_width=5.5,
 )
 
-fig_s2_mrr = _plot_mrr_curves(
-    FIG_S2_KEYS,
-    paper_figures_dir / "fig_s2_full_ranker_comparison.png",
+# Diagnostic full-ranker variant — kept for internal sanity checks but no
+# longer part of the paper. Saved under `output_dir`, not `paper_figures_dir`.
+fig_full_mrr = _plot_mrr_curves(
+    FIG_FULL_RANKER_KEYS,
+    output_dir / "diag_full_ranker_comparison.png",
     "Full ranker comparison",
     legend_outside_right=True,
 )
 
-# Numerical deltas vs BM25 for caption-writing.
-print("\nMRR@10 deltas vs BM25 (Fig S2 full set):")
-base = fig_s2_mrr["ours_bm25"][10]
-for m in FIG_S2_KEYS:
-    if m not in fig_s2_mrr:
+# Numerical deltas vs BM25 for caption-writing (diagnostic full set).
+print("\nMRR@10 deltas vs BM25 (diagnostic full set):")
+base = fig_full_mrr["ours_bm25"][10]
+for m in FIG_FULL_RANKER_KEYS:
+    if m not in fig_full_mrr:
         continue
-    v = fig_s2_mrr[m][10]
+    v = fig_full_mrr[m][10]
     print(f"  {m:30s} MRR@10={v:.4f}  delta={v-base:+.4f}")
 
 
@@ -691,9 +694,9 @@ print(f"\nSaved: {output_dir / 'mrr10_bootstrap_ci_vs_bm25.csv'}")
 
 
 # %% [markdown]
-# ## 11. Fig S3 — Per-query rerank impact: MRR@10 delta vs BM25
+# ## 11. Fig S2 — Per-query rerank impact: MRR@10 delta vs BM25
 #
-# *Paper role:* supplement Fig S3. One panel per loaded reranker (MS-MARCO
+# *Paper role:* supplement Fig S2. One panel per loaded reranker (MS-MARCO
 # MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma), 2×2 grid, sharing y-axis and x-bins.
 # Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
 # hurt / near-tie bins for plotting (|Δ|>0.025 vs |Δ|≤0.025). The console print
@@ -723,13 +726,13 @@ bins = np.concatenate([
 ])
 
 # Horizontal range for ΔMRR: slightly wider left than bins gives margin so upper-left legend clears the x≈0 spike.
-FIG_S3_XLIM = (-1.75, 1.0)
+FIG_S2_XLIM = (-1.75, 1.0)
 # Title vertical position in figure coordinates (0=bottom, 1=top). Raise toward 1.0 to move the suptitle up;
 # if it overlaps the panels, lower slightly (e.g. 0.97) and/or reduce tight_layout rect[3] below.
-FIG_S3_SUPTITLE_Y = 0.94
+FIG_S2_SUPTITLE_Y = 0.94
 
 
-def _fig_s3_legend_order(handles, labels):
+def _fig_s2_legend_order(handles, labels):
     """Near tie first (top of legend), mean Δ last."""
 
     def _rank(lab: str) -> int:
@@ -819,11 +822,11 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
         label=f"mean Δ = {mean_overall:+.3f}",
     )
     ax.set_xlabel(short_label, fontsize=14, fontweight="bold")
-    ax.set_xlim(*FIG_S3_XLIM)
+    ax.set_xlim(*FIG_S2_XLIM)
     ax.grid(True, axis="y", alpha=0.4)
     ax.tick_params(axis="y", labelsize=15)
     h_leg, lab_leg = ax.get_legend_handles_labels()
-    h_ord, lab_ord = _fig_s3_legend_order(h_leg, lab_leg)
+    h_ord, lab_ord = _fig_s2_legend_order(h_leg, lab_leg)
     ax.legend(h_ord, lab_ord, fontsize=14, loc="upper left")
 
 axes[0].set_ylabel("# queries", fontsize=15)
@@ -831,10 +834,10 @@ fig.suptitle(
     f"Per-query rerank impact on MRR@10 vs BM25  (n={len(qrels)})",
     fontsize=15,
     fontweight="bold",
-    y=FIG_S3_SUPTITLE_Y,
+    y=FIG_S2_SUPTITLE_Y,
 )
 plt.tight_layout(rect=[0, 0, 1, 0.94])
-fig1b_path = paper_figures_dir / "fig_s3_per_query_rerank_delta.png"
+fig1b_path = paper_figures_dir / "fig_s2_per_query_rerank_delta.png"
 plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig1b_path)
 plt.show()
