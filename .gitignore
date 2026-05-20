@@ -25,6 +25,9 @@ output/paper_figures/*
 !output/paper_figures/table*.md
 !output/paper_figures/table*.csv
 scripts/public/article_fetching/output/
+# Zenodo deposit staging: keep README only; data files live on Zenodo
+zenodo_release/*
+!zenodo_release/README.md
 NCBI_API_KEY
 dictybase_files/dicty21/dicty21.Data/
 tmp/
