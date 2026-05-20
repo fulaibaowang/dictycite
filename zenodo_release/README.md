@@ -9,6 +9,10 @@ corpus, and a query-expansion subset used in the paper:
 Code, pipeline configurations, and reproduction instructions:
 <https://github.com/fulaibaowang/dictycite>
 
+At a glance: **1,656** curator-claim queries spanning **862** unique
+*Dictyostelium* genes, linked to **1,289** unique PubMed articles, evaluated
+against a **20,447**-article EPMC abstract corpus.
+
 ---
 
 ## Files
