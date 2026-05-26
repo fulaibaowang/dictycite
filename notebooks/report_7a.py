@@ -1510,7 +1510,7 @@ else:
         return curve_a, curve_b, n_per
 
     BASELINE_LABEL = "Abstract-only (baseline)"
-    CHUNKED_LABEL  = "+ Full-text chunks"
+    CHUNKED_LABEL  = "Abstract + full-text chunks"
     BASELINE_STYLE = {"linestyle": "-",  "linewidth": 1.8, "marker": "o", "markersize": 6}
     CHUNKED_STYLE  = {"linestyle": "--", "linewidth": 2.2, "marker": "D", "markersize": 6}
 
@@ -1796,10 +1796,16 @@ else:
         r_rr_base=run_rerank_base,
         r_rr_chunked=run_rerank_chunked,
     )
+    # Fig S3 is no longer included in the paper (Table S2 in paper.tex now
+    # reports the has-PDF and full-dataset numbers side by side). The function
+    # is still called because `n_all` feeds `_caption_table` below; the PNG
+    # is redirected to a diagnostics subdir so paper_figures/ stays clean.
+    _diag_dir = paper_figures_dir / "diagnostics"
+    _diag_dir.mkdir(parents=True, exist_ok=True)
     n_all = _plot_retrieval_rerank_overlay(
         level_qrels,
         suptitle=None,
-        out_path=paper_figures_dir / "fig_s3_evidence_level_full_goldset.png",
+        out_path=_diag_dir / "fig_s3_evidence_level_full_goldset.png",
         r_ret_base=run_retrieval_base,
         r_ret_chunked=run_retrieval_chunked,
         r_rr_base=run_rerank_base,
