@@ -18,12 +18,14 @@ output/dicty_gold_build/*
 dicty_fulltext_corpus/v2/corpus.jsonl
 !output/dicty_gold_build/7e_dicty_gold_query_expansion_benchmark.jsonl
 !output/dicty_gold_build/8b_gold_linked_notes_examples.jsonl
-# Paper-figures release: PNGs and table .md/.csv only; paper-prose drafts stay local.
+# Paper-figures release: PNGs, table .md/.csv, and the LaTeX source/bib.
 !output/paper_figures/
 output/paper_figures/*
 !output/paper_figures/*.png
 !output/paper_figures/table*.md
 !output/paper_figures/table*.csv
+!output/paper_figures/paper.tex
+!output/paper_figures/*.bib
 scripts/public/article_fetching/output/
 # Zenodo deposit staging: keep README only; data files live on Zenodo
 zenodo_release/*

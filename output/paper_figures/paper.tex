@@ -1,0 +1,546 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{url}
+\usepackage{color}
+\usepackage{hyperref}
+
+% Springer eBook style for URLs.
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+\urlstyle{rm}
+
+% Float placement tuned for LNCS drafts: keep figures close to first mention,
+% avoid float-only pages when possible, and prevent supplement floats from
+% jumping above the Supplement heading.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.70}
+% Tighter float spacing for LNCS page budget. This changes layout only;
+% it does not change figure or table content.
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{7pt plus 2pt minus 2pt}
+\setlength{\intextsep}{7pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{5pt}
+\setlength{\belowcaptionskip}{0pt}
+
+% Keeps the file compilable even before the Overleaf Figures/ folder is synced.
+% When the figure file exists, the actual image is used.
+\newcommand{\includegraphicsifexists}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\begin{minipage}[c][0.22\textheight][c]{0.92\linewidth}
+    \centering Missing figure file: \texttt{\detokenize{#2}}
+    \end{minipage}}%
+  }%
+}
+
+\title{Benchmarking Literature Retrieval for a Model Organism: A \emph{Dictyostelium} Case Study}
+\titlerunning{Model-Organism Literature Retrieval: \emph{Dictyostelium}}
+\author{Yun Wang\inst{1}\orcidID{0000-0002-2441-4182} \and
+Bla\v{z} Zupan\inst{1}\orcidID{0000-0002-5864-7056}}
+\authorrunning{Y. Wang and B. Zupan}
+\institute{Faculty of Computer and Information Science, University of Ljubljana, Ve\v{c}na pot 113, 1000 Ljubljana, Slovenia\\
+\email{\{yun.wang,blaz.zupan\}@fri.uni-lj.si}}
+
+\begin{document}
+
+\maketitle
+\emergencystretch=3em
+
+\begin{abstract}
+Biological literature retrieval is often evaluated in broad biomedical settings, but much biological knowledge is curated around narrower model-organism domains where literature is sparse and terminology is highly organism-specific. We construct a citation-derived retrieval benchmark from dictyBase for \emph{Dictyostelium discoideum}: curator-written claim queries linked to PubMed articles over a Europe PMC abstract corpus, each with structured gene metadata and an LLM-assisted evidence-level label indicating whether the cited abstract is sufficient or whether full-text evidence may be needed. We use this benchmark to evaluate a two-stage retrieve-and-rerank pipeline and to analyze three factors relevant to niche biological search: cross-encoder domain fit, gene-aware query expansion, and full-text evidence. BM25 is a strong baseline; reranking reliably improves over it only with biomedical or sufficiently large cross-encoders, while a generic reranker hurts. Gene-aware metadata expansion gives consistent gains for smaller rerankers and diminishing returns for the largest. Chunked full-text retrieval nearly closes the first-stage recall gap on claims whose cited abstracts are insufficient, but ranking those chunks remains the harder problem. Data and code: \url{https://github.com/fulaibaowang/dictycite}.
+
+\keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
+\end{abstract}
+
+\section{Introduction}
+
+Biological literature retrieval is often evaluated in broad biomedical settings,
+where large corpora, common disease and molecular terminology, and general-purpose
+retrieval models dominate the task. However, much biological knowledge is organized
+around narrower domains, including model organisms such as \emph{Dictyostelium},
+\emph{Drosophila}, and \emph{C. elegans}. In these settings, the literature can be
+comparatively sparse, terminology can be highly organism-specific, and important
+matches may depend on gene symbols, synonyms, product descriptions, phenotypes, or
+curator conventions rather than on broadly shared biomedical terms. As a result,
+retrieval behavior in these domains may differ from what is observed in general
+biomedical question answering or large-scale literature search.
+
+This raises a practical question for scientific retrieval systems: are standard
+retrieval and reranking components sufficient for such niche biological domains, or
+is there value in domain-specific resources and evaluation? Modern retrieval
+pipelines often combine lexical retrieval, dense retrieval, rank fusion, and
+cross-encoder reranking, but these components are usually evaluated on broad
+benchmarks. Less is known about how they behave when the query is a compact
+biological claim and the target is the specific paper cited as evidence in a
+model-organism knowledge base. In such cases, exact lexical cues may be unusually
+important, while semantic reranking or generic query expansion may not reliably
+improve the ranking.
+
+Curated model-organism databases provide a useful setting for studying this
+problem. Their gene pages contain compact curator-written biological statements
+linked to literature citations. These claim--citation pairs can be used to define a
+controlled retrieval task: given a curator claim, retrieve the cited article from a
+domain-specific literature corpus. This setting does not provide exhaustive
+relevance judgments, but it offers a realistic and scalable way to evaluate whether
+retrieval systems can recover the literature evidence used in biological knowledge
+curation.
+
+In this paper, we construct a citation-derived retrieval benchmark from dictyBase
+gene summary pages. Each query is a curator-written biological claim, and the
+corresponding relevance judgment is obtained from the inline citation attached to
+that claim. The benchmark also includes structured gene metadata and evidence-level
+labels indicating whether the cited abstract supports the detailed claim, supports
+only the core statement, or is likely insufficient without full-text evidence.
+
+We use this benchmark to analyze three factors that are especially relevant for
+domain-specific biological retrieval: reranker domain fit, gene-aware metadata
+expansion, and the role of full-text evidence when abstracts are insufficient. The
+principal contribution is not a new retrieval architecture, but a controlled
+benchmark and analysis of when standard retrieval components, curated metadata, and
+full-text evidence help or fail in a sparse model-organism retrieval setting.
+
+\section{Related Work}
+Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated metadata may affect retrieval differently from broad biomedical QA settings.
+%todo: include citations, cite in sentence cover
+
+Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval, dense retrieval, reciprocal rank fusion, cross-encoder reranking, and LLM-based rerankers are widely used components~\cite{robertson_probabilistic_2009,li_making_2023,cormack_reciprocal_2009,bajaj_ms_2018}.
+%todo: avoid non specific citations with many papers
+Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. Rather than proposing a new architecture, we use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
+
+Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated metadata for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
+
+Taken together, prior work provides strong retrieval components and broad
+biomedical retrieval benchmarks, but less is known about their behavior in model-organism knowledge bases. Our work uses dictyBase
+claim--citation pairs as a controlled test case for this setting, with emphasis on
+reranker domain fit, curated gene metadata, and full-text evidence.
+
+\section{Dataset}
+\label{sec:dataset}
+
+We constructed a \emph{Dictyostelium} literature retrieval dataset from dictyBase gene summary pages~\cite{fey_one_2013}. 
+Each retrieval instance is derived from a curator-written biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as the relevance judgment. 
+The dataset contains 1,656 curator-claim queries from 862 unique \emph{Dictyostelium} genes, linked to 1,289 unique PubMed articles and evaluated against a 20,447-article Europe PMC abstract corpus. 
+In addition to the query--article relevance pairs, the dataset includes structured gene metadata for gene-aware query expansion and LLM-assisted evidence labels for stratified analysis of whether the cited abstract contains sufficient evidence for the curator claim. 
+The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenodo.20308282}{10.5281/zenodo.20308282}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.98\linewidth,height=0.48\textheight,keepaspectratio]{Figures/fig1_dataset2.png}
+\caption{Construction of a retrieval instance from a dictyBase gene page. 
+(A) The source page for gene \emph{pkaC} 
+(\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene 
+metadata and curator-written notes with inline citations. 
+(B) A curator-written claim is extracted as the query, and its inline citation 
+is mapped to a PubMed-indexed article used as the cited relevance judgment. 
+Auxiliary annotations are used in later experiments: gene metadata supports 
+gene-aware query expansion, and the LLM-assisted evidence label supports the 
+full-text analysis by marking whether the cited abstract is sufficient for the 
+claim or whether full-text evidence may be needed.}
+\label{fig:dataset}
+\end{figure}
+
+\paragraph{Retrieval corpus.}
+We assembled the retrieval corpus by collecting PubMed-indexed articles related to \emph{Dictyostelium} from Europe PMC. 
+Only articles with available abstracts were included in the abstract-only corpus. 
+The abstracts were cleaned by removing residual markup, decoding HTML entities, and normalizing whitespace, resulting in a collection of 20,447 articles. 
+All abstract-only retrieval and reranking experiments use this same corpus.
+
+\paragraph{Curator-derived queries and relevance judgments.}
+Queries were derived from curator notes on dictyBase gene summary pages. 
+These notes consist of compact biological statements supported by inline citations, as illustrated in Fig.~\ref{fig:dataset}. 
+For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as its gold article. 
+Because dictyBase uses internal publication identifiers, we first mapped cited publications to PubMed IDs. 
+Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus.
+
+The remaining claims were cleaned and deduplicated. 
+Near-duplicate or semantically similar claims were grouped within each gene, and one representative claim was retained as the final query. 
+This process yielded 1,656 curator-claim queries linked to 1,289 unique PubMed articles.
+
+\paragraph{Gene metadata for query expansion.}
+For each gene page, dictyBase provides structured metadata such as the canonical gene name, alternative gene names, and product description. 
+We retain these fields as auxiliary annotations, not as part of the original query.
+They are used only in the gene-aware query-expansion experiments described in Section~\ref{sec:gene_qe}, where metadata can be appended to the query when the relevant gene mention is unambiguously resolved. 
+This expansion setting is available for 563 queries.
+
+\paragraph{Evidence labels and full-text subset.}
+Curator citations define article-level relevance, but they do not guarantee that 
+the cited abstract contains the specific evidence needed to support the full 
+curator claim. This creates an important distinction for retrieval evaluation: 
+some queries can in principle be answered from abstracts alone, whereas others 
+may require evidence from the article body even when the cited PMID is correct. 
+To characterize this distinction, we assigned an evidence-level label to each 
+claim--article pair using to indicate whether the cited abstract: (i) supports the detailed claim; 
+(ii) supports only the core statement; or (iii) is insufficient, suggesting that 
+the cited article may require full-text evidence. The third label does not mark 
+the citation as irrelevant; rather, it identifies cases where the supporting 
+evidence may lie outside the abstract. These labels define the strata used in the full-text analysis:
+the full-text retrieval setting is described in Section~\ref{sec:fulltext_variant}, and the corresponding
+results are reported in Section~\ref{sec:results_fulltext}.
+
+To support this analysis, we construct a chunked full-text corpus for articles with
+accessible PDFs, covering 1,124 gold PubMed articles. Queries with at least one
+gold PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
+queries. Because labels are assigned to claim--article pairs rather than queries,
+label counts can exceed the number of queries: the full dataset contains
+816/654/387 pairs labeled as abstract supports detail, abstract supports core, and
+abstract insufficient, respectively; the corresponding has-PDF counts are
+707/585/350.
+
+\FloatBarrier
+\section{Retrieval pipeline and variants}
+\label{sec:pipeline}
+
+This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. 
+
+\subsection{Two-stage retrieval pipeline}
+\label{sec:two_stage_pipeline}
+Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
+Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: lexical BM25~\cite{robertson_probabilistic_2009} and dense retrieval over an HNSW-indexed embedding space. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 reranks the fused candidate pool using a cross-encoder reranker~\cite{bajaj_ms_2018}. To retain the first-stage retrieval signal, the final output is produced by a second RRF step that combines the cross-encoder ranking with the original retrieval-fusion ranking. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.88\linewidth,height=0.30\textheight,keepaspectratio]{Figures/fig2_pipeline_dicty.png}
+\caption{Two-stage retrieval and reranking pipeline. 
+Stage 1 builds a recall-oriented candidate pool by fusing BM25 and dense HNSW retrieval with RRF. 
+Stage 2 reranks the fused candidates with a cross-encoder and combines the reranker order with the original retrieval-fusion order through a second RRF step to produce the final ranking.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Gene-aware query expansion}
+\label{sec:gene_qe}
+We use structured dictyBase metadata to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. For each detected gene, we construct two expanded query variants: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
+
+\subsection{Chunked full-text corpus variant}
+\label{sec:fulltext_variant}
+To test whether evidence beyond abstracts improves retrieval, we construct a chunked full-text variant of the corpus. Each article is represented by an abstract chunk and a sequence of body-text chunks, indexed as chunk-level documents. The same retrieval-and-reranking pipeline is used for both the abstract-only and full-text settings. The only change is the indexed corpus: in the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. Retrieval, fusion, reranking, and post-rerank fusion are then applied without changing the pipeline parameters.
+
+Because relevance judgments are defined at the article level, chunk-level outputs are collapsed back to PubMed IDs before evaluation. We use first-occurrence pooling: the highest-ranked chunk for a PMID determines the article's rank. This allows direct comparison between the abstract-only and chunked-corpus variants using the same PMID-level relevance judgments.
+
+\FloatBarrier
+\section{Experimental setup}
+\label{sec:experimental_setup}
+
+We evaluate all systems under fixed retrieval depths, fusion settings, and significance-testing procedures. This section defines the metrics, compared systems, and implementation details used in the experiments.
+
+
+\subsection{Metrics, candidate depths, and significance testing}
+\label{sec:metrics_significance}
+We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Recall@K measures whether a gold cited article appears in the retrieved candidate pool, while MRR@K measures whether a gold cited article is placed near the top of the final ranking. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
+
+Unless otherwise stated, pipeline parameters were fixed before the dictyBase experiments and were not tuned on the dictyBase dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker. Fig.~\ref{fig:s1} shows that BM25+Dense retrieval fusion approaches recall saturation by K = 1,000, supporting this candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
+
+For significance testing, we use paired bootstrap resampling over queries with B = 10,000 samples. We report 95\% percentile confidence intervals for per-query MRR@10 differences against the relevant baseline.
+
+\subsection{Systems compared}
+\label{sec:systems_compared}
+We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}).
+
+The rerankers (short names used below in bold) are:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item \textbf{MiniLM-L12} (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{noauthor_cross-encoderms-marco-minilm-l12-v2_2026,bajaj_ms_2018,wang_minilm_2020} --- lightweight general-domain CE.
+    \item \textbf{BGE-m3} (BAAI/bge-reranker-v2-m3)~\cite{noauthor_baaibge-reranker-v2-m3_2026,chen_m3-embedding_2024} --- multilingual CE; default reranker in several experiments.
+    \item \textbf{MedCPT} (ncbi/MedCPT-Cross-Encoder)~\cite{jin_medcpt_2023} --- biomedical CE trained on PubMed query--article click data.
+    \item \textbf{BGE-Gemma} (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026} --- LLM-based reranker from the BGE-reranker-v2 family.
+\end{itemize}
+
+We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradeep_ragnarok_2025,pradeep_rankzephyr_2023}. Ragnarok is an independently maintained retrieval-and-listwise-reranking pipeline using RankZephyr, a 7B listwise LLM reranker. We do not retune Ragnarok on the dictyBase dataset, so this comparison is intended as a contextual reference rather than a parameter-matched baseline.
+
+\subsection{Implementation details}
+\label{sec:implementation_details}
+BM25 retrieval uses PyTerrier over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index.
+
+Retrieval fusion uses RRF with k = 60 and equal weights for BM25 and dense retrieval. The reranker receives the top 1,000 documents from the fused candidate pool. Cross-encoder rerankers are run with max\_length = 512.
+
+Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings were fixed before the dictyBase evaluation. The fusion keeps the final ranking primarily reranker-driven while preserving some retrieval-stage signal.
+
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public goldset are released at \url{https://github.com/fulaibaowang/dictycite}; the Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
+
+\section{Results}
+\label{sec:results}
+
+We organize the results around three questions: whether cross-encoder reranking
+adds value beyond strong first-stage retrieval baselines, whether curated gene
+metadata helps compact biological queries, and whether full-text chunks improve
+retrieval when abstracts lack sufficient evidence. Table~\ref{tab:qual_examples}
+grounds the aggregate trends in Figs.~\ref{fig:ranker}--\ref{fig:evidence_haspdf}
+with three query-level examples.overa
+
+\subsection{Reranking gains are model-dependent}
+\label{sec:results_reranking}
+On the 1,656-query dataset, BM25 is a strong first-stage baseline (MRR@10 = 0.593). Rerankers applied to the BM25+Dense RRF candidate pool show markedly different behavior (Fig.~\ref{fig:ranker}, Table~\ref{tab:ranker_comparison}). The lightweight general-domain MiniLM-L12 reduces MRR@10 below BM25, and BGE-m3 yields only a small, non-significant gain. In contrast, the biomedical MedCPT reranker and the larger BGE-Gemma model yield clear improvements (+5.7 and +11.4 pp, respectively).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.8\linewidth,height=0.32\textheight,keepaspectratio]{Figures/fig3_main_ranker_comparison.png}
+\caption{Ranker choice on the dictyBase curator-claim dataset. Mean MRR@K on 1,656 queries over a 20,447-article EPMC abstract corpus. The dashed curve shows BM25 first-stage retrieval. Solid curves show four cross-encoder rerankers applied to the BM25+Dense RRF candidate pool. Paired-bootstrap confidence intervals for MRR@10 deltas against BM25 are reported in Table~\ref{tab:ranker_comparison}.}
+\label{fig:ranker}
+\end{figure}
+
+The two non-cross-encoder references reinforce the same point (Table~\ref{tab:ranker_comparison}). BM25+Dense fusion without reranking and the external Ragnarok BM25+RankZephyr reference both score below BM25 at K = 10, with paired-bootstrap 95\% confidence intervals entirely below zero.
+
+The per-query analysis supports the same pattern (Fig.~\ref{fig:s2}). MiniLM-L12 hurts more queries than it helps, whereas BGE-m3 is nearly balanced. MedCPT shifts the distribution toward positive deltas, and BGE-Gemma has the strongest asymmetry, helping many more queries than it hurts. The first block in Table~\ref{tab:qual_examples} illustrates one such failure mode: a general reranker can promote a paper whose abstract overlaps in phenotype/location vocabulary while weakening the gene-specific lexical cue BM25 captures. These results suggest that, for highly condensed curator claims, reranking can either preserve or weaken the lexical signal captured by BM25 depending on the reranker.
+
+\begin{table}[t]
+\centering
+\caption{Ranker comparison on the full dataset. Mean MRR@10 is reported with paired-bootstrap $\Delta$ against BM25 and 95\% percentile confidence intervals, $B=10{,}000$.}
+\label{tab:ranker_comparison}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{4.0cm}p{3.0cm}c c c@{}}
+\toprule
+System & Type & MRR@10 & \shortstack{$\Delta$ vs.\\ BM25, pp} & \shortstack{95\%\\ CI} \\
+\midrule
+BM25 & Lexical baseline & 0.593 & -- & -- \\
+BM25+Dense fusion & Fusion, no rerank & 0.568 & $-2.6$ & [$-4.1$, $-1.0$] \\
+Ragnarok BM25+RankZephyr & External listwise reference & 0.566 & $-2.7$ & [$-4.8$, $-0.8$] \\
+MiniLM-L12 & General-domain CE & 0.541 & $-5.2$ & [$-7.0$, $-3.4$] \\
+BGE-m3 & General-purpose CE & 0.605 & $1.2$ & [$-0.5$, $+2.8$]$^{\dag}$ \\
+MedCPT & Biomedical CE & 0.650 & $5.7$ & [$+4.2$, $+7.2$] \\
+BGE-Gemma & LLM-based reranker & 0.707 & $11.4$ & [$+9.8$, $+13.0$] \\
+\bottomrule
+\end{tabular}
+
+\vspace{1mm}
+\begin{minipage}{\textwidth}
+\scriptsize
+$^{\dag}$ Confidence interval crosses zero. CE = cross-encoder.
+\end{minipage}
+\end{table}
+
+\subsection{Gene-aware query expansion improves retrieval and benefits BGE-m3 and MedCPT}
+\label{sec:results_qe}
+We next evaluate gene-aware query expansion (Section~\ref{sec:gene_qe}) on the 563-query subset for which dictyBase synonym and product fields are available. We compare the original curator claim with two expanded variants: adding gene synonyms, and adding both synonyms and product descriptions.
+
+At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b), with dense retrieval gaining more since it starts from a lower original-query baseline.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.78\linewidth,height=0.38\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
+\caption{Effect of gene-aware query expansion. Results on the 563-query subset with available dictyBase synonym and product fields. Three query variants are compared: the original curator claim, the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K. (b) Dense Recall@K. (c) Mean MRR@K after BGE-m3 reranking. (d) MRR@10 change relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma. Bar pairs show the two expansion variants. Paired-bootstrap confidence intervals for MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
+\label{fig:qe}
+\end{figure}
+
+For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
+
+Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. The second block in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the gold abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
+
+\FloatBarrier
+
+\subsection{Full-text chunks benefit claims whose evidence is missing from abstracts}
+\label{sec:results_fulltext}
+The previous experiments use the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
+
+We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset. Fig.~\ref{fig:s3} repeats the analysis on the full dataset, where full-text coverage is partial.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=\textwidth,keepaspectratio]{Figures/fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png}
+\caption{Retrieval and reranking by abstract-evidence level on the has-PDF subset. The upper row shows first-stage Recall@K from BM25+Dense RRF retrieval. The lower row shows post-rerank MRR@K using BGE-m3. Columns correspond to \emph{abstract supports detail} (n=707), \emph{abstract supports core} (n=585), and \emph{abstract insufficient} (n=350). Solid lines show the abstract-only baseline; dashed lines show the corpus augmented with full-text chunks.}
+\label{fig:evidence_haspdf}
+\end{figure}
+
+The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported buckets. The other two buckets were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
+
+The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles (0.16 $\rightarrow$ 0.39), yet stays well below the two abstract-supported buckets under the same chunked setting. This pattern is consistent across rerankers (Table~\ref{tab:s2_evidence_level_all_rerankers}).
+
+At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). The third block in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
+
+Overall, full-text chunks provide their largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient bucket. The remaining gap to the abstract-supported buckets indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
+
+\begin{table}[!htbp]
+\centering
+\caption{Compact qualitative examples illustrating the mechanisms behind the main quantitative findings. Each block shows the curator cue, the shortest evidence contrast needed to understand the rank movement, and the aggregate result it illustrates. The examples are diagnostic anchors, not additional quantitative evidence.}
+\label{tab:qual_examples}
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.20cm}>{\raggedright\arraybackslash}p{8.70cm}@{}}
+\toprule
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 1: reranker loses lexical specificity} \; (Fig.~\ref{fig:ranker}; Fig.~\ref{fig:s2})} \\
+\midrule
+Query cue & DymA localizes to the phagosome and the cleavage furrow. \\
+Evidence contrast & Gold PMID 23679940 contains the gene-specific cue: ``DymA and DlpA were associated with actin filaments at the furrow.'' The promoted non-gold article shares location vocabulary (``cleavage furrow'', ``phagocytic cup'') but not the DymA signal. \\
+Rank movement & Gold: BM25 2 $\rightarrow$ MiniLM-L12 60; BGE-Gemma 3. Non-gold competitor: MiniLM-L12 1. \\
+Takeaway & A general reranker can over-weight phenotype/location overlap while weakening the gene-specific lexical signal captured by BM25. \\
+\midrule
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 2: gene-aware expansion resolves synonym mismatch} \; (Fig.~\ref{fig:qe}; Table~\ref{tab:s1_qe_reranker})} \\
+\midrule
+Query cue & DetA is involved in cell-type specification during development. \\
+Evidence contrast & The curator claim uses DetA, while the gold source uses the synonym DET1. Query expansion appends \texttt{DET1}, matching the gold title/abstract cue. \\
+Rank movement & Gold PMID 21193547 under BGE-m3: original query 39 $\rightarrow$ +synonyms 1; +synonyms/products 1. \\
+Takeaway & Trusted gene synonyms can close vocabulary gaps between compact curator wording and article wording. \\
+\midrule
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 3: full-text chunks recover missing detailed evidence} \; (Fig.~\ref{fig:evidence_haspdf}; Table~\ref{tab:s2_evidence_level_all_rerankers})} \\
+\midrule
+Query cue & \emph{gefE} null mutants are less sensitive to DIF than wild type. \\
+Evidence contrast & Abstract cue is broad: ``gefE is required for normal lineage priming and salt and pepper differentiation.'' Body-text cue is specific: ``\emph{gefE}$^{-}$ cells are less sensitive to DIF than wild type cells\ldots'' \\
+Rank movement & Gold PMID 24282234 under BGE-m3: abstract-only corpus 54 $\rightarrow$ +full-text chunks 1. \\
+Takeaway & Full-text chunks help when the cited abstract supports the general context but omits the detailed evidence behind the curator claim. \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
+
+\FloatBarrier
+\section{Discussion}
+\label{sec:discussion}
+We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. Its value is not only as a new dataset, but also as a test case for retrieval behavior that can differ from many open-domain QA settings. In this domain, gene symbols, pathway terms, phenotypes, and other organism-specific expressions provide highly informative lexical cues. This helps explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
+
+This has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade. For niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
+lexical baseline on the target retrieval behavior.
+
+Gene-aware query expansion provides a complementary and low-cost way to improve the
+pipeline. In our controlled reranking analysis, the candidate pool is fixed and
+only the reranker query changes, so the observed gains show that expansion helps
+not only by retrieving more candidates but also by giving the reranker better
+query-side context. This suggests that curated biological metadata can enrich
+compact claims with missing gene vocabulary without substantially increasing
+reranking noise. More broadly, trusted metadata plus a smaller domain-suitable
+reranker may be a more efficient operating point than relying only on larger
+LLM-based rerankers.
+
+The full-text experiments show a different but related issue: abstracts are
+efficient, but they do not always contain the evidence needed for detailed
+biological claims. Adding full-text chunks gives the largest benefit for claims
+whose cited abstracts are insufficient, nearly closing the first-stage recall gap
+and substantially improving final ranking. However, the remaining MRR gap shows
+that full text is not only a recall problem. Once body chunks are added, the system
+must rank among more noisy and fine-grained candidates, and the evidence for a
+claim may be distributed across sections rather than concentrated in one best
+chunk. The partial-coverage analysis further reflects realistic deployment, where
+complete full-text coverage cannot be assumed. The persistence of the same
+qualitative gains suggests that mixed abstract/full-text corpora can improve
+evidence retrieval even without indexing every relevant article in full text.
+
+The qualitative examples are diagnostic rather than additional evaluation
+evidence: they show how lexical specificity, synonym mismatch, and missing
+abstract evidence can drive rank changes behind the aggregate metrics. The
+benchmark also has limitations. Citation-derived judgments are not exhaustive,
+some extracted statements may depend on page context, and the evidence labels
+are LLM-assisted rather than expert annotations. Future work should add
+expert-reviewed queries, broader model-organism coverage, and evidence-level
+evaluation of generated answers.
+
+Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Because many claims are extracted as compact sentence-level statements, some may depend on surrounding page or paragraph context and therefore be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but do not constitute exhaustive relevance judgments. A claim often cites only one or a few papers, so other relevant articles may exist but remain unlabeled. As a result, the benchmark is best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. The evidence-level labels are also LLM-assisted and should be interpreted as analysis labels rather than definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader
+model-organism coverage, and evidence-level evaluation of generated answers.
+
+\FloatBarrier
+
+% \clearpage
+\section*{Supplement}
+\FloatBarrier
+% Supplement figures are grouped as two figure-only pages: S1--S2 and S3--S4.
+% We keep captions unchanged and use page-float placement plus explicit page breaks
+% between pairs so no supplement page receives more than two figures.
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\theHfigure}{S\arabic{figure}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\theHtable}{S\arabic{table}}
+
+\begin{figure}[H]
+\centering
+\includegraphicsifexists[width=0.92\linewidth,height=0.340\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
+\caption{Baseline retrieval and reranking behavior across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion on the full 1,656-query dataset. Right: MRR@K for BM25+Dense fusion without reranking (candidate pool from first stage), and second-stage BGE-m3 reranking and Post-rerank fusion.}
+\label{fig:s1}
+
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphicsifexists[width=0.95\linewidth,height=0.38\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
+\caption{Per-query reranking effect relative to BM25. Per-query $\Delta$MRR@10, computed as reranker minus BM25, for the four rerankers in Fig.~\ref{fig:ranker}. Queries are grouped as hurt, helped, or near tie using thresholds $\Delta < -0.025$, $\Delta > +0.025$, and $|\Delta| \leq 0.025$. The distributions show that similar aggregate scores can hide different query-level behavior: MiniLM-L12 hurts more queries than it helps, BGE-m3 is approximately balanced, and MedCPT and BGE-Gemma shift the distribution toward positive deltas.}
+\label{fig:s2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphicsifexists[width=\textwidth,keepaspectratio]{Figures/fig_s3_evidence_level_full_goldset.png}
+\caption{Retrieval and reranking by abstract-evidence level on the full dataset. Same layout and styling as Fig.~\ref{fig:evidence_haspdf}, but evaluated on the full 1,656-query dataset without filtering to claims whose cited PDFs are available in the chunked corpus. The lower row shows post-rerank MRR@K using BGE-m3. Columns correspond to \emph{abstract supports detail} (n=816), \emph{abstract supports core} (n=654), and \emph{abstract insufficient} (n=387). }
+\label{fig:s3}
+
+% \vspace{0.4em}
+% \includegraphicsifexists[width=\textwidth,keepaspectratio]{Figures/fig_s4_per_query_chunked_delta_haspdf.png}
+% \caption{Per-query effect of adding full-text chunks. Per-query $\Delta$MRR@10, computed as chunked corpus minus abstract-only corpus, on the has-PDF subset using BGE-m3. Panels correspond to the three abstract-evidence levels. Queries are grouped as hurt, helped, or near tie using thresholds $\Delta < -0.025$, $\Delta > +0.025$, and $|\Delta| \leq 0.025$. The helped fraction increases the most for \emph{abstract insufficient}.}
+% \label{fig:s4}
+\end{figure}
+
+% \clearpage
+\FloatBarrier
+
+\begin{table}[H]
+\centering
+\caption{Effect of gene-aware query expansion on the query-expansion subset. Each cell reports MRR@10. For expanded-query variants, parentheses report the paired-bootstrap difference from the original-query baseline for the same reranker, in percentage points, with 95\% confidence intervals.}
+\label{tab:s1_qe_reranker}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{3.2cm}c p{3.55cm}p{3.7cm}@{}}
+\toprule
+Reranker & \shortstack{Original\\query} & + Synonyms & + Synonyms and products \\
+\midrule
+BGE-m3
+& 0.576
+& \shortstack{0.623\\($+4.7$, [$+2.6$, $+6.8$])}
+& \shortstack{0.622\\($+4.6$, [$+2.2$, $+7.1$])} \\
+
+MedCPT
+& 0.624
+& \shortstack{0.682\\($+5.8$, [$+3.7$, $+7.9$])}
+& \shortstack{0.673\\($+5.0$, [$+2.7$, $+7.2$])} \\
+
+BGE-Gemma
+& 0.694
+& \shortstack{0.703\\($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$}
+& \shortstack{0.701\\($+0.7$, [$-0.6$, $+2.1$])$^{\dag}$} \\
+\bottomrule
+\end{tabular}
+
+\vspace{1mm}
+{\scriptsize $^{\dag}$ Confidence interval crosses zero. Deltas are in percentage points.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Evidence-level performance across rerankers on the has-PDF subset. Values are post-rerank MRR@10 for the abstract-only baseline and the chunked full-text corpus.}
+\label{tab:s2_evidence_level_all_rerankers}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l r cc cc cc@{}}
+\toprule
+ & & \multicolumn{2}{c}{BGE-m3} & \multicolumn{2}{c}{MedCPT} & \multicolumn{2}{c}{BGE-Gemma} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}
+Evidence level & $n$ & Abs. & +Chunks & Abs. & +Chunks & Abs. & +Chunks \\
+\midrule
+\emph{Abstract supports detail} & 707 & 0.802 & 0.843 & 0.814 & 0.843 & 0.857 & 0.874 \\
+\emph{Abstract supports core}   & 585 & 0.505 & 0.635 & 0.568 & 0.652 & 0.605 & 0.691 \\
+\emph{Abstract insufficient}    & 350 & 0.161 & 0.385 & 0.193 & 0.421 & 0.203 & 0.430 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{credits}
+\subsubsection{\ackname} This publication is co-funded by the European Union's Horizon Europe research and innovation program under the Marie Sk\l{}odowska-Curie COFUND Postdoctoral Programme grant agreement No.~101081355--SMASH, and by the Republic of Slovenia and the European Union from the European Regional Development Fund.
+
+\subsubsection{Disclaimer.} Co-funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or European Research Executive Agency. Neither the European Union nor the granting authority can be held responsible for them.
+
+\subsubsection{\discintname} The authors have no competing interests to declare that are relevant to the content of this article.
+\end{credits}
+
+\bibliographystyle{splncs04}
+\bibliography{ds_paper_revised}
+
+\end{document}
