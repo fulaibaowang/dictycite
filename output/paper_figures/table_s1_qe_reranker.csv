@@ -1,10 +1,10 @@
 reranker,qe_variant,mrr_at_10,delta_vs_original_pp,ci_lo_pp,ci_hi_pp,ci_crosses_zero
-BGE-reranker-v2-m3,Original Query,0.576,,,,
-BGE-reranker-v2-m3,+ Synonyms,0.623,4.7,2.6,6.8,False
-BGE-reranker-v2-m3,+ Synonyms & Products,0.622,4.6,2.2,7.1,False
+BGE-m3,Original Query,0.576,,,,
+BGE-m3,+ Synonyms,0.623,4.7,2.6,6.8,False
+BGE-m3,+ Synonyms & Products,0.622,4.6,2.2,7.1,False
 MedCPT,Original Query,0.624,,,,
 MedCPT,+ Synonyms,0.682,5.8,3.7,7.9,False
 MedCPT,+ Synonyms & Products,0.673,5.0,2.7,7.2,False
-BGE-reranker-v2-Gemma,Original Query,0.694,,,,
-BGE-reranker-v2-Gemma,+ Synonyms,0.703,0.9,-0.5,2.3,True
-BGE-reranker-v2-Gemma,+ Synonyms & Products,0.701,0.7,-0.6,2.1,True
+BGE-Gemma,Original Query,0.694,,,,
+BGE-Gemma,+ Synonyms,0.703,0.9,-0.5,2.3,True
+BGE-Gemma,+ Synonyms & Products,0.701,0.7,-0.6,2.1,True

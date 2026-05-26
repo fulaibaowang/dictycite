@@ -7,10 +7,10 @@
 | BM25                       | lexical baseline                   |  0.593 |         — | —              |
 | BM25 + Dense fusion        | fusion, no rerank                  |  0.568 |      −2.6 | [−4.1, −1.0]   |
 | Ragnarok BM25 + RankZephyr | external listwise reference        |  0.566 |      −2.7 | [−4.8, −0.8]   |
-| MS-MARCO MiniLM-L12        | general-domain cross-encoder       |  0.541 |      −5.2 | [−7.0, −3.4]   |
-| BGE-reranker-v2-m3         | general-purpose cross-encoder      |  0.605 |      +1.2 | [−0.5, +2.8] † |
+| MiniLM-L12                 | general-domain cross-encoder       |  0.541 |      −5.2 | [−7.0, −3.4]   |
+| BGE-m3                     | general-purpose cross-encoder      |  0.605 |      +1.2 | [−0.5, +2.8] † |
 | MedCPT                     | biomedical cross-encoder           |  0.650 |      +5.7 | [+4.2, +7.2]   |
-| BGE-reranker-v2-Gemma      | LLM-based cross-encoder / reranker |  0.707 |     +11.4 | [+9.8, +13.0]  |
+| BGE-Gemma                  | LLM-based cross-encoder / reranker |  0.707 |     +11.4 | [+9.8, +13.0]  |
 
 † 95% CI crosses zero — not significantly different from BM25.
 

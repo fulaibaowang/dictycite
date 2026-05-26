@@ -247,7 +247,7 @@ methods_stage2 = {
         "color": "#2ca02c",
         "marker": "D",
     },
-    "BGE-reranker-v2-m3": {
+    "BGE-m3": {
         "df": rerank_metrics,
         "color": "#1f77b4",
         "marker": "o",
@@ -340,7 +340,7 @@ axes_bar = axes_bar.ravel()
 
 method_colors_bar = {
     "BM25 Dense Fusion": "#2ca02c",
-    "BGE-reranker-v2-m3": "#1f77b4",
+    "BGE-m3": "#1f77b4",
     "Post-rerank fusion": "#ff7f0e",
 }
 
@@ -357,7 +357,7 @@ for idx, split in enumerate(splits):
     row_r = rerank_metrics[rerank_metrics["split"] == split]
     if not row_r.empty:
         vals.append(float(row_r.iloc[0]["MAP@10"]))
-        labels_methods.append("BGE-reranker-v2-m3")
+        labels_methods.append("BGE-m3")
 
     row_f = rerank_fusion_metrics[rerank_fusion_metrics["split"] == split]
     if not row_f.empty:
@@ -468,7 +468,7 @@ def _mrr_at_ks_for_run(run_df: pd.DataFrame, qrels: dict[str, set[str]], ks: lis
 
 run_dirs = {
     "BM25 Dense Fusion": retrieval_dir / "fusion" / "runs",
-    "BGE-reranker-v2-m3": rerank_dir / "cross_encoder" / "runs",
+    "BGE-m3": rerank_dir / "cross_encoder" / "runs",
     "Post-rerank fusion": rerank_dir / "post_rerank_fusion_snippet" / "runs",
 }
 
@@ -507,7 +507,7 @@ else:
 # Post-fusion: `#d62728` appears elsewhere in this report (e.g. evidence / S6) but not in `01_stage1_recall_per_split.png`.
 colors_map = {
     "BM25 Dense Fusion": "#2ca02c",
-    "BGE-reranker-v2-m3": "#9467bd",
+    "BGE-m3": "#9467bd",
     "Post-rerank fusion": "#d62728",
 }
 
@@ -592,7 +592,7 @@ map_curves_rr = {k: v for k, v in map_curves.items() if k != "Post-rerank fusion
 mrr_curves_rr = {k: v for k, v in mrr_curves.items() if k != "Post-rerank fusion"}
 colors_map_rr = {
     "BM25 Dense Fusion": colors_map["BM25 Dense Fusion"],
-    "BGE-reranker-v2-m3": "#9467bd",
+    "BGE-m3": "#9467bd",
 }
 all_maps_rr = []
 for method_dict in map_curves_rr.values():
@@ -1391,7 +1391,7 @@ for lvl in levels:
 # is plotted. They are saved under each workflow's `figures/` (has-PDF → Vega MedCPT dir;
 # all claims → Frida chunked MedCPT dir), not under `paper_figures/`.
 #
-# Likewise **BGE-reranker-v2-Gemma** lower-row-only figures when post-fusion TSVs exist under
+# Likewise **BGE-Gemma** lower-row-only figures when post-fusion TSVs exist under
 # `workflow_frida_7a_public_goldset_rerank_gemma` (abstract) and
 # `workflow_frida_7a_public_goldset_chunked_v2_rerank_gemma` (chunked v2): has-PDF → abstract
 # workflow `figures/`, all claims → chunked workflow `figures/`.
@@ -1917,7 +1917,7 @@ else:
             level_qrels_haspdf,
             suptitle=(
                 "Post-rerank MRR@K by Evidence Level — has-PDF subset "
-                "(BGE-reranker-v2-Gemma post-fusion; abstract vs +chunked corpus)"
+                "(BGE-Gemma post-fusion; abstract vs +chunked corpus)"
             ),
             out_path=_gem_fig_abs / "fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf_gemma.png",
             r_rr_base=run_rerank_base_gemma,
@@ -1927,7 +1927,7 @@ else:
             level_qrels,
             suptitle=(
                 "Post-rerank MRR@K by Evidence Level — all claims "
-                "(BGE-reranker-v2-Gemma post-fusion; abstract vs +chunked corpus)"
+                "(BGE-Gemma post-fusion; abstract vs +chunked corpus)"
             ),
             out_path=_gem_fig_chunk / "fig_s3_evidence_level_full_goldset_gemma.png",
             r_rr_base=run_rerank_base_gemma,

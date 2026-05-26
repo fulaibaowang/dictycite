@@ -47,6 +47,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 plt.rcParams["figure.figsize"] = (9, 5)
 plt.rcParams["axes.grid"] = False
@@ -92,11 +93,11 @@ COLORS = {
 LABELS = {
     "ours_bm25":                "Ours: BM25",
     "ours_fusion":              "Ours: BM25+Dense Fusion",
-    "ours_ce":                  "Ours: BGE-reranker-v2-m3",
+    "ours_ce":                  "Ours: BGE-m3",
     "ours_postfusion":          "Ours: Post-rerank Fusion",
     "vega_medcpt_ce":           "Ours: MedCPT (rerank-only)",
-    "frida_gemma_ce":           "Ours: BGE-reranker-v2-Gemma (rerank-only)",
-    "frida_ms_marco_minilm_ce": "Ours: MS MARCO MiniLM (rerank-only)",
+    "frida_gemma_ce":           "Ours: BGE-Gemma (rerank-only)",
+    "frida_ms_marco_minilm_ce": "Ours: MiniLM-L12 (rerank-only)",
     "rag_bm25":                 "Ragnarok: BM25",
     "rag_rerank":               "Ragnarok: BM25 + RankZephyr",
 }
@@ -476,7 +477,7 @@ ALL_METHOD_STYLE: dict[str, dict] = {
         "zorder": 4,
         "marker": "o",
         "markersize": 5,
-        "label": "MS-MARCO MiniLM-L12",
+        "label": "MiniLM-L12",
     },
     "ours_ce": {
         "color": "#d62728",
@@ -486,7 +487,7 @@ ALL_METHOD_STYLE: dict[str, dict] = {
         "zorder": 4,
         "marker": "o",
         "markersize": 5,
-        "label": "BGE-reranker-v2-m3",
+        "label": "BGE-m3",
     },
     "vega_medcpt_ce": {
         "color": "#8c564b",
@@ -506,7 +507,7 @@ ALL_METHOD_STYLE: dict[str, dict] = {
         "zorder": 4,
         "marker": "o",
         "markersize": 5,
-        "label": "BGE-reranker-v2-Gemma",
+        "label": "BGE-Gemma",
     },
     "rag_rerank": {
         "color": "#7b1fa2",
@@ -538,6 +539,7 @@ def _plot_mrr_curves(
     legend_outside_right: bool = False,
     show_title: bool = True,
     fig_width: float | None = None,
+    inline_labels: bool = False,
 ):
     keys = [k for k in method_keys if k in runs]
     mrr = {m: mean_at_ks(runs[m], qrels, fig9_ks, mrr_at_k) for m in keys}
@@ -547,10 +549,15 @@ def _plot_mrr_curves(
     else:
         fig_w = 6.2 if legend_outside_right else 6.0
     fig, ax = plt.subplots(figsize=(fig_w, 4.8))
+    label_points: list[tuple[str, float, float, str]] = []
     for m in keys:
         style = dict(ALL_METHOD_STYLE[m])
         label = style.pop("label")
-        ax.plot(fig9_ks, [mrr[m][k] for k in fig9_ks], label=label, **style)
+        if inline_labels:
+            style["color"] = "#333333"
+        ys = [mrr[m][k] for k in fig9_ks]
+        ax.plot(fig9_ks, ys, label=label, **style)
+        label_points.append((label, fig9_ks[-1], ys[-1], style.get("color", "#333333")))
 
     all_vals = [mrr[m][k] for m in keys for k in fig9_ks]
     y_lo = max(0.0, min(all_vals) - 0.02)
@@ -563,7 +570,25 @@ def _plot_mrr_curves(
     ax.set_xticklabels([str(k) for k in fig9_ks])
     ax.grid(True, axis="y", alpha=0.4)
     ax.grid(True, axis="x", alpha=0.3)
-    if legend_outside_right:
+
+    if inline_labels:
+        # Top-N curves get their label above the endpoint; bottom-M below.
+        # Centered horizontally on the rightmost x value.
+        label_points.sort(key=lambda t: -t[2])
+        n_above = min(3, len(label_points))
+        pad = (y_hi - y_lo) * 0.025
+        x_end = max(fig9_ks)
+        for i, (label, _x, y, color) in enumerate(label_points):
+            if i < n_above:
+                y_text, va = y + pad, "bottom"
+            else:
+                y_text, va = y - pad, "top"
+            ax.text(
+                x_end, y_text, label,
+                va=va, ha="center", fontsize=10, color=color, fontweight="bold",
+            )
+        ax.set_xlim(min(fig9_ks) - 0.2, max(fig9_ks) + 0.6)
+    elif legend_outside_right:
         ax.legend(
             fontsize=10,
             loc="center left",
@@ -577,7 +602,9 @@ def _plot_mrr_curves(
         ax.legend(fontsize=10, loc="lower right", handlelength=3.8, handletextpad=0.5)
     if show_title:
         fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
-    if legend_outside_right:
+    if inline_labels:
+        plt.tight_layout()
+    elif legend_outside_right:
         top = 0.93 if show_title else 1.0
         plt.tight_layout(rect=[0, 0, 0.58, top])
     else:
@@ -594,6 +621,7 @@ fig3_mrr = _plot_mrr_curves(
     "Reranker choice",
     show_title=False,
     fig_width=5.5,
+    inline_labels=True,
 )
 
 # Diagnostic full-ranker variant — kept for internal sanity checks but no
@@ -697,12 +725,11 @@ print(f"\nSaved: {output_dir / 'mrr10_bootstrap_ci_vs_bm25.csv'}")
 # ## 11. Fig S2 — Per-query rerank impact: MRR@10 delta vs BM25
 #
 # *Paper role:* supplement Fig S2. One panel per loaded reranker (MS-MARCO
-# MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma), 2×2 grid, sharing y-axis and x-bins.
+# MiniLM, BGE-reranker-v2-m3, MedCPT, BGE-reranker-v2-Gemma), 1×4 grid, sharing y-axis and x-bins.
 # Decomposes the aggregate MRR@10 gain shown in main Fig 3 into helped /
 # hurt / near-tie bins for plotting (|Δ|>0.025 vs |Δ|≤0.025). The console print
 # line still reports strict helped/hurt/unchanged (Δ>0 / Δ<0 / Δ==0), which
-# partition n and sum to n. Each panel uses the reranker name as the x-axis label;
-# MRR@10 vs BM25 is stated in the suptitle.
+# partition n and sum to n. Each panel uses the reranker name as the x-axis label.
 # The 4 panels show that lightweight CE produces
 # many hurt queries while domain/strong CEs are increasingly asymmetric in
 # favor of helped — depth behind the Fig 3 main-paper claim.
@@ -725,54 +752,30 @@ bins = np.concatenate([
     np.array([0.025, 0.07, 0.12, 0.18, 0.25, 0.35, 0.5, 0.75, 1.0]),
 ])
 
-# Horizontal range for ΔMRR: slightly wider left than bins gives margin so upper-left legend clears the x≈0 spike.
-FIG_S2_XLIM = (-1.75, 1.0)
-# Title vertical position in figure coordinates (0=bottom, 1=top). Raise toward 1.0 to move the suptitle up;
-# if it overlaps the panels, lower slightly (e.g. 0.97) and/or reduce tight_layout rect[3] below.
-FIG_S2_SUPTITLE_Y = 0.94
+FIG_S2_XLIM = (-1.0, 1.0)
+FIG_S2_CATEGORY_LEGEND = [
+    Patch(facecolor="#888888", alpha=0.95, label="Near tie"),
+    Patch(facecolor="#d62728", alpha=0.85, label="Hurt"),
+    Patch(facecolor="#2ca02c", alpha=0.85, label="Helped"),
+]
 
-
-def _fig_s2_legend_order(handles, labels):
-    """Near tie first (top of legend), mean Δ last."""
-
-    def _rank(lab: str) -> int:
-        if lab.startswith("Near tie"):
-            return 0
-        if lab.startswith("Hurt"):
-            return 1
-        if lab.startswith("Helped"):
-            return 2
-        if lab.startswith("mean"):
-            return 3
-        return 9
-
-    order = sorted(range(len(labels)), key=lambda i: _rank(labels[i]))
-    return [handles[i] for i in order], [labels[i] for i in order]
 
 fig1b_panels_all = [
-    ("frida_ms_marco_minilm_ce", "MS-MARCO MiniLM-L12"),
-    ("ours_ce",                  "BGE-reranker-v2-m3"),
+    ("frida_ms_marco_minilm_ce", "MiniLM-L12"),
+    ("ours_ce",                  "BGE-m3"),
     ("vega_medcpt_ce",           "MedCPT"),
-    ("frida_gemma_ce",           "BGE-reranker-v2-Gemma"),
+    ("frida_gemma_ce",           "BGE-Gemma"),
 ]
 fig1b_panels = [(k, l) for k, l in fig1b_panels_all if k in runs]
 
 n_panels = len(fig1b_panels)
-# 2×2 when four rerankers are present; fall back to a flat row if fewer.
-if n_panels <= 1:
-    fig, axes = plt.subplots(1, max(n_panels, 1), figsize=(5.5, 4.5), sharey=True)
-    axes = np.atleast_1d(axes).ravel().tolist()
-elif n_panels == 4:
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8), sharey=True)
-    axes = axes.ravel().tolist()
-else:
-    ncols = min(2, n_panels)
-    nrows = int(np.ceil(n_panels / ncols))
-    fig, axes_arr = plt.subplots(nrows, ncols, figsize=(5.5 * ncols, 4.5 * nrows), sharey=True)
-    axes_flat = np.atleast_1d(axes_arr).ravel()
-    for j in range(n_panels, len(axes_flat)):
-        axes_flat[j].set_visible(False)
-    axes = axes_flat[:n_panels].tolist()
+fig, axes = plt.subplots(
+    1, max(n_panels, 1),
+    figsize=(3.5 * max(n_panels, 1), 4.2),
+    sharey=True,
+    gridspec_kw={"wspace": 0.06},
+)
+axes = np.atleast_1d(axes).ravel().tolist()
 
 print("Per-query MRR@10 Δ (rerank − BM25):")
 for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
@@ -804,39 +807,47 @@ for ax, (rerank_key, short_label) in zip(axes, fig1b_panels):
     n_helped_plot = int(help_m.sum())
     n_neutral = int(neutral_m.sum())
 
-    ax.hist(
-        deltas[hurt_m], bins=bins, color="#d62728", alpha=0.85,
-        label=f"Hurt (n={n_hurt_plot}, {n_hurt_plot/n_total:.0%})",
-    )
-    ax.hist(
-        deltas[help_m], bins=bins, color="#2ca02c", alpha=0.85,
-        label=f"Helped (n={n_helped_plot}, {n_helped_plot/n_total:.0%})",
-    )
-    ax.bar(
-        [0], [n_neutral], width=0.05, color="#888888", alpha=0.95,
-        label=f"Near tie (n={n_neutral}, {n_neutral/n_total:.0%})",
-    )
+    ax.hist(deltas[hurt_m], bins=bins, color="#d62728", alpha=0.85, label="_nolegend_")
+    ax.hist(deltas[help_m], bins=bins, color="#2ca02c", alpha=0.85, label="_nolegend_")
+    ax.bar([0], [n_neutral], width=0.05, color="#888888", alpha=0.95, label="_nolegend_")
     ax.axvline(0, color="black", linewidth=0.8, alpha=0.6)
-    ax.axvline(
-        mean_overall, color="black", linestyle=":", linewidth=1.4,
-        label=f"mean Δ = {mean_overall:+.3f}",
+    mean_line = ax.axvline(
+        mean_overall, color="black", linestyle=":", linewidth=1.4, label="_nolegend_",
     )
     ax.set_xlabel(short_label, fontsize=14, fontweight="bold")
     ax.set_xlim(*FIG_S2_XLIM)
+    ax.set_xticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_xticklabels(["-1", "-0.5", "0", "0.5", "1"])
     ax.grid(True, axis="y", alpha=0.4)
+    ax.tick_params(axis="x", labelsize=15)
     ax.tick_params(axis="y", labelsize=15)
-    h_leg, lab_leg = ax.get_legend_handles_labels()
-    h_ord, lab_ord = _fig_s2_legend_order(h_leg, lab_leg)
-    ax.legend(h_ord, lab_ord, fontsize=14, loc="upper left")
+
+    stats_handles = [
+        Patch(facecolor="#888888", alpha=0.95, edgecolor="none"),
+        Patch(facecolor="#d62728", alpha=0.85, edgecolor="none"),
+        Patch(facecolor="#2ca02c", alpha=0.85, edgecolor="none"),
+        mean_line,
+    ]
+    stats_labels = [
+        f"n={n_neutral}, {n_neutral/n_total:.0%}",
+        f"n={n_hurt_plot}, {n_hurt_plot/n_total:.0%}",
+        f"n={n_helped_plot}, {n_helped_plot/n_total:.0%}",
+        f"mean Δ = {mean_overall:+.3f}",
+    ]
+    ax.legend(stats_handles, stats_labels, fontsize=12, loc="upper left", framealpha=0.9)
 
 axes[0].set_ylabel("# queries", fontsize=15)
-fig.suptitle(
-    f"Per-query rerank impact on MRR@10 vs BM25  (n={len(qrels)})",
-    fontsize=15,
-    fontweight="bold",
-    y=FIG_S2_SUPTITLE_Y,
+
+fig.legend(
+    handles=FIG_S2_CATEGORY_LEGEND,
+    loc="upper center",
+    ncol=3,
+    fontsize=13,
+    framealpha=0.9,
+    bbox_to_anchor=(0.5, 0.985),
 )
-plt.tight_layout(rect=[0, 0, 1, 0.94])
+plt.tight_layout(rect=[0, 0, 1, 0.90])
+plt.subplots_adjust(wspace=0.04, top=0.86)
 fig1b_path = paper_figures_dir / "fig_s2_per_query_rerank_delta.png"
 plt.savefig(fig1b_path, dpi=150, bbox_inches="tight")
 print("Saved:", fig1b_path)

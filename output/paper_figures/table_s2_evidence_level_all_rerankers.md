@@ -1,8 +1,8 @@
 # Table S2 — Evidence-level performance across rerankers (has-PDF subset)
 
-**Table S2.** Post-rerank MRR@10 on the has-PDF subset (1,480 unique queries; per-bucket n in column 2 — some queries cite papers spanning multiple evidence levels, §3.4), by evidence level, for three cross-encoder rerankers — BGE-reranker-v2-m3 (default; same as the lower row of Fig 5), MedCPT, BGE-reranker-v2-Gemma. First-stage Recall is reranker-independent (shown in the upper row of Fig 5) and omitted here. Pattern is consistent across rerankers: large absolute gains on *abstract insufficient* under the chunked corpus, but the bucket continues to trail the other two.
+**Table S2.** Post-rerank MRR@10 on the has-PDF subset (1,480 unique queries; per-bucket n in column 2 — some queries cite papers spanning multiple evidence levels, §3.4), by evidence level, for three cross-encoder rerankers — BGE-m3 (default; same as the lower row of Fig 5), MedCPT, BGE-Gemma. First-stage Recall is reranker-independent (shown in the upper row of Fig 5) and omitted here. Pattern is consistent across rerankers: large absolute gains on *abstract insufficient* under the chunked corpus, but the bucket continues to trail the other two.
 
-| Evidence level             |   n | BGE-v2-m3 base | BGE-v2-m3 +chk | MedCPT base | MedCPT +chk | Gemma base | Gemma +chk |
+| Evidence level             |   n | BGE-m3 base    | BGE-m3 +chk    | MedCPT base | MedCPT +chk | BGE-Gemma base | BGE-Gemma +chk |
 | -------------------------- | --: | -------------: | -------------: | ----------: | ----------: | ---------: | ---------: |
 | Abstract supports detail   | 707 |          0.802 |          0.843 |       0.814 |       0.843 |      0.857 |      0.874 |
 | Abstract supports core     | 585 |          0.505 |          0.635 |       0.568 |       0.652 |      0.605 |      0.691 |

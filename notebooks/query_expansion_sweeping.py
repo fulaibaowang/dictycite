@@ -202,12 +202,12 @@ _rc_rr = {
 }
 
 _TAG_TO_RERANKER_TITLE = {
-    "7d": "BGE-reranker-v2-m3",
+    "7d": "BGE-m3",
     "7d_medcpt": "MedCPT",
-    "7d_gemma": "BGE-reranker-v2-Gemma",
-    "7e": "BGE-reranker-v2-m3",
+    "7d_gemma": "BGE-Gemma",
+    "7e": "BGE-m3",
     "7e_medcpt": "MedCPT",
-    "7e_gemma": "BGE-reranker-v2-Gemma",
+    "7e_gemma": "BGE-Gemma",
 }
 
 # Diagnostic QE×reranker column order (left → right): v2-m3 first for comparison with Fig 4 panel (c).
@@ -569,9 +569,9 @@ print("MRR@10 by panel-c method:", {m: round(v[fig2_ks_mrr.index(10)], 4) for m,
 # We load (reranker × QE) run TSVs and compute MRR@10 for each combo so the
 # inset can display QE Δ MRR@10 per reranker.
 RERANKER_DIRS_INSET: dict[str, Path] = {
-    "BGE-reranker-v2-m3": _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d" / "fixed_long_rerank_sweep",
-    "MedCPT":             _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_medcpt" / "fixed_long_rerank_sweep",
-    "BGE-reranker-v2-Gemma":          _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
+    "BGE-m3":    _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d" / "fixed_long_rerank_sweep",
+    "MedCPT":    _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_medcpt" / "fixed_long_rerank_sweep",
+    "BGE-Gemma": _root / "output" / "workflow_baseline_full_sweep" / "workflow_fixed_long_rerank_sweep_7d_gemma" / "fixed_long_rerank_sweep",
 }
 
 cross_reranker_mrr10: dict[str, dict[str, float]] = {}
@@ -758,7 +758,7 @@ for qf in ["body", "synonyms", "long"]:
     ax_c.plot(fig2_ks_mrr, mrr_curves[qf], marker="o", markersize=5,
               color=s["color"], linewidth=s["lw"], linestyle=s["ls"], alpha=s["alpha"])
 
-ax_c.set_title("(c) BGE-reranker-v2-m3", fontsize=_FIG4_FS_TITLE, fontweight="bold")
+ax_c.set_title("(c) BGE-m3", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_c.set_xscale("log")
 ax_c.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
 ax_c.set_ylabel("Mean MRR@K", fontsize=_FIG4_FS_LABEL)
@@ -772,7 +772,7 @@ ax_c.grid(True, axis="x", alpha=0.35)
 # The diminishing bar height left-to-right tells the orthogonality story:
 # QE compounds with weaker rerankers; with a strong enough reranker
 # (BGE-reranker-v2-Gemma) the marginal QE benefit shrinks.
-inset_reranker_order = ["BGE-reranker-v2-m3", "MedCPT", "BGE-reranker-v2-Gemma"]
+inset_reranker_order = ["BGE-m3", "MedCPT", "BGE-Gemma"]
 inset_qf_pair = ["synonyms", "long"]
 
 inset_data: dict[str, dict[str, float]] = {}
@@ -945,7 +945,7 @@ fig_diag, ax_diag = plt.subplots(figsize=(6.5, 4.5))
 if "long" in mrr_curves:
     s = QE_STYLE["long"]
     ax_diag.plot(fig2_ks_mrr, mrr_curves["long"], marker="o", markersize=6,
-               color=s["color"], linewidth=2.4, label="BGE-reranker-v2-m3 + long-form QE")
+               color=s["color"], linewidth=2.4, label="BGE-m3 + long-form QE")
 
 if "fusion_long" in mrr_curves:
     ax_diag.plot(fig2_ks_mrr, mrr_curves["fusion_long"], marker="D", markersize=6,
@@ -956,7 +956,7 @@ if "fusion_long" in mrr_curves:
 if "body" in mrr_curves:
     ax_diag.plot(fig2_ks_mrr, mrr_curves["body"], marker="o", markersize=4,
                color="#888888", linewidth=1.4, alpha=0.85,
-               label="BGE-reranker-v2-m3 + original query (reference)")
+               label="BGE-m3 + original query (reference)")
 
 ax_diag.set_xscale("log")
 ax_diag.set_xlabel("K")
