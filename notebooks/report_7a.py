@@ -1542,10 +1542,10 @@ else:
     # `supxlabel(..., y=…)`: vertical position in figure coordinates (raise/lower vs tick labels).
     FIG5_OVERLAY_SUPXLABEL_Y = 0.15
     # Figure-level legend under the bottom row.
-    FIG5_OVERLAY_LEGEND_FONTSIZE = 17
+    FIG5_OVERLAY_LEGEND_FONTSIZE = 14
     FIG5_OVERLAY_LEGEND_HANDLELENGTH = 4.5
     FIG5_OVERLAY_LEGEND_BBOX_X = 0.5
-    FIG5_OVERLAY_LEGEND_BBOX_Y = 0.04
+    FIG5_OVERLAY_LEGEND_BBOX_Y = 0.09
     FIG5_OVERLAY_LEGEND_NCOL = 2
     # Raster export.
     FIG5_OVERLAY_DPI = 150

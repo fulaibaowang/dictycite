@@ -531,6 +531,41 @@ FIG_FULL_RANKER_KEYS = [
 ]
 
 
+def _expand_ax_limits_for_texts(
+    ax,
+    text_objs: list,
+    *,
+    x_lo: float,
+    x_hi: float,
+    y_lo: float,
+    y_hi: float,
+) -> None:
+    """Grow axis limits so inline labels stay inside the plot box."""
+    if not text_objs:
+        ax.set_xlim(x_lo, x_hi)
+        ax.set_ylim(y_lo, y_hi)
+        return
+
+    fig = ax.figure
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    inv = ax.transData.inverted()
+    x0s, x1s, y0s, y1s = [], [], [], []
+    for t in text_objs:
+        bbox = t.get_window_extent(renderer).transformed(inv)
+        x0s.append(bbox.x0)
+        x1s.append(bbox.x1)
+        y0s.append(bbox.y0)
+        y1s.append(bbox.y1)
+
+    x_span = x_hi - x_lo
+    y_span = y_hi - y_lo
+    x_margin = max(x_span * 0.012, 0.03)
+    y_margin = max(y_span * 0.02, 0.008)
+    ax.set_xlim(min(x_lo, min(x0s) - x_margin), max(x_hi, max(x1s) + x_margin))
+    ax.set_ylim(min(y_lo, min(y0s) - y_margin), max(y_hi, max(y1s) + y_margin))
+
+
 def _plot_mrr_curves(
     method_keys: list[str],
     out_path: Path,
@@ -577,17 +612,22 @@ def _plot_mrr_curves(
         label_points.sort(key=lambda t: -t[2])
         n_above = min(3, len(label_points))
         pad = (y_hi - y_lo) * 0.025
-        x_end = max(fig9_ks)
+        x_end = max(fig9_ks) - 0.08
+        x_lo = min(fig9_ks) - 0.2
+        x_hi = max(fig9_ks) + 0.22
+        text_objs = []
         for i, (label, _x, y, color) in enumerate(label_points):
             if i < n_above:
                 y_text, va = y + pad, "bottom"
             else:
                 y_text, va = y - pad, "top"
-            ax.text(
+            text_objs.append(ax.text(
                 x_end, y_text, label,
-                va=va, ha="center", fontsize=10, color=color, fontweight="bold",
-            )
-        ax.set_xlim(min(fig9_ks) - 0.2, max(fig9_ks) + 0.6)
+                va=va, ha="right", fontsize=10, color=color, fontweight="bold",
+                clip_on=True,
+            ))
+        ax.set_xlim(x_lo, x_hi)
+        ax.set_ylim(y_lo, y_hi)
     elif legend_outside_right:
         ax.legend(
             fontsize=10,
@@ -604,6 +644,9 @@ def _plot_mrr_curves(
         fig.suptitle(f"{title}  (n={len(qrels)})", fontsize=14, fontweight="bold")
     if inline_labels:
         plt.tight_layout()
+        _expand_ax_limits_for_texts(
+            ax, text_objs, x_lo=x_lo, x_hi=x_hi, y_lo=y_lo, y_hi=y_hi,
+        )
     elif legend_outside_right:
         top = 0.93 if show_title else 1.0
         plt.tight_layout(rect=[0, 0, 0.58, top])
@@ -620,7 +663,7 @@ fig3_mrr = _plot_mrr_curves(
     paper_figures_dir / "fig3_main_ranker_comparison.png",
     "Reranker choice",
     show_title=False,
-    fig_width=5.5,
+    fig_width=4.4,
     inline_labels=True,
 )
 

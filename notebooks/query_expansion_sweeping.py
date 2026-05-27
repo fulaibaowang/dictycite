@@ -38,20 +38,23 @@ RERANK_DISPLAY = {
 
 # %%
 # Path setup + workflow-root resolver shared by the rerank cells below.
-root = Path(os.environ.get("DICTYCITE_ROOT", "../"))
+def _resolve_repo_root() -> Path:
+    env = os.environ.get("DICTYCITE_ROOT")
+    if env:
+        return Path(env).resolve()
+    base_dir = Path.cwd().resolve()
+    if (base_dir / "output").exists():
+        return base_dir
+    if (base_dir.parent / "output").exists():
+        return base_dir.parent
+    return base_dir
+
+
+root = _resolve_repo_root()
 
 # Consolidated paper figures land here; diagnostic plots stay in per-workflow figures/ dirs.
-def _resolve_paper_figures_dir() -> Path:
-    candidates = [root / "output" / "paper_figures", Path("../output/paper_figures")]
-    for c in candidates:
-        if c.parent.exists():
-            c.mkdir(parents=True, exist_ok=True)
-            return c
-    candidates[0].mkdir(parents=True, exist_ok=True)
-    return candidates[0]
-
-
-paper_figures_dir = _resolve_paper_figures_dir()
+paper_figures_dir = root / "output" / "paper_figures"
+paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 
 def _resolve_rerank_sweep_root(cfg: dict) -> Path:
@@ -415,7 +418,7 @@ else:
 # Showcases QE on the standard pipeline (BGE-reranker-v2-m3): retrieval recall
 # improves substantially with QE, that gain carries through the rerank stage,
 # and panel (d) shows the QE lift shrinks as the reranker gets stronger —
-# orthogonality with diminishing returns. Layout: **2×2 panels** with a shared
+# orthogonality with diminishing returns. Layout: **1×4 panels** with a shared
 # legend above the grid.
 #
 # - Panel (a): BM25 Recall@K, 3 QE variants — body / synonyms / long
@@ -439,7 +442,9 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
+from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
 
 _root = Path.cwd().resolve()
@@ -696,19 +701,21 @@ n_q = len(fig2_gold)
 # Fig 4 typography — slightly enlarged for print / slides
 _FIG4_FS_TITLE = 15
 _FIG4_FS_LABEL = 14
-_FIG4_FS_TICK = 13
+_FIG4_FS_YLABEL = 12
+_FIG4_FS_TICK = 11
 _FIG4_FS_LEGEND = 14
-_FIG4_FS_D_BAR = 12  # Δ MRR labels on bars in panel (d)
 
-fig, axes = plt.subplots(
-    2,
-    2,
-    figsize=(10.8, 10.2),
-    # Tight grid: small w/h space; tight_layout pad/h_pad/w_pad shrink outer + inter-panel gaps.
-    gridspec_kw={"wspace": 0.06, "hspace": 0.22},
+fig = plt.figure(figsize=(13.0, 4.0))
+# Equal-width panels; spacer cols absorb y tick labels between (b,c) and (c,d).
+gs = GridSpec(
+    1, 6, figure=fig,
+    width_ratios=[1.0, 1.0, 0.30, 1.0, 0.22, 1.0],
+    wspace=0.03,
 )
-ax_a, ax_b = axes[0, 0], axes[0, 1]
-ax_c, ax_d = axes[1, 0], axes[1, 1]
+ax_a = fig.add_subplot(gs[0])
+ax_b = fig.add_subplot(gs[1], sharey=ax_a)
+ax_c = fig.add_subplot(gs[3])
+ax_d = fig.add_subplot(gs[5])
 
 
 # Panel (a): BM25 Recall@K
@@ -721,9 +728,10 @@ for qf in ["body", "synonyms", "long"]:
 ax_a.set_title("(a) BM25 retrieval", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_a.set_xscale("log")
 ax_a.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
-ax_a.set_ylabel("Mean Recall@K", fontsize=_FIG4_FS_LABEL)
+ax_a.set_ylabel("Mean Recall@K", fontsize=_FIG4_FS_YLABEL)
 ax_a.grid(True, axis="y", alpha=0.35)
 ax_a.grid(True, axis="x", alpha=0.35)
+ax_b.tick_params(axis="y", left=False, labelleft=False)
 
 
 # Panel (b): Dense Recall@K
@@ -745,7 +753,6 @@ _yb = ax_b.get_ylim()
 _recall_ymin = min(_ya[0], _yb[0])
 _recall_ymax = max(_ya[1], _yb[1])
 ax_a.set_ylim(_recall_ymin, _recall_ymax)
-ax_b.set_ylim(_recall_ymin, _recall_ymax)
 
 
 # Panel (c): BGE-reranker-v2-m3 MRR@K under each QE variant. The retrieval-fusion
@@ -761,7 +768,10 @@ for qf in ["body", "synonyms", "long"]:
 ax_c.set_title("(c) BGE-m3", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_c.set_xscale("log")
 ax_c.set_xlabel("K", fontsize=_FIG4_FS_LABEL)
-ax_c.set_ylabel("Mean MRR@K", fontsize=_FIG4_FS_LABEL)
+ax_c.set_ylabel("Mean MRR@K", fontsize=_FIG4_FS_YLABEL, labelpad=2)
+ax_c.yaxis.set_major_locator(MaxNLocator(nbins=4))
+ax_c.yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+ax_c.tick_params(axis="y", pad=1)
 ax_c.grid(True, axis="y", alpha=0.35)
 ax_c.grid(True, axis="x", alpha=0.35)
 
@@ -798,23 +808,11 @@ for i, qf in enumerate(inset_qf_pair):
         color=QE_STYLE[qf]["color"], alpha=0.9, edgecolor="black", linewidth=0.4,
         label=QE_STYLE[qf]["label"],
     )
-    for bar, delta in zip(bars, deltas):
-        if np.isnan(delta):
-            continue
-        h = bar.get_height()
-        ax_d.text(
-            bar.get_x() + bar.get_width() / 2,
-            h + (0.0015 if h >= 0 else -0.0015),
-            f"{delta:+.3f}",
-            ha="center",
-            va="bottom" if h >= 0 else "top",
-            fontsize=_FIG4_FS_D_BAR,
-            rotation=45,
-        )
 
 ax_d.axhline(0, color="black", linewidth=0.6)
 ax_d.set_xticks(xpos)
-ax_d.set_xticklabels(inset_reranker_order, rotation=15, ha="right", fontsize=_FIG4_FS_TICK)
+ax_d.set_xticklabels(inset_reranker_order, rotation=45, ha="right", fontsize=_FIG4_FS_TICK - 1)
+ax_d.tick_params(axis="y", pad=1)
 ax_d.set_ylabel("")
 ax_d.set_title("(d) Δ MRR@10 vs no QE", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_d.grid(True, axis="y", alpha=0.35)
@@ -822,8 +820,8 @@ ax_d.grid(True, axis="y", alpha=0.35)
 if all_deltas:
     y_max = max(all_deltas)
     y_min = min(0.0, min(all_deltas))
-    pad = (y_max - y_min) * 0.20 if y_max > y_min else 0.01
-    ax_d.set_ylim(y_min - pad * 0.3, y_max + pad)
+    pad = (y_max - y_min) * 0.12 if y_max > y_min else 0.01
+    ax_d.set_ylim(y_min - pad * 0.2, y_max + pad)
 
 
 # Shared legend (above panels)
@@ -834,18 +832,17 @@ for qf in ["body", "synonyms", "long"]:
                                  linewidth=s["lw"], label=s["label"]))
 for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.tick_params(axis="both", which="major", labelsize=_FIG4_FS_TICK)
+for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.set_box_aspect(1)
 
 fig.tight_layout(
-    rect=(0.1, 0.1, 0.99, 0.92),
-    pad=0.35,
-    h_pad=0.45,
-    w_pad=0.35,
+    rect=(0.02, 0.10, 0.99, 0.84),
+    pad=0.30,
 )
 fig.legend(
     handles=legend_handles,
     loc="lower center",
-    bbox_to_anchor=(0.5, 0.9),
+    bbox_to_anchor=(0.5, 0.88),
     ncol=3,
     prop={"size": _FIG4_FS_LEGEND, "weight": "bold"},
     frameon=True,

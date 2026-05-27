@@ -211,7 +211,7 @@ Given a query, Stage 1 retrieves candidate articles using two complementary retr
 
 \begin{figure}[!htbp]
 \centering
-\includegraphicsifexists[width=0.88\linewidth,height=0.30\textheight,keepaspectratio]{Figures/fig2_pipeline_dicty.png}
+\includegraphicsifexists[width=0.86\linewidth,height=0.28\textheight,keepaspectratio]{Figures/fig2_pipeline_dicty.png}
 \caption{Two-stage retrieval and reranking pipeline. 
 Stage 1 builds a recall-oriented candidate pool by fusing BM25 and dense HNSW retrieval with RRF. 
 Stage 2 reranks the fused candidates with a cross-encoder and combines the reranker order with the original retrieval-fusion order through a second RRF step to produce the final ranking.}
@@ -274,92 +274,39 @@ We organize the results around three questions: whether cross-encoder reranking
 adds value beyond strong first-stage retrieval baselines, whether curated gene
 metadata helps compact biological queries, and whether full-text chunks improve
 retrieval when abstracts lack sufficient evidence. Table~\ref{tab:qual_examples}
-grounds the aggregate trends in Figs.~\ref{fig:ranker}--\ref{fig:evidence_haspdf}
-with three query-level examples.overa
+grounds the aggregate trends in Table~\ref{tab:ranker_comparison} and Figs.~\ref{fig:qe}--\ref{fig:evidence_haspdf}
+with three query-level examples.
 
 \subsection{Reranking gains are model-dependent}
 \label{sec:results_reranking}
-On the 1,656-query dataset, BM25 is a strong first-stage baseline (MRR@10 = 0.593). Rerankers applied to the BM25+Dense RRF candidate pool show markedly different behavior (Fig.~\ref{fig:ranker}, Table~\ref{tab:ranker_comparison}). The lightweight general-domain MiniLM-L12 reduces MRR@10 below BM25, and BGE-m3 yields only a small, non-significant gain. In contrast, the biomedical MedCPT reranker and the larger BGE-Gemma model yield clear improvements (+5.7 and +11.4 pp, respectively).
+On the 1,656-query dataset, BM25 is a strong first-stage baseline (MRR@10 = 0.593). Rerankers applied to the BM25+Dense RRF candidate pool show markedly different behavior (Table~\ref{tab:ranker_comparison}). The lightweight general-domain MiniLM-L12 reduces MRR@10 below BM25, and BGE-m3 yields only a small, non-significant gain. In contrast, the biomedical MedCPT reranker and the larger BGE-Gemma model yield clear improvements (+5.7 and +11.4 pp, respectively).
 
-\begin{figure}[!htbp]
+\begin{table}[!htbp]
 \centering
-\includegraphicsifexists[width=0.8\linewidth,height=0.32\textheight,keepaspectratio]{Figures/fig3_main_ranker_comparison.png}
-\caption{Ranker choice on the dictyBase curator-claim dataset. Mean MRR@K on 1,656 queries over a 20,447-article EPMC abstract corpus. The dashed curve shows BM25 first-stage retrieval. Solid curves show four cross-encoder rerankers applied to the BM25+Dense RRF candidate pool. Paired-bootstrap confidence intervals for MRR@10 deltas against BM25 are reported in Table~\ref{tab:ranker_comparison}.}
-\label{fig:ranker}
-\end{figure}
+\caption{Ranker comparison on the full dataset. Mean MRR@10 with paired-bootstrap $\Delta$ vs BM25 (pp) and 95\% CI in brackets, $B=10{,}000$.}
+\label{tab:ranker_comparison}
+\scriptsize
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+System & Type & MRR@10 & $\Delta$ vs.\ BM25 \\
+\midrule
+BM25       & Lexical baseline            & 0.593 & --                       \\
+BM25+Dense & Lexical+dense RRF, no rerank           & 0.568 & $-2.6$ [$-4.1$,$-1.0$]   \\
+Ragnarok   & External BM25+listwise reference & 0.566 & $-2.7$ [$-4.8$,$-0.8$]   \\
+MiniLM-L12 & Lightweight MS MARCO CE           & 0.541 & $-5.2$ [$-7.0$,$-3.4$]   \\
+BGE-m3     & General-purpose CE          & 0.605 & $+1.2$ [$-0.5$,$+2.8$]   \\
+MedCPT     & Biomedical CE               & 0.650 & $+5.7$ [$+4.2$,$+7.2$]   \\
+BGE-Gemma  & LLM-based reranker          & 0.707 & $+11.4$ [$+9.8$,$+13.0$] \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 The two non-cross-encoder references reinforce the same point (Table~\ref{tab:ranker_comparison}). BM25+Dense fusion without reranking and the external Ragnarok BM25+RankZephyr reference both score below BM25 at K = 10, with paired-bootstrap 95\% confidence intervals entirely below zero.
 
 The per-query analysis supports the same pattern (Fig.~\ref{fig:s2}). MiniLM-L12 hurts more queries than it helps, whereas BGE-m3 is nearly balanced. MedCPT shifts the distribution toward positive deltas, and BGE-Gemma has the strongest asymmetry, helping many more queries than it hurts. The first block in Table~\ref{tab:qual_examples} illustrates one such failure mode: a general reranker can promote a paper whose abstract overlaps in phenotype/location vocabulary while weakening the gene-specific lexical cue BM25 captures. These results suggest that, for highly condensed curator claims, reranking can either preserve or weaken the lexical signal captured by BM25 depending on the reranker.
 
-\begin{table}[t]
-\centering
-\caption{Ranker comparison on the full dataset. Mean MRR@10 is reported with paired-bootstrap $\Delta$ against BM25 and 95\% percentile confidence intervals, $B=10{,}000$.}
-\label{tab:ranker_comparison}
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{4.0cm}p{3.0cm}c c c@{}}
-\toprule
-System & Type & MRR@10 & \shortstack{$\Delta$ vs.\\ BM25, pp} & \shortstack{95\%\\ CI} \\
-\midrule
-BM25 & Lexical baseline & 0.593 & -- & -- \\
-BM25+Dense fusion & Fusion, no rerank & 0.568 & $-2.6$ & [$-4.1$, $-1.0$] \\
-Ragnarok BM25+RankZephyr & External listwise reference & 0.566 & $-2.7$ & [$-4.8$, $-0.8$] \\
-MiniLM-L12 & General-domain CE & 0.541 & $-5.2$ & [$-7.0$, $-3.4$] \\
-BGE-m3 & General-purpose CE & 0.605 & $1.2$ & [$-0.5$, $+2.8$]$^{\dag}$ \\
-MedCPT & Biomedical CE & 0.650 & $5.7$ & [$+4.2$, $+7.2$] \\
-BGE-Gemma & LLM-based reranker & 0.707 & $11.4$ & [$+9.8$, $+13.0$] \\
-\bottomrule
-\end{tabular}
-
-\vspace{1mm}
-\begin{minipage}{\textwidth}
-\scriptsize
-$^{\dag}$ Confidence interval crosses zero. CE = cross-encoder.
-\end{minipage}
-\end{table}
-
-\subsection{Gene-aware query expansion improves retrieval and benefits BGE-m3 and MedCPT}
-\label{sec:results_qe}
-We next evaluate gene-aware query expansion (Section~\ref{sec:gene_qe}) on the 563-query subset for which dictyBase synonym and product fields are available. We compare the original curator claim with two expanded variants: adding gene synonyms, and adding both synonyms and product descriptions.
-
-At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b), with dense retrieval gaining more since it starts from a lower original-query baseline.
-
-\begin{figure}[!htbp]
-\centering
-\includegraphicsifexists[width=0.78\linewidth,height=0.38\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
-\caption{Effect of gene-aware query expansion. Results on the 563-query subset with available dictyBase synonym and product fields. Three query variants are compared: the original curator claim, the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K. (b) Dense Recall@K. (c) Mean MRR@K after BGE-m3 reranking. (d) MRR@10 change relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma. Bar pairs show the two expansion variants. Paired-bootstrap confidence intervals for MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
-\label{fig:qe}
-\end{figure}
-
-For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
-
-Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. The second block in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the gold abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
-
-\FloatBarrier
-
-\subsection{Full-text chunks benefit claims whose evidence is missing from abstracts}
-\label{sec:results_fulltext}
-The previous experiments use the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
-
-We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset, and Table~\ref{tab:s2_evidence_haspdf_full} extends it to the full dataset, where full-text coverage is partial.
-
-\begin{figure}[!htbp]
-\centering
-\includegraphicsifexists[width=\textwidth,keepaspectratio]{Figures/fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png}
-\caption{Retrieval and reranking by abstract-evidence level on the has-PDF subset. The upper row shows first-stage Recall@K from BM25+Dense RRF retrieval. The lower row shows post-rerank MRR@K using BGE-m3. Columns correspond to \emph{abstract supports detail} (n=707), \emph{abstract supports core} (n=585), and \emph{abstract insufficient} (n=350). Solid lines show the abstract-only baseline; dashed lines show the corpus augmented with full-text chunks.}
-\label{fig:evidence_haspdf}
-\end{figure}
-
-The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported buckets. The other two buckets were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
-
-The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles (0.16 $\rightarrow$ 0.39), yet stays well below the two abstract-supported buckets under the same chunked setting.
-
-At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). The third block in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
-
-Overall, full-text chunks provide their largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient bucket. The remaining gap to the abstract-supported buckets indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
-
-\begin{table}[!htbp]
+\begin{table}[!t]
 \centering
 \caption{Compact qualitative examples illustrating the mechanisms behind the main quantitative findings. Each block shows the curator cue, the shortest evidence contrast needed to understand the rank movement, and the aggregate result it illustrates. The examples are diagnostic anchors, not additional quantitative evidence.}
 \label{tab:qual_examples}
@@ -369,7 +316,7 @@ Overall, full-text chunks provide their largest benefit on claims whose cited ab
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.20cm}>{\raggedright\arraybackslash}p{8.70cm}@{}}
 \toprule
-\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 1: reranker loses lexical specificity} \; (Fig.~\ref{fig:ranker}; Fig.~\ref{fig:s2})} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 1: reranker loses lexical specificity} \; (Table~\ref{tab:ranker_comparison}; Fig.~\ref{fig:s2})} \\
 \midrule
 Query cue & DymA localizes to the phagosome and the cleavage furrow. \\
 Evidence contrast & Gold PMID 23679940 contains the gene-specific cue: ``DymA and DlpA were associated with actin filaments at the furrow.'' The promoted non-gold article shares location vocabulary (``cleavage furrow'', ``phagocytic cup'') but not the DymA signal. \\
@@ -393,6 +340,48 @@ Takeaway & Full-text chunks help when the cited abstract supports the general co
 \end{tabular}
 \endgroup
 \end{table}
+
+\subsection{Gene-aware query expansion improves retrieval and benefits BGE-m3 and MedCPT}
+\label{sec:results_qe}
+We next evaluate gene-aware query expansion (Section~\ref{sec:gene_qe}) on the 563-query subset for which dictyBase synonym and product fields are available. We compare the original curator claim with two expanded variants: adding gene synonyms, and adding both synonyms and product descriptions.
+
+At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b), with dense retrieval gaining more since it starts from a lower original-query baseline.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.98\linewidth,height=0.3\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
+\caption{Effect of gene-aware query expansion. Results on the 563-query subset with available dictyBase synonym and product fields. Three query variants are compared: the original curator claim, the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K. (b) Dense Recall@K. (c) Mean MRR@K after BGE-m3 reranking. (d) MRR@10 change relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma. Bar pairs show the two expansion variants. Paired-bootstrap confidence intervals for MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
+\label{fig:qe}
+\end{figure}
+
+For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
+
+Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. The second block in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the gold abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
+
+\FloatBarrier
+
+\subsection{Full-text chunks benefit claims whose evidence is missing from abstracts}
+\label{sec:results_fulltext}
+The previous experiments use the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
+
+We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset, and Table~\ref{tab:s2_evidence_haspdf_full} extends it to the full dataset, where full-text coverage is partial.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphicsifexists[width=0.92\textwidth,keepaspectratio]{Figures/fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png}
+\caption{Retrieval and reranking by abstract-evidence level on the has-PDF subset. The upper row shows first-stage Recall@K from BM25+Dense RRF retrieval. The lower row shows post-rerank MRR@K using BGE-m3. Columns correspond to \emph{abstract supports detail} (n=707), \emph{abstract supports core} (n=585), and \emph{abstract insufficient} (n=350). Solid lines show the abstract-only baseline; dashed lines show the corpus augmented with full-text chunks.}
+\label{fig:evidence_haspdf}
+\end{figure}
+
+The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported buckets. The other two buckets were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
+
+The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles (0.16 $\rightarrow$ 0.39), yet stays well below the two abstract-supported buckets under the same chunked setting.
+
+At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). The third block in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
+
+Overall, full-text chunks provide their largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient bucket. The remaining gap to the abstract-supported buckets indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
+
+
 
 \FloatBarrier
 \section{Discussion}
@@ -451,16 +440,16 @@ model-organism coverage, and evidence-level evaluation of generated answers.
 
 \begin{figure}[H]
 \centering
-\includegraphicsifexists[width=0.92\linewidth,height=0.340\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
-\caption{Baseline retrieval and reranking behavior across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion on the full 1,656-query dataset. Right: MRR@K for BM25+Dense fusion without reranking (candidate pool from first stage), and second-stage BGE-m3 reranking and Post-rerank fusion.}
+\includegraphicsifexists[width=0.9\linewidth,height=0.320\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
+\caption{Baseline retrieval and reranking across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion. Right: MRR@K for BM25+Dense fusion, and second-stage BGE-m3 reranking and Post-rerank fusion.}
 \label{fig:s1}
 
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphicsifexists[width=0.95\linewidth,height=0.38\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
-\caption{Per-query reranking effect relative to BM25. Per-query $\Delta$MRR@10, computed as reranker minus BM25, for the four rerankers in Fig.~\ref{fig:ranker}. Queries are grouped as hurt, helped, or near tie using thresholds $\Delta < -0.025$, $\Delta > +0.025$, and $|\Delta| \leq 0.025$. The distributions show that similar aggregate scores can hide different query-level behavior: MiniLM-L12 hurts more queries than it helps, BGE-m3 is approximately balanced, and MedCPT and BGE-Gemma shift the distribution toward positive deltas.}
+\includegraphicsifexists[width=0.9\linewidth,height=0.34\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
+\caption{Per-query reranking effect relative to BM25. $\Delta$MRR@10 is computed as reranker minus BM25 and grouped as hurt, helped, or near tie using thresholds of $\pm0.025$. Similar aggregate scores mask different query-level behavior: MiniLM-L12 is mostly harmful, BGE-m3 is balanced, and MedCPT and BGE-Gemma shift more queries toward positive deltas.}
 \label{fig:s2}
 \end{figure}
 
@@ -480,7 +469,7 @@ model-organism coverage, and evidence-level evaluation of generated answers.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{3.2cm}c p{3.55cm}p{3.7cm}@{}}
 \toprule
-Reranker & \shortstack{Original\\query} & + Synonyms & + Synonyms and products \\
+Reranker & \shortstack{Original} & + Synonyms & + Synonyms and products \\
 \midrule
 BGE-m3
 & 0.576
