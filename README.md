@@ -25,11 +25,11 @@ Full schema: [`DATA_PREP.md`](docs/DATA_PREP.md).
 
 ## Paper figures
 
-Three notebooks produce all paper figures; the hand-curated tables under [`output/paper_figures/`](output/paper_figures/) are fed by bootstrap-CI and summary CSVs the same notebooks write.
+Three notebooks produce all paper figures; the hand-curated tables under [`output/paper_figures/`](output/paper_figures/) are fed by bootstrap-CI and summary CSVs the same notebooks write. Manuscript figure numbers differ from file names — see [`FIGURES.md`](output/paper_figures/FIGURES.md) for the full figure/table index and underlying-data paths. Fig 1 and Fig 2 are external (hand-drawn) and not produced by these notebooks.
 
-- [`ragnarok_comparison.ipynb`](notebooks/ragnarok_comparison.ipynb) — Fig 3, Fig S2, Fig S3
-- [`query_expansion_sweeping.ipynb`](notebooks/query_expansion_sweeping.ipynb) — Fig 4, Fig S4
-- [`report_7a.ipynb`](notebooks/report_7a.ipynb) — Fig 5, Fig S1, Fig S5, Fig S6
+- [`ragnarok_comparison.ipynb`](notebooks/ragnarok_comparison.ipynb) — Fig S2 (and the ranker-comparison plot now folded into Table 1)
+- [`query_expansion_sweeping.ipynb`](notebooks/query_expansion_sweeping.ipynb) — Fig 3
+- [`report_7a.ipynb`](notebooks/report_7a.ipynb) — Fig 4, Fig S1 (plus diagnostic Fig S3, Fig S4)
 
 ## Repository layout
 
