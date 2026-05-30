@@ -214,12 +214,12 @@ abstract insufficient, respectively; the corresponding has-PDF counts are
 \section{Retrieval pipeline and variants}
 \label{sec:pipeline}
 
-This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. 
+This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. Exact software choices and fusion parameters are given in the Appendix.
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
 Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
-Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: lexical BM25~\cite{robertson_probabilistic_2009} and dense retrieval over an HNSW-indexed embedding space. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 reranks the fused candidate pool using a cross-encoder reranker~\cite{bajaj_ms_2018}. To retain the first-stage retrieval signal, the final output is produced by a second RRF step that combines the cross-encoder ranking with the original retrieval-fusion ranking. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: lexical BM25~\cite{robertson_probabilistic_2009} and dense retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 reranks the fused candidate pool using a cross-encoder reranker~\cite{bajaj_ms_2018}. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
 
 \begin{figure}[!htbp]
 \centering
@@ -232,11 +232,11 @@ Stage 2 reranks the fused candidates with a cross-encoder and combines the reran
 
 \subsection{Gene-aware query expansion}
 \label{sec:gene_qe}
-We use structured dictyBase metadata to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. For each detected gene, we construct two expanded query variants: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
+We use structured dictyBase metadata to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. We compare two expanded query variants with the original claim: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
 
 \subsection{Chunked full-text corpus variant}
 \label{sec:fulltext_variant}
-To test whether evidence beyond abstracts improves retrieval, we construct a chunked full-text variant of the corpus. Each article is represented by an abstract chunk and a sequence of body-text chunks, indexed as chunk-level documents. The same retrieval-and-reranking pipeline is used for both the abstract-only and full-text settings. The only change is the indexed corpus: in the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. Retrieval, fusion, reranking, and post-rerank fusion are then applied without changing the pipeline parameters.
+To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
 
 Because relevance judgments are defined at the article level, chunk-level outputs are collapsed back to PubMed IDs before evaluation. We use first-occurrence pooling: the highest-ranked chunk for a PMID determines the article's rank. This allows direct comparison between the abstract-only and chunked-corpus variants using the same PMID-level relevance judgments.
 
@@ -244,36 +244,22 @@ Because relevance judgments are defined at the article level, chunk-level output
 \section{Experimental setup}
 \label{sec:experimental_setup}
 
-We evaluate all systems under fixed retrieval depths, fusion settings, and significance-testing procedures. This section defines the metrics, compared systems, and implementation details used in the experiments.
-
+We evaluate all systems under fixed retrieval depths, fusion settings, and significance-testing procedures. This section defines the metrics and compared systems; implementation details are given in the Appendix.
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
 We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Recall@K measures whether a gold cited article appears in the retrieved candidate pool, while MRR@K measures whether a gold cited article is placed near the top of the final ranking. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
 
-Unless otherwise stated, pipeline parameters were fixed before the dictyBase experiments and were not tuned on the dictyBase dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker. Fig.~\ref{fig:s1} shows that BM25+Dense retrieval fusion approaches recall saturation by K = 1,000, supporting this candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
+Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker. Fig.~\ref{fig:s1} shows that BM25+Dense retrieval fusion approaches recall saturation by K = 1,000, supporting this candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
 
 For significance testing, we use paired bootstrap resampling over queries with B = 10,000 samples. We report 95\% percentile confidence intervals for per-query MRR@10 differences against the relevant baseline.
 
 \subsection{Systems compared}
 \label{sec:systems_compared}
-We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}).
-
-The rerankers (short names used below in bold) are:
-\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-    \item \textbf{MiniLM-L12} (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{bajaj_ms_2018,wang_minilm_2020} --- lightweight general-domain CE.
-    \item \textbf{BGE-m3} (BAAI/bge-reranker-v2-m3)~\cite{chen_m3-embedding_2024} --- multilingual CE; default reranker in several experiments.
-    \item \textbf{MedCPT} (ncbi/MedCPT-Cross-Encoder)~\cite{jin_medcpt_2023} --- biomedical CE trained on PubMed query--article click data.
-    \item \textbf{BGE-Gemma} (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026} --- LLM-based reranker from the BGE-reranker-v2 family.
-\end{itemize}
+We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}). The rerankers are MiniLM-L12 (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{wang_minilm_2020,noauthor_cross-encoder-ms-marco-minilm-l12-v2_2026}, BGE-m3 (BAAI/bge-reranker-v2-m3)~\cite{chen_m3-embedding_2024,noauthor_baaibge-reranker-v2-m3_2026}, MedCPT (ncbi/MedCPT-Cross-Encoder)~\cite{jin_medcpt_2023,noauthor_ncbimedcpt-cross-encoder_2026}, and BGE-Gemma (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026}, representing lightweight general-domain, general-purpose, biomedical, and LLM-based reranking settings.
 
 We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradeep_ragnarok_2025,pradeep_rankzephyr_2023}. Ragnarok is an independently maintained retrieval-and-listwise-reranking pipeline using RankZephyr, a 7B listwise LLM reranker. We do not retune Ragnarok on the dictyBase dataset, so this comparison is intended as a contextual reference rather than a parameter-matched baseline.
 
-\subsection{Implementation details}
-\label{sec:implementation_details}
-BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. The reranker receives the top 1,000 documents from the fused candidate pool, and cross-encoder rerankers are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings were fixed before the dictyBase evaluation, keeping the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
-
-Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public goldset are released at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \section{Results}
 \label{sec:results}
@@ -292,7 +278,7 @@ retrieval (MRR@10 = 0.593; Table~\ref{tab:ranker_comparison}). BM25+Dense fusion
 improves candidate coverage at larger depths (Fig.~\ref{fig:s1}), but by itself
 scores below BM25 at MRR@10, indicating that higher recall does not automatically
 improve the top ranks. Cross-encoder reranking is also not uniformly beneficial:
-the lightweight MS MARCO MiniLM-L12 reranker hurts performance, and BGE-m3 gives
+the lightweight MiniLM-L12 reranker hurts performance, and BGE-m3 gives
 only a small, non-significant gain. Clear improvements appear for the biomedical
 MedCPT reranker and the high-capacity BGE-Gemma model, which improve MRR@10 by
 +5.7 and +11.4 percentage points, respectively. The external Ragnarok
@@ -301,25 +287,24 @@ depend on reranker fit rather than on adding a reranking stage alone.
 
 \begin{table}[!htbp]
 \centering
-\caption{Ranker comparison on the full dataset. Mean MRR@10 with paired-bootstrap $\Delta$ vs BM25 (pp) and 95\% CI in brackets, $B=10{,}000$.}
+\caption{Ranker comparison on the full dataset. Mean MRR@10 with paired-bootstrap $\Delta$ vs BM25 (pp) and 95\% CI in brackets, $B=10{,}000$. Model scale is shown for neural rerankers where applicable.}
 \label{tab:ranker_comparison}
 \scriptsize
-\setlength{\tabcolsep}{8pt}
-\begin{tabular}{@{}llcc@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llccc@{}}
 \toprule
-System & Type & MRR@10 & $\Delta$ vs.\ BM25 \\
+System & Description & Scale & MRR@10 & $\Delta$ vs.\ BM25 \\
 \midrule
-BM25       & Lexical baseline            & 0.593 & --                       \\
-BM25+Dense & Lexical+dense RRF, no rerank           & 0.568 & $-2.6$ [$-4.1$,$-1.0$]   \\
-Ragnarok   & External BM25+listwise reference & 0.566 & $-2.7$ [$-4.8$,$-0.8$]   \\
-MiniLM-L12 & Lightweight MS MARCO CE           & 0.541 & $-5.2$ [$-7.0$,$-3.4$]   \\
-BGE-m3     & General-purpose CE          & 0.605 & $+1.2$ [$-0.5$,$+2.8$]   \\
-MedCPT     & Biomedical CE               & 0.650 & $+5.7$ [$+4.2$,$+7.2$]   \\
-BGE-Gemma  & LLM-based reranker          & 0.707 & $+11.4$ [$+9.8$,$+13.0$] \\
+BM25       & Lexical baseline              & --          & 0.593 & --                       \\
+BM25+Dense & Lexical+dense RRF             & --          & 0.568 & $-2.6$ [$-4.1$,$-1.0$]   \\
+Ragnarok   & BM25 + RankZephyr LLM         & 7B          & 0.566 & $-2.7$ [$-4.8$,$-0.8$]   \\
+MiniLM-L12 & Lightweight MS MARCO CE       & 33M         & 0.541 & $-5.2$ [$-7.0$,$-3.4$]   \\
+BGE-m3     & Strong multilingual CE        & 0.6B        & 0.605 & $+1.2$ [$-0.5$,$+2.8$]   \\
+MedCPT     & PubMed-trained biomedical CE  & $\sim$110M  & 0.650 & $+5.7$ [$+4.2$,$+7.2$]   \\
+BGE-Gemma  & LLM-based CE reranker         & 3B          & 0.707 & $+11.4$ [$+9.8$,$+13.0$] \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 The per-query analysis shows the same pattern (Fig.~S2): MiniLM-L12 hurts more
 queries than it helps, BGE-m3 is nearly balanced, and MedCPT and BGE-Gemma shift
 more queries toward positive deltas. Table~\ref{tab:qual_examples} illustrates a
@@ -450,18 +435,25 @@ expert-reviewed queries, broader model-organism coverage, and evidence-level
 evaluation of generated answers.
 
 \FloatBarrier
-\clearpage
+% \clearpage
 \section*{Appendix}
 \FloatBarrier
-% Supplement figures are grouped as two figure-only pages: S1--S2 and S3--S4.
-% We keep captions unchanged and use page-float placement plus explicit page breaks
-% between pairs so no supplement page receives more than two figures.
+% The two supplement figures (S1--S2) sit on a single figure-only page.
+% We keep captions unchanged and use page-float placement so the supplement
+% page is not crowded. (Former Fig S3/S4 were dropped; S3's content now lives
+% in Table~\ref{tab:s2_evidence_haspdf_full}.)
 \setcounter{figure}{0}
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\theHfigure}{S\arabic{figure}}
 \setcounter{table}{0}
 \renewcommand{\thetable}{S\arabic{table}}
 \renewcommand{\theHtable}{S\arabic{table}}
+
+\subsection*{Implementation details}
+
+BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
+
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public goldset are released at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \begin{figure}[H]
 \centering
@@ -526,7 +518,7 @@ partial full-text coverage. Full-dataset gains are diluted because some cited
 PMIDs lack chunked-corpus coverage, but the qualitative pattern is unchanged.}
 \label{tab:s2_evidence_haspdf_full}
 \scriptsize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{8pt}
 \begin{tabular}{@{}l rcccc rcccc@{}}
 \toprule
  & \multicolumn{5}{c}{has-PDF subset} & \multicolumn{5}{c}{full dataset} \\
