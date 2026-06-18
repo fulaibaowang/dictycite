@@ -48,34 +48,30 @@
 
 \title{Benchmarking Literature Retrieval for a Model Organism: A \emph{Dictyostelium} Case Study}
 \titlerunning{Model-Organism Literature Retrieval: \emph{Dictyostelium}}
-\author{Yun Wang\inst{1}\orcidID{0000-0002-2441-4182} \and
-Bla\v{z} Zupan\inst{1}\orcidID{0000-0002-5864-7056}}
-\authorrunning{Y. Wang and B. Zupan}
-\institute{Faculty of Computer and Information Science, University of Ljubljana, Ve\v{c}na pot 113, 1000 Ljubljana, Slovenia\\
-\email{\{yun.wang,blaz.zupan\}@fri.uni-lj.si}}
 
+\author{Yun Wang\inst{1}\orcidID{0000-0002-2441-4182} \and
+Toma\v{z} Curk\inst{1}\orcidID{0000-0003-4888-7256} \and
+Gad Shaulsky\inst{2}\orcidID{0000-0002-0532-0551} \and
+Bla\v{z} Zupan\inst{1,2}\orcidID{0000-0002-5864-7056}}
+
+\authorrunning{Y. Wang et al.}
+
+\institute{
+Faculty of Computer and Information Science, University of Ljubljana,
+Ve\v{c}na pot 113, 1000 Ljubljana, Slovenia\\
+\email{\{yun.wang,tomaz.curk,blaz.zupan\}@fri.uni-lj.si}
+\and
+Department of Molecular and Human Genetics, Baylor College of Medicine,
+Baylor Plaza, Houston, TX 77030, USA\\
+\email{gadi@bmc.edu}
+}
 \begin{document}
 
 \maketitle
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using
-broad biomedical corpora and general-purpose search tasks. However, many
-curated knowledge bases operate in narrower model-organism domains, where
-the literature is sparse and terminology is organism-specific. We introduce a
-retrieval benchmark from dictyBase for \emph{Dictyostelium}, consisting of
-curator-written biological queries linked to PubMed-indexed articles, together
-with structured gene metadata. Using this benchmark, we study three factors in
-niche biological retrieval: cross-encoder reranking, gene-aware query expansion,
-and abstract-only versus full-text retrieval. Reranking and gene-aware metadata
-expansion both improve retrieval selectively: reranking is most useful when the
-model is well suited to biological evidence matching, while metadata helps
-clarify compact biological queries. Full-text chunks substantially improve
-retrieval when cited abstracts are insufficient, increasing both candidate recall
-and top-rank performance, although these cases remain harder than queries
-supported in abstracts. Data and code are publicly available at
-\url{https://github.com/fulaibaowang/dictycite}.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-written biological queries linked to PubMed-indexed articles, together with structured gene metadata. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. Reranking and gene-aware metadata expansion both improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, while metadata helps clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases remain harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}.
 
 \keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
@@ -94,7 +90,7 @@ or general literature search.
 
 This raises a practical question for scientific retrieval systems: how well do
 standard retrieval pipelines work when the query is a compact biological
-statement and the target is the specific paper used as supporting evidence in a
+statement and the target is a specific paper used as supporting evidence in a
 curated knowledge base? Systems that perform well on broad literature-search
 benchmarks may behave differently in narrower biological domains, where exact
 gene names, aliases, and phenotype terms can carry substantial signal. In this
@@ -102,7 +98,9 @@ setting, semantic reranking or generic query expansion should be evaluated
 rather than assumed to improve retrieval.
 
 Many model-organism databases maintain gene-centered pages that combine
-structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}.
+structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
+widely used in cell and developmental biology, including studies of chemotaxis,
+motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
 gene summary pages contain curator-written notes with inline citations. This
 structure allows the curation record to be converted into a controlled evidence
@@ -120,7 +118,7 @@ Our principal contribution is not a new retrieval architecture, but a benchmark
 and analysis of retrieval behavior in a sparse model-organism domain. The
 results show that reranking gains depend strongly on model fit, that trusted
 gene metadata can reduce vocabulary mismatch, and that full-text chunks improve
-both recall and final ranking when abstracts omit detailed evidence, although
+recall and final ranking when abstracts omit detailed evidence, although
 such cases remain challenging.
 
 \section{Related Work}
@@ -190,7 +188,7 @@ This expansion setting is available for 563 queries.
 Curator citations define article-level relevance, but they do not guarantee that 
 the cited abstract contains the specific evidence needed to support the full 
 curator claim. This creates an important distinction for retrieval evaluation: 
-some queries can in principle be answered from abstracts alone, whereas others 
+some queries can be answered from abstracts alone, whereas others 
 may require evidence from the article body even when the cited PMID is correct. 
 To characterize this distinction, we assigned an evidence-level label to each 
 claim--article pair to indicate whether the cited abstract: (i) supports the detailed claim; 
@@ -372,7 +370,7 @@ Overall, gene-aware expansion improves first-stage recall and provides clear dow
 
 \subsection{Full-text chunks benefit claims whose evidence is missing from abstracts}
 \label{sec:results_fulltext}
-The previous experiments use the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
+The previous experiments used the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
 
 We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset, and Table~\ref{tab:s2_evidence_haspdf_full} extends it to the full dataset, where full-text coverage is partial.
 
@@ -385,7 +383,7 @@ We stratify queries by the evidence-level labels introduced in the Dataset secti
 
 The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported buckets. The other two buckets were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
 
-The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles (0.16 $\rightarrow$ 0.39), yet stays well below the two abstract-supported buckets under the same chunked setting.
+The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported buckets under the same chunked setting.
 
 At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). The third block in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
 
@@ -396,7 +394,7 @@ Overall, full-text chunks provide their largest benefit on claims whose cited ab
 \FloatBarrier
 \section{Discussion}
 \label{sec:discussion}
-We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. Its value is not only as a new dataset, but also as a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific expressions provide highly informative lexical cues. This helps explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
+We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. Its value is not only as a new dataset, but also as a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. This helps explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
 This has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade. For niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
 lexical baseline on the target retrieval behavior.
@@ -418,7 +416,7 @@ problem over noisier, more fine-grained candidates. Since open-access and
 machine-readable full-text coverage is uneven in practice, complete full-text
 indexing cannot be assumed. The full-dataset columns of
 Table~\ref{tab:s2_evidence_haspdf_full} are therefore encouraging: mixed
-abstract/full-text retrieval can still improve evidence finding under partial
+abstract/full-text retrieval can improve evidence finding under partial
 coverage.
 
 Several limitations remain. The queries were automatically extracted, cleaned,

@@ -8,7 +8,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 1 (Abstract)
 
-- [ ] ✏️ **L73–74 (abstract):** strike `1` → insert `One` *(spell out the number)*
+- [x] ✏️ **L73–74 (abstract):** strike `1` → insert `One` *(spell out the number)*
 - [ ] 💬 **L74 (abstract)** — `metadata helps`: "the word 'data'/'metadata' is plural → use **'metadata help clarify'** (help, not helps). Apply **throughout the text**."
 
 ## Page 2 (Intro)
