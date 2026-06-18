@@ -210,12 +210,15 @@ insufficient} for 387 (350).
 \section{Retrieval pipeline and variants}
 \label{sec:pipeline}
 
-This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. 
+This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments.
+
+\paragraph{Retrieval terminology.}
+We use several standard information-retrieval terms. BM25 is a keyword-based ranking method that scores articles by overlap with informative query terms. Dense retrieval ranks articles by similarity between learned vector representations of the query and article text. Reciprocal Rank Fusion (RRF) combines ranked lists by favoring articles that appear near the top of one or more lists. Reranking refers to reordering an already retrieved candidate list with a more expensive model. Recall@K measures whether a known cited article appears within the top K retrieved candidates, whereas MRR@K rewards systems that place a known cited article near the top of the final ranking.
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
 Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
-Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: keyword-based BM25 retrieval~\cite{robertson_probabilistic_2009} and dense semantic retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 then reranks this pool: a cross-encoder~\cite{bajaj_ms_2018} reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: keyword-based BM25 retrieval~\cite{robertson_probabilistic_2009} and dense semantic retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 then reranks this pool with a cross-encoder~\cite{bajaj_ms_2018}. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
 
 \begin{figure}[!htbp]
 \centering
@@ -244,7 +247,7 @@ We evaluate all systems under fixed retrieval depths, fusion settings, and signi
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Recall@K measures whether a known cited article appears in the retrieved candidate pool, while MRR@K measures whether a known cited article is placed near the top of the final ranking. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
+We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
 
 Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker. Fig.~\ref{fig:s1} shows that BM25+Dense retrieval fusion approaches recall saturation by K = 1,000, supporting this candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
 

@@ -40,7 +40,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
 - [x] ✅ **L220** — `dense`: reworded L218 to "keyword-based BM25 retrieval and **dense semantic retrieval**" (lowercase descriptive phrasing, echoes the intro's "keyword-based"). Capitalized "Dense" elsewhere is only inside the system label **"BM25+Dense"** (a config name, proper-noun-like), so it stays — prose is lowercase, label is capitalized; that distinction is the answer to "should it be capitalized here too?" (no).
 - [x] ✅ **L220** — `Our` (re-ranker terminology): clarified at first use → "Stage 2 then reranks this pool: a cross-encoder reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again." Makes the "hidden rank" (Stage 1's ranking) explicit without a heavy definition.
-- [ ] 💬 **L220 (Text note)** — "Explain in more detail what **BM25, MRR@K, RRF** etc. are — still didn't understand them after finishing the paper."
+- [x] ✅ **L220 (Text note)** — "Explain BM25, MRR@K, RRF etc.": added a `\paragraph{Retrieval terminology.}` at the start of §4 defining BM25, dense retrieval, RRF, reranking, Recall@K, and MRR@K in one place. Removed the now-duplicate metric definitions at L247 (kept the caveat) and simplified the L218 reranking clause (terminology paragraph carries it). L97 intro gloss kept (also covers query expansion).
 
 ## Page 6 (Pipeline / Setup)
 
