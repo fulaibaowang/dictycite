@@ -38,7 +38,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L206** — `816/654/387 ... respectively; ... 707/585/350`: rephrased to attach each count to its label inline → "*abstract supports detail* accounts for 816 pairs (707 in the has-PDF subset), *abstract supports core* for 654 (585), and *abstract insufficient* for 387 (350)." Removes the double slash-triple and "respectively"; no table needed (only 6 numbers).
 - [x] 💬 **L215** — `fusion parameters`: "What does this mean?"
 - [x] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
-- [ ] 💬 **L220** — `dense`: "Capitalized in the figure — should it be capitalized here too?"
+- [x] ✅ **L220** — `dense`: reworded L218 to "keyword-based BM25 retrieval and **dense semantic retrieval**" (lowercase descriptive phrasing, echoes the intro's "keyword-based"). Capitalized "Dense" elsewhere is only inside the system label **"BM25+Dense"** (a config name, proper-noun-like), so it stays — prose is lowercase, label is capitalized; that distinction is the answer to "should it be capitalized here too?" (no).
 - [x] ✅ **L220** — `Our` (re-ranker terminology): clarified at first use → "Stage 2 then reranks this pool: a cross-encoder reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again." Makes the "hidden rank" (Stage 1's ranking) explicit without a heavy definition.
 - [ ] 💬 **L220 (Text note)** — "Explain in more detail what **BM25, MRR@K, RRF** etc. are — still didn't understand them after finishing the paper."
 
