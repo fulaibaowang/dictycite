@@ -36,10 +36,10 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L191:** delete `in principle` — *done ("some queries can be answered from abstracts alone")*
 - [x] ✅ **L202–203** — `gold`: resolved with L173 (now "cited PubMed articles" / "cited PMID").
 - [x] ✅ **L206** — `816/654/387 ... respectively; ... 707/585/350`: rephrased to attach each count to its label inline → "*abstract supports detail* accounts for 816 pairs (707 in the has-PDF subset), *abstract supports core* for 654 (585), and *abstract insufficient* for 387 (350)." Removes the double slash-triple and "respectively"; no table needed (only 6 numbers).
-- [ ] 💬 **L215** — `fusion parameters`: "What does this mean?"
-- [ ] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
+- [x] 💬 **L215** — `fusion parameters`: "What does this mean?"
+- [x] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
 - [ ] 💬 **L220** — `dense`: "Capitalized in the figure — should it be capitalized here too?"
-- [ ] 💬 **L220** — `Our` (Section: two-stage design): "Don't understand the terminology. Why a **re**-ranker and not a ranker? Is there a hidden rank?"
+- [x] ✅ **L220** — `Our` (re-ranker terminology): clarified at first use → "Stage 2 then reranks this pool: a cross-encoder reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again." Makes the "hidden rank" (Stage 1's ranking) explicit without a heavy definition.
 - [ ] 💬 **L220 (Text note)** — "Explain in more detail what **BM25, MRR@K, RRF** etc. are — still didn't understand them after finishing the paper."
 
 ## Page 6 (Pipeline / Setup)

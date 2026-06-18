@@ -210,12 +210,12 @@ insufficient} for 387 (350).
 \section{Retrieval pipeline and variants}
 \label{sec:pipeline}
 
-This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. Exact software choices and fusion parameters are given in the Appendix.
+This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments. 
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
 Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
-Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: lexical BM25~\cite{robertson_probabilistic_2009} and dense retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 reranks the fused candidate pool using a cross-encoder reranker~\cite{bajaj_ms_2018}. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: lexical BM25~\cite{robertson_probabilistic_2009} and dense retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} to form a single candidate pool. Stage 2 then reranks this pool: a cross-encoder~\cite{bajaj_ms_2018} reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
 
 \begin{figure}[!htbp]
 \centering
