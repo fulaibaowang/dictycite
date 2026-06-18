@@ -120,7 +120,7 @@ recall and final ranking when abstracts omit detailed evidence, although
 such cases remain challenging.
 
 \section{Related Work}
-Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
+Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
 %todo: include citations, cite in sentence cover
 
 Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval, dense retrieval, reciprocal rank fusion, cross-encoder reranking, and LLM-based rerankers are widely used components~\cite{robertson_probabilistic_2009,li_making_2023,cormack_reciprocal_2009,bajaj_ms_2018}.
@@ -168,7 +168,7 @@ All abstract-only retrieval and reranking experiments use this same corpus.
 \paragraph{Curator-derived queries and relevance judgments.}
 Queries were derived from curator notes on dictyBase gene summary pages. 
 These notes consist of compact biological statements supported by inline citations, as illustrated in Fig.~\ref{fig:dataset}. 
-For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as its gold article. 
+For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as the reference article for evaluation.
 Because dictyBase uses internal publication identifiers, we first mapped cited publications to PubMed IDs. 
 Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus.
 
@@ -198,8 +198,8 @@ the full-text retrieval setting is described in Section~\ref{sec:fulltext_varian
 results are reported in Section~\ref{sec:results_fulltext}.
 
 To support this analysis, we construct a chunked full-text corpus for articles with
-accessible PDFs, covering 1,124 gold PubMed articles. Queries with at least one
-gold PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
+accessible PDFs, covering 1,124 cited PubMed articles. Queries with at least one
+cited PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
 queries. Because labels are assigned to claim--article pairs rather than queries,
 label counts can exceed the number of queries: the full dataset contains
 816/654/387 pairs labeled as abstract supports detail, abstract supports core, and
@@ -244,7 +244,7 @@ We evaluate all systems under fixed retrieval depths, fusion settings, and signi
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Recall@K measures whether a gold cited article appears in the retrieved candidate pool, while MRR@K measures whether a gold cited article is placed near the top of the final ranking. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
+We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Recall@K measures whether a known cited article appears in the retrieved candidate pool, while MRR@K measures whether a known cited article is placed near the top of the final ranking. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
 
 Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker. Fig.~\ref{fig:s1} shows that BM25+Dense retrieval fusion approaches recall saturation by K = 1,000, supporting this candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
 
@@ -325,22 +325,22 @@ quantitative evidence.}
 \multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 1: reranker loses lexical specificity} \; (Table~\ref{tab:ranker_comparison}; Fig.~\ref{fig:s2})} \\
 \midrule
 Query cue & DymA localizes to the phagosome and the cleavage furrow. \\
-Evidence contrast & Gold PMID 23679940 contains the gene-specific cue: ``DymA and DlpA were associated with actin filaments at the furrow.'' The promoted non-gold article shares location vocabulary (``cleavage furrow'', ``phagocytic cup'') but not the DymA signal. \\
-Rank movement & Gold: BM25 2 $\rightarrow$ MiniLM-L12 60; BGE-Gemma 3. Non-gold competitor: MiniLM-L12 1. \\
+Evidence contrast & Cited PMID 23679940 contains the gene-specific cue: ``DymA and DlpA were associated with actin filaments at the furrow.'' The promoted non-cited competitor shares location vocabulary (``cleavage furrow'', ``phagocytic cup'') but not the DymA signal. \\
+Rank movement & Cited: BM25 2 $\rightarrow$ MiniLM-L12 60; BGE-Gemma 3. Non-cited competitor: MiniLM-L12 1. \\
 Takeaway & A general reranker can over-weight phenotype/location overlap while weakening the gene-specific lexical signal captured by BM25. \\
 \midrule
 \multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 2: gene-aware expansion resolves synonym mismatch} \; (Fig.~\ref{fig:qe}; Table~\ref{tab:s1_qe_reranker})} \\
 \midrule
 Query cue & DetA is involved in cell-type specification during development. \\
-Evidence contrast & The curator claim uses DetA, while the gold source uses the synonym DET1. Query expansion appends \texttt{DET1}, matching the gold title/abstract cue. \\
-Rank movement & Gold PMID 21193547 under BGE-m3: original query 39 $\rightarrow$ +synonyms 1; +synonyms/products 1. \\
+Evidence contrast & The curator claim uses DetA, while the cited source uses the synonym DET1. Query expansion appends \texttt{DET1}, matching the cited article's title/abstract cue. \\
+Rank movement & Cited PMID 21193547 under BGE-m3: original query 39 $\rightarrow$ +synonyms 1; +synonyms/products 1. \\
 Takeaway & Trusted gene synonyms can close vocabulary gaps between compact curator wording and article wording. \\
 \midrule
 \multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 3: full-text chunks recover missing detailed evidence} \; (Fig.~\ref{fig:evidence_haspdf}; Table~\ref{tab:s2_evidence_haspdf_full})} \\
 \midrule
 Query cue & \emph{gefE} null mutants are less sensitive to DIF than wild type. \\
 Evidence contrast & Abstract cue is broad: ``gefE is required for normal lineage priming and salt and pepper differentiation.'' Body-text cue is specific: ``\emph{gefE}$^{-}$ cells are less sensitive to DIF than wild type cells\ldots'' \\
-Rank movement & Gold PMID 24282234 under BGE-m3: abstract-only corpus 54 $\rightarrow$ +full-text chunks 1. \\
+Rank movement & Cited PMID 24282234 under BGE-m3: abstract-only corpus 54 $\rightarrow$ +full-text chunks 1. \\
 Takeaway & Full-text chunks help when the cited abstract supports the general context but omits the detailed evidence behind the curator claim. \\
 \bottomrule
 \end{tabular}
@@ -362,7 +362,7 @@ At the retrieval stage, expansion substantially improves recall for both BM25 an
 
 For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
 
-Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. The second block in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the gold abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
+Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. The second block in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the cited abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
 
 \FloatBarrier
 
@@ -449,7 +449,7 @@ evaluation of generated answers.
 
 BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
 
-Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public goldset are released at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \begin{figure}[H]
 \centering

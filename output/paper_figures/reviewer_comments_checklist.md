@@ -18,23 +18,23 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L97** — `reranking or generic query expansion`: glossed inline at first body use → "two common strategies---semantic reranking, which reorders the retrieved articles using a more selective model, and query expansion, which adds related terms to the search query---should be evaluated…". Full definitions remain in Related Work (L128) and Methods/Figs 1–2.
 - [x] ✅ **L113** — `when reranking improves over strong lexical retrieval,`: rephrased → "**whether reranking adds value beyond strong keyword-based retrieval**" (clearer, and parallels the Results-section phrasing)."
 - [x] ✅ **L120:** delete `both` (in "improve both recall and final ranking") — *done*
-- [ ] ✏️ **L125:** edit "Textpresso ... semantic" — strike `a` → insert `-` *(hyphenation/typo fix)*
+- [x] ✏️ **L125:** edit "Textpresso ... semantic" — strike `a` → insert `-` *(hyphenation/typo fix)*
 
 ## Page 3 (Dataset)
 
-- [ ] 💬 **L144** — `Europe PMC abstract corpus.`: "Using the Europe DB can be misleading. Why not use all available literature?"
-- [ ] 💬 **L145** — `DOI 10.5281/zenodo.20308282.`: "Link throws an error in Safari. Please revise."
+- [x] 🚫 **L144** — `Europe PMC abstract corpus.`: **Won't fix.** Rests on a misconception — Europe PMC indexes all PubMed/MEDLINE abstracts (EPMC ⊇ PubMed), so the source choice doesn't restrict coverage; absences come only from the topical corpus snapshot. (Gadi is a friendly reviewer, not the gatekeeper.)
+- [x] ⏸️ **L145 (Zenodo DOI)** — **Deferred.** Link will resolve once the Zenodo record is published; leaving as-is for now.
 
 ## Page 4 (Dataset)
 
-- [ ] 💬 **L173** — `gold`: "Don't know what **'gold'** means. Define here or use a more intuitive term."
-- [ ] 💬 **L175** — `cited articles were absent from the Europe PMC abstract corpus.`: "How many were absent? Would using PubMed directly have solved it?"
+- [x] ✅ **L173** — `gold`: replaced jargon with intuitive terms in prose (no "ground-truth" — too strong, since citations aren't exhaustive). L171 first use now: "...used as the **reference article for evaluation**. We treat such curator-cited articles as **known positive references**, not as an exhaustive set...". Targeted swaps elsewhere: gold cited article→known cited article, gold PubMed articles→cited, gold PMID→cited PMID, non-gold→non-cited competitor, gold source→cited source, gold abstract→cited abstract. "goldset" now appears **once**, at L452, as a findability anchor: "the public dataset (released as the dictyBase citation **goldset**) are available at…". This matches the public-facing name (GitHub README, Zenodo, `dictycite_goldset.jsonl`) while keeping the rest of the prose jargon-free.
+- [x] 🚫 **L175** — `cited articles were absent from the Europe PMC abstract corpus.`: **Won't fix** (same misconception as L144 — absences are from the topical corpus snapshot, not EPMC vs PubMed coverage).
 
 ## Page 5 (Pipeline)
 
 - [x] ✅ **L191** — `This creates...`: → "**This gap creates** an important distinction…"
 - [x] ✅ **L191:** delete `in principle` — *done ("some queries can be answered from abstracts alone")*
-- [ ] 🔖 **L202–203** — `gold`: flagged again (same define-the-term issue).
+- [x] ✅ **L202–203** — `gold`: resolved with L173 (now "cited PubMed articles" / "cited PMID").
 - [ ] 💬 **L206** — `the full dataset contains 816/654/387 pairs ... respectively; ... 707/585/350.`: "Avoid 'respectively'. Rewrite as 'X pairs fall into category A, Y into category B...' **or put the data in a small table**."
 - [ ] 💬 **L215** — `fusion parameters`: "What does this mean?"
 - [ ] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
