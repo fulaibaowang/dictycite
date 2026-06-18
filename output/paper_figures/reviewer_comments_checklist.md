@@ -9,7 +9,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 1 (Abstract)
 
 - [x] ✏️ **L73–74 (abstract):** strike `1` → insert `One` *(spell out the number)*
-- [ ] 💬 **L74 (abstract)** — `metadata helps`: "the word 'data'/'metadata' is plural → use **'metadata help clarify'** (help, not helps). Apply **throughout the text**."
+- [x] ✅ **L74 (abstract)** — `metadata helps`: resolved by replacing "metadata" with **"gene annotations / curated annotations"** throughout (count noun → "annotations help"), which also addresses the plural-verb note. All 18 "metadata" mentions swapped paper-wide.
 
 ## Page 2 (Intro)
 

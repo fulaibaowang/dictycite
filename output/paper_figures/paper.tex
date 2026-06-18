@@ -71,7 +71,7 @@ Baylor Plaza, Houston, TX 77030, USA\\
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-written biological queries linked to PubMed-indexed articles, together with structured gene metadata. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. Reranking and gene-aware metadata expansion both improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, while metadata helps clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases remain harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-written biological queries linked to PubMed-indexed articles, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. Reranking and gene-aware query expansion both improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, while curated annotations help clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases remain harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}.
 
 \keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
@@ -110,31 +110,31 @@ article from a domain-specific literature corpus.
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
 \emph{Dictyostelium}. We use this setting to examine three questions: when 
-reranking improves over strong lexical retrieval, whether curated gene metadata
-helps compact biological queries, and how full-text evidence changes retrieval
+reranking improves over strong lexical retrieval, whether curated gene annotations
+help compact biological queries, and how full-text evidence changes retrieval
 when abstracts are insufficient.
 
 Our principal contribution is not a new retrieval architecture, but a benchmark
 and analysis of retrieval behavior in a sparse model-organism domain. The
 results show that reranking gains depend strongly on model fit, that trusted
-gene metadata can reduce vocabulary mismatch, and that full-text chunks improve
+gene annotations can reduce vocabulary mismatch, and that full-text chunks improve
 recall and final ranking when abstracts omit detailed evidence, although
 such cases remain challenging.
 
 \section{Related Work}
-Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated metadata may affect retrieval differently from broad biomedical QA settings.
+Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
 %todo: include citations, cite in sentence cover
 
 Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval, dense retrieval, reciprocal rank fusion, cross-encoder reranking, and LLM-based rerankers are widely used components~\cite{robertson_probabilistic_2009,li_making_2023,cormack_reciprocal_2009,bajaj_ms_2018}.
 %todo: avoid non specific citations with many papers
 Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. Rather than proposing a new architecture, we use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
 
-Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated metadata for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
+Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated annotations for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
 
 Taken together, prior work provides strong retrieval components and broad
 biomedical retrieval benchmarks, but less is known about their behavior in model-organism knowledge bases. Our work uses dictyBase
 claim--citation pairs as a controlled test case for this setting, with emphasis on
-reranker domain fit, curated gene metadata, and full-text evidence.
+reranker domain fit, curated gene annotations, and full-text evidence.
 
 \section{Dataset}
 \label{sec:dataset}
@@ -142,7 +142,7 @@ reranker domain fit, curated gene metadata, and full-text evidence.
 We constructed a \emph{Dictyostelium} literature retrieval dataset from dictyBase gene summary pages~\cite{fey_one_2013}. 
 Each retrieval instance is derived from a curator-written biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as the relevance judgment. 
 The dataset contains 1,656 curator-claim queries from 862 unique \emph{Dictyostelium} genes, linked to 1,289 unique PubMed articles and evaluated against a 20,447-article Europe PMC abstract corpus. 
-In addition to the query--article relevance pairs, the dataset includes structured gene metadata for gene-aware query expansion and LLM-assisted evidence labels for stratified analysis of whether the cited abstract contains sufficient evidence for the curator claim. 
+In addition to the query--article relevance pairs, the dataset includes structured gene annotations for gene-aware query expansion and LLM-assisted evidence labels for stratified analysis of whether the cited abstract contains sufficient evidence for the curator claim. 
 The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenodo.20308282}{10.5281/zenodo.20308282}.
 
 \begin{figure}[!htbp]
@@ -150,11 +150,11 @@ The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenod
 \includegraphicsifexists[width=0.98\linewidth,height=0.48\textheight,keepaspectratio]{Figures/fig1_dataset2.png}
 \caption{Construction of a retrieval instance from a dictyBase gene page. 
 (A) The source page for gene \emph{pkaC} 
-(\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene 
-metadata and curator-written notes with inline citations. 
+(\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene
+annotations and curator-written notes with inline citations. 
 (B) A curator-written claim is extracted as the query, and its inline citation 
 is mapped to a PubMed-indexed article used as the cited relevance judgment. 
-Auxiliary annotations are used in later experiments: gene metadata supports 
+Auxiliary fields are used in later experiments: gene annotations support 
 gene-aware query expansion, and the LLM-assisted evidence label supports the 
 full-text analysis by marking whether the cited abstract is sufficient for the 
 claim or whether full-text evidence may be needed.}
@@ -178,10 +178,10 @@ The remaining claims were cleaned and deduplicated.
 Near-duplicate or semantically similar claims were grouped within each gene, and one representative claim was retained as the final query. 
 This process yielded 1,656 curator-claim queries linked to 1,289 unique PubMed articles.
 
-\paragraph{Gene metadata for query expansion.}
-For each gene page, dictyBase provides structured metadata such as the canonical gene name, alternative gene names, and product description. 
-We retain these fields as auxiliary annotations, not as part of the original query.
-They are used only in the gene-aware query-expansion experiments described in Section~\ref{sec:gene_qe}, where metadata can be appended to the query when the relevant gene mention is unambiguously resolved. 
+\paragraph{Gene annotations for query expansion.}
+For each gene page, dictyBase provides structured gene annotations such as the canonical gene name, alternative gene names, and product description.
+We retain these fields for query expansion only, not as part of the original query.
+They are used only in the gene-aware query-expansion experiments described in Section~\ref{sec:gene_qe}, where these annotations can be appended to the query when the relevant gene mention is unambiguously resolved. 
 This expansion setting is available for 563 queries.
 
 \paragraph{Evidence labels and full-text subset.}
@@ -230,7 +230,7 @@ Stage 2 reranks the fused candidates with a cross-encoder and combines the reran
 
 \subsection{Gene-aware query expansion}
 \label{sec:gene_qe}
-We use structured dictyBase metadata to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. We compare two expanded query variants with the original claim: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
+We use structured gene annotations from dictyBase to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. We compare two expanded query variants with the original claim: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
 
 \subsection{Chunked full-text corpus variant}
 \label{sec:fulltext_variant}
@@ -264,7 +264,7 @@ We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradee
 
 We organize the results around three questions: whether cross-encoder reranking
 adds value beyond strong first-stage retrieval baselines, whether curated gene
-metadata helps compact biological queries, and whether full-text chunks improve
+annotations help compact biological queries, and whether full-text chunks improve
 retrieval when abstracts lack sufficient evidence. Table~\ref{tab:qual_examples}
 grounds the aggregate trends in Table~\ref{tab:ranker_comparison} and Figs.~\ref{fig:qe}--\ref{fig:evidence_haspdf}
 with three query-level examples.
@@ -403,9 +403,9 @@ Gene-aware query expansion provides a complementary and low-cost way to improve 
 pipeline. In our controlled reranking analysis, the candidate pool is fixed and
 only the reranker query changes, so the observed gains show that expansion helps
 not only by retrieving more candidates but also by giving the reranker better
-query-side context. This suggests that curated biological metadata can enrich
+query-side context. This suggests that curated gene annotations can enrich
 compact claims with missing gene vocabulary without substantially increasing
-reranking noise. More broadly, trusted metadata plus a smaller domain-suitable
+reranking noise. More broadly, trusted gene annotations plus a smaller domain-suitable
 reranker may be a more efficient operating point than relying only on larger
 LLM-based rerankers.
 
