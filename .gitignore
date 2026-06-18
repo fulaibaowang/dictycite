@@ -24,6 +24,7 @@ output/paper_figures/*
 !output/paper_figures/*.png
 !output/paper_figures/table*.md
 !output/paper_figures/table*.csv
+!output/paper_figures/reviewer_comments_checklist.md
 !output/paper_figures/paper.tex
 !output/paper_figures/*.bib
 scripts/public/article_fetching/output/
