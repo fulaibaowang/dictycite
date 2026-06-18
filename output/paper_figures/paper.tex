@@ -94,8 +94,7 @@ statement and the target is a specific paper used as supporting evidence in a
 curated knowledge base? Systems that perform well on broad literature-search
 benchmarks may behave differently in narrower biological domains, where exact
 gene names, aliases, and phenotype terms can carry substantial signal. In this
-setting, semantic reranking or generic query expansion should be evaluated
-rather than assumed to improve retrieval.
+setting, two common strategies---semantic reranking, which reorders the retrieved articles using a more selective model, and query expansion, which adds related terms to the search query---should be evaluated rather than assumed to improve retrieval.
 
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
@@ -109,8 +108,7 @@ article from a domain-specific literature corpus.
 
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
-\emph{Dictyostelium}. We use this setting to examine three questions: when 
-reranking improves over strong lexical retrieval, whether curated gene annotations
+\emph{Dictyostelium}. We use this setting to examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated gene annotations
 help compact biological queries, and how full-text evidence changes retrieval
 when abstracts are insufficient.
 

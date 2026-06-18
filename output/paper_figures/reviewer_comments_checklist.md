@@ -15,8 +15,8 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 - [x] ✅ **L91** — `This raises...`: → "**Such differences raise** a practical question…" (named the referent). *Being selective: only ambiguous bare "This/Its + verb" openers were changed, not every "This".*
 - [x] ✅ **L93:** strike `the` → insert `a` — *done ("the target is a specific paper")*
-- [ ] 💬 **L97** — `reranking or generic query expansion`: "Define **'reranking'** and **'query expansion'** — not trivial to a biologist."
-- [ ] 💬 **L113** — `when reranking improves over strong lexical retrieval,`: "Confusing — rephrase."
+- [x] ✅ **L97** — `reranking or generic query expansion`: glossed inline at first body use → "two common strategies---semantic reranking, which reorders the retrieved articles using a more selective model, and query expansion, which adds related terms to the search query---should be evaluated…". Full definitions remain in Related Work (L128) and Methods/Figs 1–2.
+- [x] ✅ **L113** — `when reranking improves over strong lexical retrieval,`: rephrased → "**whether reranking adds value beyond strong keyword-based retrieval**" (clearer, and parallels the Results-section phrasing)."
 - [x] ✅ **L120:** delete `both` (in "improve both recall and final ranking") — *done*
 - [ ] ✏️ **L125:** edit "Textpresso ... semantic" — strike `a` → insert `-` *(hyphenation/typo fix)*
 
