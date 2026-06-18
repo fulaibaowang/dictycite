@@ -88,7 +88,7 @@ broadly shared biomedical vocabulary. Retrieval behavior in such domains may
 therefore differ from what is observed in large-scale biomedical question answering
 or general literature search.
 
-This raises a practical question for scientific retrieval systems: how well do
+Such differences raise a practical question for scientific retrieval systems: how well do
 standard retrieval pipelines work when the query is a compact biological
 statement and the target is a specific paper used as supporting evidence in a
 curated knowledge base? Systems that perform well on broad literature-search
@@ -187,7 +187,7 @@ This expansion setting is available for 563 queries.
 \paragraph{Evidence labels and full-text subset.}
 Curator citations define article-level relevance, but they do not guarantee that 
 the cited abstract contains the specific evidence needed to support the full 
-curator claim. This creates an important distinction for retrieval evaluation: 
+curator claim. This gap creates an important distinction for retrieval evaluation: 
 some queries can be answered from abstracts alone, whereas others 
 may require evidence from the article body even when the cited PMID is correct. 
 To characterize this distinction, we assigned an evidence-level label to each 
@@ -394,16 +394,16 @@ Overall, full-text chunks provide their largest benefit on claims whose cited ab
 \FloatBarrier
 \section{Discussion}
 \label{sec:discussion}
-We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. Its value is not only as a new dataset, but also as a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. This helps explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
+We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
-This has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade. For niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
+This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
 lexical baseline on the target retrieval behavior.
 
 Gene-aware query expansion provides a complementary and low-cost way to improve the
 pipeline. In our controlled reranking analysis, the candidate pool is fixed and
 only the reranker query changes, so the observed gains show that expansion helps
 not only by retrieving more candidates but also by giving the reranker better
-query-side context. This suggests that curated gene annotations can enrich
+query-side context. These gains suggest that curated gene annotations can enrich
 compact claims with missing gene vocabulary without substantially increasing
 reranking noise. More broadly, trusted gene annotations plus a smaller domain-suitable
 reranker may be a more efficient operating point than relying only on larger

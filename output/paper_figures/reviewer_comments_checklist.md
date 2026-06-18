@@ -13,7 +13,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 2 (Intro)
 
-- [ ] 🔖 **L91** — `This raises...`: "Don't start sentences with **'This'** — too ambiguous. Flagged in places but **change throughout the paper**."
+- [x] ✅ **L91** — `This raises...`: → "**Such differences raise** a practical question…" (named the referent). *Being selective: only ambiguous bare "This/Its + verb" openers were changed, not every "This".*
 - [x] ✅ **L93:** strike `the` → insert `a` — *done ("the target is a specific paper")*
 - [ ] 💬 **L97** — `reranking or generic query expansion`: "Define **'reranking'** and **'query expansion'** — not trivial to a biologist."
 - [ ] 💬 **L113** — `when reranking improves over strong lexical retrieval,`: "Confusing — rephrase."
@@ -32,7 +32,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 5 (Pipeline)
 
-- [ ] 🔖 **L191** — `This creates...`: flagged 'This' sentence-opener (revise).
+- [x] ✅ **L191** — `This creates...`: → "**This gap creates** an important distinction…"
 - [x] ✅ **L191:** delete `in principle` — *done ("some queries can be answered from abstracts alone")*
 - [ ] 🔖 **L202–203** — `gold`: flagged again (same define-the-term issue).
 - [ ] 💬 **L206** — `the full dataset contains 816/654/387 pairs ... respectively; ... 707/585/350.`: "Avoid 'respectively'. Rewrite as 'X pairs fall into category A, Y into category B...' **or put the data in a small table**."
@@ -75,15 +75,14 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 - [x] ✅ **L386:** `(0.16 →0.39)` → `from 0.16 to 0.39` — *done (consistent with "rises from 0.78 to 0.97" above)*
 - [ ] 💬 **L386** — `chunked setting.`: "Elaborate — 'abstract insufficient' may have two subgroups (abstract insufficient but full text sufficient vs. both insufficient). **Curator may have given a wrong reference in some cases.**"
-- [ ] 🔖 **L397** — `Its` (value sentence): "Revise — **'Its'** as a sentence-opener is as bad as 'This'."
-- [ ] 💬 **L397** — `not only as a new dataset, but also`: "Avoid 'not only X but also Y' — say the value is a combination of the new dataset and a test case for..."
+- [x] ✅ **L397** — `Its` + `not only...but also` (value sentence): both resolved → "**The benchmark's value is a combination of** a new dataset **and** a test case for retrieval behavior…"
 - [x] ✅ **L397:** `expressions` → `terms` ("organism-specific terms") — *done*
-- [ ] 🔖 **L397** — `This helps explain...`: "Revise" (This sentence-opener).
-- [ ] 🔖 **L399** — `This has a practical implication...`: flagged 'This' opener.
-- [ ] 💬 **L399** — `default upgrade.`: "Don't understand — upgrade of what?"
-- [ ] 💬 **L399** — `For` (in "For niche biological search..."): "Revise — starting with **'For'** seems odd."
-- [ ] 💬 **L405** — `not only by`: "Rephrase."
-- [ ] 🔖 **L405** — `This suggests that...`: flagged 'This' opener.
+- [x] ✅ **L397** — `This helps explain...`: → "**These cues help explain** why BM25 remains strong…"
+- [x] ✅ **L399** — `This has a practical implication...`: → "**This finding has** a practical implication…"
+- [ ] 💬 **L399** — `default upgrade.`: "Don't understand — upgrade of what?" *(still open — define/clarify)*
+- [x] ✅ **L399** — `For` (in "For niche biological search..."): → "**In** niche biological search…"
+- [ ] 💬 **L405** — `not only by`: "Rephrase." *(still open — also a content issue: pool is fixed, so crediting "more candidates" is contradictory; needs recast)*
+- [x] ✅ **L405** — `This suggests that...`: → "**These gains suggest** that curated gene annotations can enrich…"
 - [ ] 💬 **L386 (Text note)** — "Reconsider: leave the text as is here, but **add a paragraph to the Discussion** noting curators may have made mistakes. Offer: reviewer could examine claim–reference pairs still problematic after full text."
 
 ## Page 12 (Discussion / Appendix)
