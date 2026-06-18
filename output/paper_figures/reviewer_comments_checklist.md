@@ -35,7 +35,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L191** — `This creates...`: → "**This gap creates** an important distinction…"
 - [x] ✅ **L191:** delete `in principle` — *done ("some queries can be answered from abstracts alone")*
 - [x] ✅ **L202–203** — `gold`: resolved with L173 (now "cited PubMed articles" / "cited PMID").
-- [ ] 💬 **L206** — `the full dataset contains 816/654/387 pairs ... respectively; ... 707/585/350.`: "Avoid 'respectively'. Rewrite as 'X pairs fall into category A, Y into category B...' **or put the data in a small table**."
+- [x] ✅ **L206** — `816/654/387 ... respectively; ... 707/585/350`: rephrased to attach each count to its label inline → "*abstract supports detail* accounts for 816 pairs (707 in the has-PDF subset), *abstract supports core* for 654 (585), and *abstract insufficient* for 387 (350)." Removes the double slash-triple and "respectively"; no table needed (only 6 numbers).
 - [ ] 💬 **L215** — `fusion parameters`: "What does this mean?"
 - [ ] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
 - [ ] 💬 **L220** — `dense`: "Capitalized in the figure — should it be capitalized here too?"
