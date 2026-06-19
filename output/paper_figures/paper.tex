@@ -235,7 +235,7 @@ We use structured gene annotations from dictyBase to test whether gene-aware que
 
 \subsection{Chunked full-text corpus variant}
 \label{sec:fulltext_variant}
-To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
+To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant, where each article is split into smaller text segments, or chunks, that can be retrieved separately. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
 
 Because relevance judgments are defined at the article level, chunk-level outputs are collapsed back to PubMed IDs before evaluation. We use first-occurrence pooling: the highest-ranked chunk for a PMID determines the article's rank. This allows direct comparison between the abstract-only and chunked-corpus variants using the same PMID-level relevance judgments.
 

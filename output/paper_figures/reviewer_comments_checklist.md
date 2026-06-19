@@ -45,7 +45,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 6 (Pipeline / Setup)
 
 - [x] 🚫 **L231 (§ heading)** — `Gene-aware`: **Won't fix (leave term).** "X-aware" = the method leverages gene-level knowledge (synonyms/aliases/products); defensible and idiomatic. Appears 14× (abstract ×2, two headings, contribution, figure caption) and is already operationally defined at first use (L234). Renaming risks drift across paper/figures/artifacts for a borderline point.
-- [ ] 💬 **L235** — `Chunked`: "Don't know the term **'chunked'** — define it."
+- [x] ✅ **L235** — `Chunked`: defined inline at first definitional use (L238) → "each article is **split into shorter passages (*chunks*)** — an abstract chunk and several body-text chunks — that are indexed and retrieved individually." (Standard IR term, but jargon to a biologist; one-clause gloss, no rename.)
 - [ ] 💬 **L239** — `Because...`: "Didn't understand this paragraph — need to understand **'first-occurrence pooling'**."
 - [ ] 💬 **L242 (§5 heading)** — `Experimental setup`: "Didn't understand anything in Section 5. Add a **text box explaining the setup in lay terms**."
 - [ ] 💬 **L239 (Text note)** — "Still didn't understand the terms after finishing the paper."
