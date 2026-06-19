@@ -8,7 +8,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 1 (Abstract)
 
-- [x] ✏️ **L73–74 (abstract):** strike `1` → insert `One` *(spell out the number)*
+- [x] ✅ **L73–74 (abstract):** strike `1` → insert `One` *(spell out the number)*
 - [x] ✅ **L74 (abstract)** — `metadata helps`: resolved by replacing "metadata" with **"gene annotations / curated annotations"** throughout (count noun → "annotations help"), which also addresses the plural-verb note. All 18 "metadata" mentions swapped paper-wide.
 
 ## Page 2 (Intro)
@@ -36,8 +36,8 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L191:** delete `in principle` — *done ("some queries can be answered from abstracts alone")*
 - [x] ✅ **L202–203** — `gold`: resolved with L173 (now "cited PubMed articles" / "cited PMID").
 - [x] ✅ **L206** — `816/654/387 ... respectively; ... 707/585/350`: rephrased to attach each count to its label inline → "*abstract supports detail* accounts for 816 pairs (707 in the has-PDF subset), *abstract supports core* for 654 (585), and *abstract insufficient* for 387 (350)." Removes the double slash-triple and "respectively"; no table needed (only 6 numbers).
-- [x] 💬 **L215** — `fusion parameters`: "What does this mean?"
-- [x] ✏️ **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
+- [x] ✅  **L215** — `fusion parameters`: "What does this mean?"
+- [x] ✅  **L217:** edit "retrieval pipeline" — strike `e` → insert `article-retrieval` *(→ "article-retrieval pipeline")*
 - [x] ✅ **L220** — `dense`: reworded L218 to "keyword-based BM25 retrieval and **dense semantic retrieval**" (lowercase descriptive phrasing, echoes the intro's "keyword-based"). Capitalized "Dense" elsewhere is only inside the system label **"BM25+Dense"** (a config name, proper-noun-like), so it stays — prose is lowercase, label is capitalized; that distinction is the answer to "should it be capitalized here too?" (no).
 - [x] ✅ **L220** — `Our` (re-ranker terminology): clarified at first use → "Stage 2 then reranks this pool: a cross-encoder reorders the candidate articles produced by Stage 1 rather than searching the whole corpus again." Makes the "hidden rank" (Stage 1's ranking) explicit without a heavy definition.
 - [x] ✅ **L220 (Text note)** — "Explain BM25, MRR@K, RRF etc.": added a `\paragraph{Retrieval terminology.}` at the start of §4 defining BM25, dense retrieval, RRF, reranking, Recall@K, and MRR@K in one place. Removed the now-duplicate metric definitions at L247 (kept the caveat) and simplified the L218 reranking clause (terminology paragraph carries it). L97 intro gloss kept (also covers query expansion).
@@ -52,7 +52,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 7 (Results)
 
-- [ ] 💬 **L267** — `Table 2 grounds`: "Tables/figures must be referenced in order — **Table 2 can't be mentioned before Table 1**."
+- [x] ✅ **L267** — `Table 2 grounds`: flipped the roadmap sentence so Table 1 is referenced first → "The aggregate trends in Table~\ref{tab:ranker_comparison} and Figs… are illustrated by three query-level examples in Table~\ref{tab:qual_examples}." No table floats moved (chose "mention Table 1 earlier").
 
 ## Page 8 (Results / Table 1)
 
