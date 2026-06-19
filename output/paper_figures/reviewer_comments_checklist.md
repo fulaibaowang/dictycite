@@ -74,7 +74,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 11 (Discussion)
 
 - [x] ✅ **L386:** `(0.16 →0.39)` → `from 0.16 to 0.39` — *done (consistent with "rises from 0.78 to 0.97" above)*
-- [ ] 💬 **L386** — `chunked setting.`: "Elaborate — 'abstract insufficient' may have two subgroups (abstract insufficient but full text sufficient vs. both insufficient). **Curator may have given a wrong reference in some cases.**"
+- [x] ✅ **L386** — `chunked setting.` (+ Text note below): addressed as a **dataset limitation** (per Gadi's steer: leave Results as-is, note dataset imperfection). Expanded the limitations paragraph: "...not exhaustive or definitive relevance judgments... some difficult cases may reflect **claim–citation mismatch rather than retrieval failure**... an inline citation may... occasionally point to a paper that does not clearly support the extracted statement." Covers both the two-subgroups idea and the curator-wrong-reference case.
 - [x] ✅ **L397** — `Its` + `not only...but also` (value sentence): both resolved → "**The benchmark's value is a combination of** a new dataset **and** a test case for retrieval behavior…"
 - [x] ✅ **L397:** `expressions` → `terms` ("organism-specific terms") — *done*
 - [x] ✅ **L397** — `This helps explain...`: → "**These cues help explain** why BM25 remains strong…"
@@ -83,7 +83,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L399** — `For` (in "For niche biological search..."): → "**In** niche biological search…"
 - [ ] 💬 **L405** — `not only by`: "Rephrase." *(still open — also a content issue: pool is fixed, so crediting "more candidates" is contradictory; needs recast)*
 - [x] ✅ **L405** — `This suggests that...`: → "**These gains suggest** that curated gene annotations can enrich…"
-- [ ] 💬 **L386 (Text note)** — "Reconsider: leave the text as is here, but **add a paragraph to the Discussion** noting curators may have made mistakes. Offer: reviewer could examine claim–reference pairs still problematic after full text."
+- [x] ✅ **L386 (Text note)** — resolved together with L386 above (dataset-imperfection caveat added to the limitations paragraph). Gadi's offer to examine still-problematic claim–reference pairs is optional future work, not needed now.
 
 ## Page 12 (Discussion / Appendix)
 

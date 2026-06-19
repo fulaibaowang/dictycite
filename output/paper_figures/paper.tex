@@ -424,18 +424,7 @@ Table~\ref{tab:s2_evidence_haspdf_full} are therefore encouraging: mixed
 abstract/full-text retrieval can improve evidence finding under partial
 coverage.
 
-Several limitations remain. The queries were automatically extracted, cleaned,
-and deduplicated from dictyBase pages using rule-based procedures rather than
-being rewritten or reviewed in detail by domain experts. Some compact statements
-may therefore depend on surrounding page or paragraph context and be less
-self-contained than manually written search queries. In addition, inline citations
-provide useful retrieval targets but not exhaustive relevance judgments: other
-relevant articles may exist but remain unlabeled. The benchmark is therefore best
-interpreted as a cited-article retrieval task rather than a complete relevance
-benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels,
-not definitive expert annotations. Future work should extend the benchmark with
-expert-reviewed queries, broader model-organism coverage, and evidence-level
-evaluation of generated answers.
+Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact statements may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted statement. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
 \FloatBarrier
 % \clearpage
