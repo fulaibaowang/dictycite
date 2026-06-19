@@ -213,12 +213,12 @@ insufficient} for 387 (350).
 This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments.
 
 \paragraph{Retrieval terminology.}
-BM25~\cite{robertson_probabilistic_2009} ranks articles mainly by overlap with the exact words in the query, whereas dense retrieval ranks articles by semantic similarity between learned query and article vectors. Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} combines ranked lists by favoring articles that appear near the top of either list. Reranking reorders an already retrieved candidate list with a more expensive model. Recall@K asks whether a known cited article appears in the top K candidates, whereas MRR@K rewards placing it near the top of the final ranking.
+BM25~\cite{robertson_probabilistic_2009} ranks articles mainly by overlap with the exact words in the query, whereas dense retrieval ranks articles by semantic similarity between learned query and article vectors. Reciprocal Rank Fusion (RRF)~\cite{cormack_reciprocal_2009} combines ranked lists by favoring articles that appear near the top of either list. Reranking reorders an already retrieved candidate list with a more expensive model. Recall@K asks whether a known cited article appears within the top K retrieved candidates, with K denoting the cutoff rank. MRR@K rewards placing the cited article near the top of the final ranking.
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
 Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
-Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: keyword-based BM25 retrieval and dense semantic retrieval. The two ranked lists are merged with Reciprocal Rank Fusion (RRF) to form a single candidate pool. Stage 2 then reranks this pool with a cross-encoder~\cite{bajaj_ms_2018}. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: keyword-based BM25 retrieval and dense semantic retrieval. The two ranked lists are merged with RRF to form a single candidate pool. Stage 2 then reranks this pool with a cross-encoder~\cite{bajaj_ms_2018}. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
 
 \begin{figure}[!htbp]
 \centering

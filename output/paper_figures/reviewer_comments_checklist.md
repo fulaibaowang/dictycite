@@ -44,7 +44,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 6 (Pipeline / Setup)
 
-- [ ] 💬 **L231 (§ heading)** — `Gene-aware`: "The query is already gene-aware (defined by the gene); awareness here is to synonyms/products. Reconsider the term **'gene-aware'**."
+- [x] 🚫 **L231 (§ heading)** — `Gene-aware`: **Won't fix (leave term).** "X-aware" = the method leverages gene-level knowledge (synonyms/aliases/products); defensible and idiomatic. Appears 14× (abstract ×2, two headings, contribution, figure caption) and is already operationally defined at first use (L234). Renaming risks drift across paper/figures/artifacts for a borderline point.
 - [ ] 💬 **L235** — `Chunked`: "Don't know the term **'chunked'** — define it."
 - [ ] 💬 **L239** — `Because...`: "Didn't understand this paragraph — need to understand **'first-occurrence pooling'**."
 - [ ] 💬 **L242 (§5 heading)** — `Experimental setup`: "Didn't understand anything in Section 5. Add a **text box explaining the setup in lay terms**."
