@@ -1,9 +1,9 @@
 # DictyCite - A Domain-Specific Biological Literature Retrieval Dataset for *Dictyostelium discoideum*
 
-This release contains the curator-claim goldset, the EPMC abstract retrieval
+This release contains the curator-claim goldset, the Europe PMC abstract retrieval
 corpus, and a query-expansion subset used in the paper:
 
-> Benchmarking Domain-Specific Biological Literature Retrieval with *Dictyostelium*.
+> Benchmarking Literature Retrieval for a Model Organism: A *Dictyostelium* Case Study.
 > Yun Wang et al. Manuscript in preparation / under review, 2026.
 
 Code, pipeline configurations, and reproduction instructions:
@@ -11,7 +11,7 @@ Code, pipeline configurations, and reproduction instructions:
 
 At a glance: **1,656** curator-claim queries spanning **862** unique
 *Dictyostelium* genes, linked to **1,289** unique PubMed articles, evaluated
-against a **20,447**-article EPMC abstract corpus.
+against a **20,447**-article Europe PMC abstract corpus.
 
 ---
 
@@ -29,7 +29,7 @@ against a **20,447**-article EPMC abstract corpus.
   (synonyms; synonyms and product descriptions).
 
 - **`dictycite_fulltext_pmids.tsv`** - 1,124 PMIDs.
-  List of gold PMIDs available in the chunked full-text variant, with PMC OA
+  List of cited PMIDs available in the chunked full-text variant, with PMC OA
   license tags (see *Full text* below).
 
 Total uncompressed: ~40 MB.
@@ -44,7 +44,7 @@ One JSON object per query. Top-level fields:
 
 - `query_id` - string. Stable query identifier.
 - `query_text` - string. Curator-written claim used as the retrieval query.
-- `documents` - list of strings. PubMed URLs of cited (gold) articles.
+- `documents` - list of strings. PubMed URLs of cited articles.
 - `docs` - list of objects. Cited articles with metadata (see below).
 - `genes` - list of objects. dictyBase gene records linked to the query
   (`gene_id`, `gene_name`, `synonyms`, `gene_products`).
@@ -100,7 +100,7 @@ Only queries with `query_expansion_benchmark == "yes"` are included.
 
 ### `dictycite_fulltext_pmids.tsv`
 
-Tab-separated file. One row per gold PMID that has a chunked full-text
+Tab-separated file. One row per cited PMID that has a chunked full-text
 representation. Columns:
 
 - `pmid` - PubMed ID (joins to goldset `docs[].pmid`).
@@ -127,7 +127,7 @@ import json
 queries = pl.read_ndjson("dictycite_goldset.jsonl")
 corpus  = pl.read_ndjson("dictycite_abstract_corpus.jsonl")
 
-# Iterate query / gold-doc pairs
+# Iterate query / cited-doc pairs
 with open("dictycite_goldset.jsonl") as f:
     for line in f:
         q = json.loads(line)
@@ -178,7 +178,7 @@ All data files in this release are licensed under
 
 Upstream attribution:
 
-- **Curator claims and gene metadata** are derived from
+- **Curator claims and gene annotations** are derived from
   [dictyBase](http://dictybase.org/) gene summary pages. Please cite
   dictyBase when using the goldset.
 - **Abstract text** is sourced from PubMed via Europe PMC. NLM does not
@@ -194,7 +194,7 @@ Upstream attribution:
 
 ```bibtex
 @unpublished{dictycite2026,
-  title  = {Benchmarking Domain-Specific Biological Literature Retrieval with Dictyostelium},
+  title  = {Benchmarking Literature Retrieval for a Model Organism: A Dictyostelium Case Study},
   author = {Wang, Yun and others},
   year   = {2026},
   note   = {Manuscript in preparation / under review. Dataset: [Zenodo DOI]; Code: \url{https://github.com/fulaibaowang/dictycite}}
