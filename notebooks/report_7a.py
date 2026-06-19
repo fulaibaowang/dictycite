@@ -1583,7 +1583,9 @@ else:
 
         fig, axes = plt.subplots(2, 3, figsize=FIG5_OVERLAY_FIGSIZE)
         for idx, lvl in enumerate(levels):
-            color = EVIDENCE_FIG3_COLORS.get(lvl, "#444444")
+            # Columns already separate the three evidence levels, so per-level color
+            # is redundant; use a single dark grey (matches the legend handles).
+            color = "#333333"
             col_title = EVIDENCE_FIG3_LABELS.get(lvl, lvl)
 
             ax_r = axes[0, idx]

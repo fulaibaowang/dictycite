@@ -68,8 +68,8 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 10 (Full-text / Fig. 4)
 
 - [x] ✅ **L373:** strike `use` → insert `used` — *done*
-- [ ] 💬 **L380 (Fig. 4 caption)** — `Fig. 4. Retrieval`: "Reorder columns — put **'abstract insufficient' first** (discussed first; most interesting effect)."
-- [ ] 💬 **L380 (Fig. 4 caption)** — `Columns correspond to abstract supports detail (n=707)...`: "Change all colors to **black** — no need for three colors when already split into three columns."
+- [x] 🚫 **L380 (Fig. 4) — reorder columns:** **Declined.** Current order (detail → core → insufficient) matches how the three labels are introduced/counted everywhere else (dataset stats 816/654/387, §4, the n-counts 707/585/350); reordering only this figure would break that consistency. Text already emphasizes "abstract insufficient" verbally.
+- [x] ✅ **L380 (Fig. 4) — recolor:** Done in the plotting script (`notebooks/report_7a.py`, `_plot_retrieval_rerank_overlay`): the per-evidence-level color is redundant with the separate columns, so all lines now use a single **dark grey (#333333)** matching the legend (used dark grey, not pure black). baseline/chunked stay distinguished by line style. **PNG must be regenerated** by running the notebook (figure asset not rebuilt here).
 
 ## Page 11 (Discussion)
 
