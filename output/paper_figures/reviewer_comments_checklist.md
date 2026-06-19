@@ -56,14 +56,14 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 8 (Results / Table 1)
 
-- [ ] 💬 **L284** — `The external Ragnarok BM25+RankZephyr reference remains below BM25, further...`: "Why describe this out of order vs. the table?"
-- [ ] 💬 **L288 (Table 1 caption)** — `Table`: "Don't understand the last three columns — explain them in the table footnotes."
-- [ ] 💬 **L307** — `Table 2 illustrates a failure mode ... preserves the task-relevant lexical signal.`: "Seems out of place — Table 2 hasn't been described yet."
+- [x] 🚫 **L284** — `The external Ragnarok BM25+RankZephyr reference remains below BM25, further...`: **Won't fix.** The current narrative order is logical (rerankers first, then the external reference as context); keeping it.
+- [x] ✅ **L288 (Table 1 caption)** — last three columns: moved technical detail into table notes below the tabular and defined each — *Scale* (model size; M/B; "--" for non-neural), *MRR@10* (mean reciprocal rank of the cited article in the top 10, higher better), *Δ vs. BM25* (MRR@10 difference from BM25 in pp, with 95% bootstrap CI; interval excluding zero = reliable). Caption trimmed to a title.
+- [x] ✅ **L307** — `Table 2 illustrates a failure mode ...`: reworded to lead with the finding and demote the table to a concrete case → "One query-level failure mode is that a general reranker can promote articles sharing phenotype or location terms… Example 1 in Table~\ref{tab:qual_examples} gives a concrete case." Removes the premature "Table illustrates" forward-reference.
 
 ## Page 9 (Table 2 / Fig. 3)
 
-- [ ] 💬 **L317 (Table 2 caption)** — `Table 2.`: "Had to work hard to read it. This table format isn't suitable — **incorporate the three examples into the text** with more explicit narratives."
-- [ ] 💬 **L361 (Fig. 3 caption)** — `Fig. 3.`: "1. define **K** in panels a–c; 2. label the **y-axis in d**; 3. don't understand panel **d** — text doesn't explain it."
+- [x] ✅ **L317 (Table 2 caption)** — `Table 2.`: **Kept the table, reframed it as worked examples of the dataset/evaluation** (more useful to a biologist than "qualitative examples"; declined dissolving into prose). Changes: (a) new caption explaining claim→query, cited article=evaluation target, rank change=mechanism, examples↔3 result sections (kept "illustrative not quantitative" caveat); (b) row labels → **Curator claim / Evidence contrast / Ranking change / Interpretation**; (c) cells made readable — "Cited article"/"Competing article", "rank" added (BM25 rank 2 → …), PMIDs demoted to inline, quotes kept; (d) example titles point only to the **§section** (dropped Table/Fig refs, which the section already cites).
+- [x] ✅ **L361 (Fig. 3 caption)** — `Fig. 3.`: caption rewritten. (1) **K defined** as the cutoff rank on the x-axis of (a)–(c); (3) **panel (d) expanded** — change in MRR@10 vs. original-query baseline, two bars per reranker = the two expansion variants, positive = improvement. (2) **y-axis label in (d)** = not added — the quantity is already named in the caption/panel title, so a separate label would be redundant (no figure edit). The "panel design makes it harder" point is a figure-asset matter, not changed.
 
 ## Page 10 (Full-text / Fig. 4)
 
