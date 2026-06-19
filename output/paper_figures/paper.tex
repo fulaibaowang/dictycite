@@ -81,7 +81,7 @@ Biological literature retrieval systems are often developed and evaluated using 
 Biological literature retrieval systems are usually developed and benchmarked
 on broad biomedical corpora and general search tasks. However, much biological
 knowledge is maintained in narrower model-organism communities, such as
-\emph{D. discoideum}, \emph{D.  melanogaster}, \emph{C. elegans}. In these settings, the literature is
+\emph{D. discoideum}, \emph{D. melanogaster}, \emph{C. elegans}. In these settings, the literature is
 smaller, terminology is more organism-specific, and relevant evidence may depend
 on gene names, aliases, product annotations, and phenotype terms rather than on
 broadly shared biomedical vocabulary. Retrieval behavior in such domains may
@@ -120,11 +120,9 @@ recall and final ranking when abstracts omit detailed evidence, although
 such cases remain challenging.
 
 \section{Related Work}
-Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ and BioCreative~\cite{tsatsaronis_overview_2015,krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso and PubTator~\cite{muller_textpresso_2004,wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
-%todo: include citations, cite in sentence cover
+Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and BioCreative~\cite{krallinger_evaluation_2008}, as well as through curation-oriented search and annotation systems such as Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
 
-Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval, dense retrieval, reciprocal rank fusion, cross-encoder reranking, and LLM-based rerankers are widely used components~\cite{robertson_probabilistic_2009,li_making_2023,cormack_reciprocal_2009,bajaj_ms_2018}.
-%todo: avoid non specific citations with many papers
+Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval~\cite{robertson_probabilistic_2009}, dense retrieval~\cite{li_making_2023}, reciprocal rank fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking~\cite{bajaj_ms_2018}, and LLM-based rerankers are widely used components.
 Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. Rather than proposing a new architecture, we use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
 
 Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated annotations for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
@@ -171,10 +169,8 @@ These notes consist of compact biological statements supported by inline citatio
 For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as the reference article for evaluation.
 Because dictyBase uses internal publication identifiers, we first mapped cited publications to PubMed IDs. 
 Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus.
-
 The remaining claims were cleaned and deduplicated. 
 Near-duplicate or semantically similar claims were grouped within each gene, and one representative claim was retained as the final query. 
-This process yielded 1,656 curator-claim queries linked to 1,289 unique PubMed articles.
 
 \paragraph{Gene annotations for query expansion.}
 For each gene page, dictyBase provides structured gene annotations such as the canonical gene name, alternative gene names, and product description.
@@ -445,7 +441,7 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 \begin{figure}[H]
 \centering
 \includegraphicsifexists[width=0.8\linewidth,height=0.24\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
-\caption{Baseline retrieval and reranking across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion. Right: MRR@K for BM25+Dense fusion, and second-stage BGE-m3 reranking and Post-rerank fusion.}
+\caption{Baseline retrieval and reranking across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion. Right: MRR@K for BM25+Dense fusion, and second-stage BGE-m3 reranking and post-rerank fusion.}
 \label{fig:s1}
 
 \end{figure}
