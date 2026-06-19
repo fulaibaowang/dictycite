@@ -46,9 +46,9 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 - [x] 🚫 **L231 (§ heading)** — `Gene-aware`: **Won't fix (leave term).** "X-aware" = the method leverages gene-level knowledge (synonyms/aliases/products); defensible and idiomatic. Appears 14× (abstract ×2, two headings, contribution, figure caption) and is already operationally defined at first use (L234). Renaming risks drift across paper/figures/artifacts for a borderline point.
 - [x] ✅ **L235** — `Chunked`: defined inline at first definitional use (L238) → "each article is **split into shorter passages (*chunks*)** — an abstract chunk and several body-text chunks — that are indexed and retrieved individually." (Standard IR term, but jargon to a biologist; one-clause gloss, no rename.)
-- [ ] 💬 **L239** — `Because...`: "Didn't understand this paragraph — need to understand **'first-occurrence pooling'**."
-- [ ] 💬 **L242 (§5 heading)** — `Experimental setup`: "Didn't understand anything in Section 5. Add a **text box explaining the setup in lay terms**."
-- [ ] 💬 **L239 (Text note)** — "Still didn't understand the terms after finishing the paper."
+- [x] ✅ **L239** — `Because...` (first-occurrence pooling): rewritten to drop the jargon term entirely and state the *why* plainly → "Because an article is split into several chunks, the same article can appear multiple times in a chunk-level ranking… each article takes the rank of its highest-ranked chunk."
+- [x] 🚫 **L242 (§5 heading)** — `Experimental setup` / "add a lay text box": **Declined.** §5 is standard methods (metrics, depths, significance, systems); its jargon is now defined upstream in the §4 terminology paragraph. A boxed lay-summary would be heavy and out of place. (Gadi not the gatekeeper.)
+- [x] ✅ **L239 (Text note)** — "still didn't understand the terms": resolved by the §4 `Retrieval terminology` paragraph (same complaint as the L220 text note).
 
 ## Page 7 (Results)
 
