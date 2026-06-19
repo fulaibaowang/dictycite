@@ -57,7 +57,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 8 (Results / Table 1)
 
 - [x] 🚫 **L284** — `The external Ragnarok BM25+RankZephyr reference remains below BM25, further...`: **Won't fix.** The current narrative order is logical (rerankers first, then the external reference as context); keeping it.
-- [x] ✅ **L288 (Table 1 caption)** — last three columns: moved technical detail into table notes below the tabular and defined each — *Scale* (model size; M/B; "--" for non-neural), *MRR@10* (mean reciprocal rank of the cited article in the top 10, higher better), *Δ vs. BM25* (MRR@10 difference from BM25 in pp, with 95% bootstrap CI; interval excluding zero = reliable). Caption trimmed to a title.
+- [x] ✅ **L288 (Table 1 caption)** — last three columns defined **in the caption text** (no footnote): *Model size* (approx. params for neural rerankers; "--" = non-neural), *MRR@10* (mean reciprocal rank at cutoff 10, higher better), *Δ vs. BM25* (MRR@10 difference from BM25 in pp; brackets = 95% paired-bootstrap CI).
 - [x] ✅ **L307** — `Table 2 illustrates a failure mode ...`: reworded to lead with the finding and demote the table to a concrete case → "One query-level failure mode is that a general reranker can promote articles sharing phenotype or location terms… Example 1 in Table~\ref{tab:qual_examples} gives a concrete case." Removes the premature "Table illustrates" forward-reference.
 
 ## Page 9 (Table 2 / Fig. 3)
@@ -79,18 +79,18 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L397:** `expressions` → `terms` ("organism-specific terms") — *done*
 - [x] ✅ **L397** — `This helps explain...`: → "**These cues help explain** why BM25 remains strong…"
 - [x] ✅ **L399** — `This has a practical implication...`: → "**This finding has** a practical implication…"
-- [ ] 💬 **L399** — `default upgrade.`: "Don't understand — upgrade of what?" *(still open — define/clarify)*
+- [x] ✅ **L399** — `default upgrade.`: clarified → "should not be treated as a default upgrade **to the retrieval pipeline**." (answers "upgrade of what?")
 - [x] ✅ **L399** — `For` (in "For niche biological search..."): → "**In** niche biological search…"
-- [ ] 💬 **L405** — `not only by`: "Rephrase." *(still open — also a content issue: pool is fixed, so crediting "more candidates" is contradictory; needs recast)*
+- [x] ✅ **L405** — `not only by`: recast to fix the logic (fixed pool can't show "more candidates") → "we fix the candidate pool and vary only the reranker query, **isolating a second route**: beyond retrieving more candidates at the first stage, it also gives the reranker better query-side context." Also drops the "not only…but also" construction.
 - [x] ✅ **L405** — `This suggests that...`: → "**These gains suggest** that curated gene annotations can enrich…"
 - [x] ✅ **L386 (Text note)** — resolved together with L386 above (dataset-imperfection caveat added to the limitations paragraph). Gadi's offer to examine still-problematic claim–reference pairs is optional future work, not needed now.
 
 ## Page 12 (Discussion / Appendix)
 
-- [ ] 💬 **L414** — `Since open-access and machine-readable full-text coverage is uneven in practice, complete full-text indexing cannot be assumed.`: "Don't understand this sentence."
+- [x] ✅ **L414** — `Since open-access...cannot be assumed.`: rephrased in plain language → "In practice, not every article has open-access, machine-readable full text, so a system cannot assume that complete full text is available to index."
 - [x] ✅ **L419:** delete `still` (in "can still improve evidence finding") — *done*
-- [ ] 💬 **L437 (§ Appendix)** — `Appendix`: "Too technical — did not review it."
-- [ ] 📝 **L517 (Table S2, `tab:s2_evidence_haspdf_full`)** *(added manually)* — Table S2 is **shifted** (misaligned on the page) and **too wide**; fix placement/width.
+- [x] 🚫 **L437 (§ Appendix)** — `Appendix`: **No action.** Reviewer just noted he skipped the (intentionally technical) implementation appendix; nothing to change.
+- [x] ✅ **L517 (Table S2)** *(added manually)* — width fix: reduced `\tabcolsep` 8pt→4pt and wrapped the tabular in `\resizebox{\textwidth}{!}{…}` so it fits the text width and centers. **Eyeball after compiling** — if the scaled font looks too small, we can drop the `\resizebox` and rely on the smaller `\tabcolsep` alone.
 
 ---
 

@@ -224,7 +224,7 @@ Given a query, Stage 1 retrieves candidate articles using two complementary retr
 \centering
 \includegraphicsifexists[width=0.86\linewidth,height=0.28\textheight,keepaspectratio]{Figures/fig2_pipeline_dicty.png}
 \caption{Two-stage retrieval and reranking pipeline. 
-Stage 1 builds a recall-oriented candidate pool by fusing BM25 and dense HNSW retrieval with RRF. 
+Stage 1 builds a recall-oriented candidate pool by fusing BM25 and dense retrieval with RRF. 
 Stage 2 reranks the fused candidates with a cross-encoder and combines the reranker order with the original retrieval-fusion order through a second RRF step to produce the final ranking.}
 \label{fig:pipeline}
 \end{figure}
@@ -285,7 +285,7 @@ depend on reranker fit rather than on adding a reranking stage alone.
 
 \begin{table}[!htbp]
 \centering
-\caption{Ranker comparison on the full dataset (1,656 queries). Column definitions are given in the notes below the table.}
+\caption{Ranker comparison on the full dataset (1,656 queries). Model size denotes the approximate number of parameters for neural rerankers; ``--'' indicates systems without a neural reranker. MRR@10 is mean reciprocal rank at cutoff 10, with higher values indicating better top-rank performance. $\Delta$ vs.\ BM25 reports the difference in MRR@10 from the BM25 baseline in percentage points; brackets show 95\% paired-bootstrap confidence intervals.}
 \label{tab:ranker_comparison}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -302,9 +302,6 @@ BGE-Gemma  & LLM-based CE reranker         & 3B          & 0.707 & $+11.4$ [$+9.
 Ragnarok   & External BM25+RankZephyr      & 7B          & 0.566 & $-2.7$ [$-4.8$,$-0.8$]   \\
 \bottomrule
 \end{tabular}
-\par\smallskip
-{\scriptsize\raggedright
-Model size denotes the approximate number of parameters for neural rerankers; ``--'' indicates systems without a neural reranker. MRR@10 is mean reciprocal rank at cutoff 10, with higher values indicating better top-rank performance. $\Delta$ vs.\ BM25 reports the difference in MRR@10 from the BM25 baseline in percentage points; brackets show 95\% paired-bootstrap confidence intervals.\par}
 \end{table}
 The per-query analysis shows the same pattern (Fig.~S2): MiniLM-L12 hurts more
 queries than it helps, BGE-m3 is nearly balanced, and MedCPT and BGE-Gemma shift
@@ -401,13 +398,13 @@ Overall, full-text chunks provide their largest benefit on claims whose cited ab
 \label{sec:discussion}
 We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of niche biological search: finding supporting papers for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
-This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
+This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
 lexical baseline on the target retrieval behavior.
 
 Gene-aware query expansion provides a complementary and low-cost way to improve the
-pipeline. In our controlled reranking analysis, the candidate pool is fixed and
-only the reranker query changes, so the observed gains show that expansion helps
-not only by retrieving more candidates but also by giving the reranker better
+pipeline. In our controlled reranking analysis we fix the candidate pool and vary only the
+reranker query, isolating a second route by which expansion helps: beyond
+retrieving more candidates at the first stage, it also gives the reranker better
 query-side context. These gains suggest that curated gene annotations can enrich
 compact claims with missing gene vocabulary without substantially increasing
 reranking noise. More broadly, trusted gene annotations plus a smaller domain-suitable
@@ -417,9 +414,8 @@ LLM-based rerankers.
 The full-text experiments show that abstracts are efficient but incomplete
 retrieval units. Body chunks help most when cited abstracts are insufficient, yet
 the remaining MRR gap indicates that full text also creates a harder ranking
-problem over noisier, more fine-grained candidates. Since open-access and
-machine-readable full-text coverage is uneven in practice, complete full-text
-indexing cannot be assumed. The full-dataset columns of
+problem over noisier, more fine-grained candidates. In practice, not every article has open-access, machine-readable full text, so a
+system cannot assume that complete full text is available to index. The full-dataset columns of
 Table~\ref{tab:s2_evidence_haspdf_full} are therefore encouraging: mixed
 abstract/full-text retrieval can improve evidence finding under partial
 coverage.
@@ -444,12 +440,11 @@ Several limitations remain. The queries were automatically extracted, cleaned, a
 \subsection*{Implementation details}
 
 BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
-
 Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \begin{figure}[H]
 \centering
-\includegraphicsifexists[width=0.9\linewidth,height=0.26\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
+\includegraphicsifexists[width=0.8\linewidth,height=0.24\textheight,keepaspectratio]{Figures/fig_s1_baseline_depths.png}
 \caption{Baseline retrieval and reranking across candidate depths. Left: first-stage Recall@K for BM25, dense retrieval, and BM25+Dense RRF fusion. Right: MRR@K for BM25+Dense fusion, and second-stage BGE-m3 reranking and Post-rerank fusion.}
 \label{fig:s1}
 
@@ -457,7 +452,7 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 
 \begin{figure}[H]
 \centering
-\includegraphicsifexists[width=0.9\linewidth,height=0.34\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
+\includegraphicsifexists[width=0.88\linewidth,height=0.34\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
 \caption{Per-query reranking effect relative to BM25. $\Delta$MRR@10 is computed as reranker minus BM25 and grouped as hurt, helped, or near tie using thresholds of $\pm0.025$. Similar aggregate scores mask different query-level behavior: MiniLM-L12 is mostly harmful, BGE-m3 is balanced, and MedCPT and BGE-Gemma shift more queries toward positive deltas.}
 \label{fig:s2}
 \end{figure}
@@ -476,24 +471,13 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 \label{tab:s1_qe_reranker}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{3.2cm}c p{3.55cm}p{3.7cm}@{}}
+\begin{tabular}{@{}l c c c@{}}
 \toprule
-Reranker & \shortstack{Original} & + Synonyms & + Synonyms and products \\
+Reranker & Original & + Synonyms & + Synonyms and products \\
 \midrule
-BGE-m3
-& 0.576
-& \shortstack{0.623\\($+4.7$, [$+2.6$, $+6.8$])}
-& \shortstack{0.622\\($+4.6$, [$+2.2$, $+7.1$])} \\
-
-MedCPT
-& 0.624
-& \shortstack{0.682\\($+5.8$, [$+3.7$, $+7.9$])}
-& \shortstack{0.673\\($+5.0$, [$+2.7$, $+7.2$])} \\
-
-BGE-Gemma
-& 0.694
-& \shortstack{0.703\\($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$}
-& \shortstack{0.701\\($+0.7$, [$-0.6$, $+2.1$])$^{\dag}$} \\
+BGE-m3 & 0.576 & 0.623 ($+4.7$, [$+2.6$, $+6.8$]) & 0.622 ($+4.6$, [$+2.2$, $+7.1$]) \\
+MedCPT & 0.624 & 0.682 ($+5.8$, [$+3.7$, $+7.9$]) & 0.673 ($+5.0$, [$+2.7$, $+7.2$]) \\
+BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [$-0.6$, $+2.1$])$^{\dag}$ \\
 \bottomrule
 \end{tabular}
 
@@ -510,7 +494,8 @@ partial full-text coverage. Full-dataset gains are diluted because some cited
 PMIDs lack chunked-corpus coverage, but the qualitative pattern is unchanged.}
 \label{tab:s2_evidence_haspdf_full}
 \scriptsize
-\setlength{\tabcolsep}{8pt}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}l rcccc rcccc@{}}
 \toprule
  & \multicolumn{5}{c}{has-PDF subset} & \multicolumn{5}{c}{full dataset} \\
@@ -524,7 +509,8 @@ Evidence level & $n$ & Abs & +Chk & Abs & +Chk & $n$ & Abs & +Chk & Abs & +Chk \
 \emph{Abstract supports core}   & 585 & 0.986 & 0.998 & 0.505 & 0.636 & 654 & 0.982 & 0.992 & 0.503 & 0.608 \\
 \emph{Abstract insufficient}    & 350 & 0.784 & 0.972 & 0.161 & 0.385 & 387 & 0.788 & 0.949 & 0.164 & 0.357 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{credits}
