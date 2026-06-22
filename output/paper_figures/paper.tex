@@ -113,8 +113,8 @@ Our principal contribution is not a new retrieval architecture, but a benchmark
 and analysis of retrieval behavior in a sparse model-organism domain. The
 results show that reranking gains depend strongly on model fit, that trusted
 gene annotations can reduce vocabulary mismatch, and that full-text chunks improve
-recall and final ranking when abstracts omit detailed evidence, although
-such cases remain challenging.
+recall and final ranking when abstracts omit detailed evidence, while not fully
+closing the gap to claims whose evidence is already present in abstracts.
 
 \section{Related Work}
 Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen track~\cite{coordinators-trec2025-papers-proc-4}, as well as through curation-oriented search and annotation systems such as Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting citations for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.

@@ -699,18 +699,18 @@ FUSION_STYLE = {
 n_q = len(fig2_gold)
 
 # Fig 4 typography — slightly enlarged for print / slides
-_FIG4_FS_TITLE = 15
+_FIG4_FS_TITLE = 14
 _FIG4_FS_LABEL = 14
 _FIG4_FS_YLABEL = 12
 _FIG4_FS_TICK = 11
 _FIG4_FS_LEGEND = 14
 
-fig = plt.figure(figsize=(13.0, 4.0))
+fig = plt.figure(figsize=(12.8, 4.0))
 # Equal-width panels; spacer cols absorb y tick labels between (b,c) and (c,d).
 gs = GridSpec(
     1, 6, figure=fig,
-    width_ratios=[1.0, 1.0, 0.30, 1.0, 0.40, 1.0],
-    wspace=0.03,
+    width_ratios=[1.0, 1.0, 0.30, 1.0, 0.32, 1.0],
+    wspace=0.04,
 )
 ax_a = fig.add_subplot(gs[0])
 ax_b = fig.add_subplot(gs[1], sharey=ax_a)
@@ -814,7 +814,13 @@ ax_d.set_xticks(xpos)
 ax_d.set_xticklabels(inset_reranker_order, rotation=45, ha="right", fontsize=_FIG4_FS_TICK - 1)
 ax_d.tick_params(axis="y", pad=1)
 ax_d.set_ylabel("Δ MRR@10", fontsize=_FIG4_FS_YLABEL, labelpad=2)
-ax_d.set_title("(d) Query-expansion gain", fontsize=_FIG4_FS_TITLE, fontweight="bold")
+ax_d.set_title(
+    "(d) Query-expansion gain",
+    fontsize=_FIG4_FS_TITLE,
+    fontweight="bold",
+    x=0.38,
+    ha="center",
+)
 ax_d.grid(True, axis="y", alpha=0.35)
 
 if all_deltas:
@@ -836,7 +842,7 @@ for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.set_box_aspect(1)
 
 fig.tight_layout(
-    rect=(0.02, 0.10, 0.99, 0.84),
+    rect=(0.02, 0.10, 0.98, 0.84),
     pad=0.30,
 )
 fig.legend(

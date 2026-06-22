@@ -23,7 +23,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L98–99** — `studies of chemotaxis, motility, phago-…` → `chemotaxis, cell motility, phago-…`
 - [x] ✅ **L101** — `curator-written notes` → `curator-generated` *(recurring; done globally in ca8aad6 — see L74/101/136/147/148/304)*
 - [x] ✅ **L102–104** — `…retrieve the cited article from a domain-specific literature corpus.` → `…retrieve a proper citation to an article from a domain-specific literature corpus.`
-- [ ] ⏸️ **L117** — `such cases remain challenging.` — "say 2–3 words about **why** it is challenging." **Deferred** (skipped for now).
+- [x] ✅ **L117** — replaced the vague "although such cases remain challenging" with a concrete reason: "…while not fully closing the gap to claims whose evidence is already present in abstracts." (author wording.)
 - [x] ✅ **L120 + L384** — `supporting papers` → `supporting citations` (both occurrences, for consistency).
 
 ## Page 3 (Related work / Dataset)
