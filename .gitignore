@@ -48,3 +48,5 @@ dictybase_files/ontology/
 CLAUDE.md
 logs/
 .claude/
+# Reviewer checklist — kept local, not pushed
+output/paper_figures/reviewer_comments_checklist_revised.md
