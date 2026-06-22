@@ -67,7 +67,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 10 (Fig. 3 + full-text results)
 
 - [x] ✅ **L348/354 (Fig. 3 / QE text, `curator claim`)** — unified to "original query" (matching the legend): bridged once at first mention (L342: "the original query (the curator claim)"), then "original query" in the Fig. 3 caption and prose (L349/353/355). Kept "curator claim" only where it contrasts with the cited abstract.
-- [ ] 💬🔖 **L348 (Fig. 3 panel `(d)`)** — "**Define the y-axis in the image**" (figure asset — re-render fig5/fig3 with a y-axis label on panel d).
+- [x] ✅ **L348 (Fig. 3 panel `(d)`)** — defined the y-axis in the **caption** instead of re-rendering (author chose not to touch the figure): "(d) The y-axis shows the change in MRR@10 (in MRR@10 units) relative to the original-query baseline…". Note: panel (d) is in raw MRR@10 units, not percentage points (deltas computed as v−body on the 0–1 scale in query_expansion_sweeping.py), so "percentage points" was deliberately avoided.
 - [x] ✅ **L360** — `…limiting for claims whose cited abstracts…` → `claims where the cited abstracts…` *(this is the same "whose" Gadi's two overlapping marks both point at)*
 - [x] ✅ **L~ (full-text)** — L359 subsection title: "…evidence is missing from abstracts" → "…missing from **the** abstracts".
 - [x] ✅ **L372** — `…already close to ceiling…` → "close to **the** ceiling".
@@ -77,12 +77,12 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 - [x] ✅ **L377** — `provide their largest benefit` → "provide **the** largest benefit" (dropped "their").
 - [x] ✅ **L~ (discussion)** — inserted `a` at L385: "a realistic form of **a** niche biological search" (author edit).
-- [ ] ⭐💬🔖 **L386 (`a costly reranker`)** — "could you explain this term? why is one reranker more costly than another? Is it the actual cost in **$** or measured in **compute time**?" → define cost.
-- [ ] 💬🔖 **L389 (`low-cost`)** — "same as above re. cost" → define alongside L386.
+- [x] ✅ **L386 (`a costly reranker`)** — resolved $-vs-compute ambiguity by dropping the word "costly": "…because **a reranking stage that adds substantial computation** is useful only if it improves over a strong lexical baseline on the target retrieval task." (author wording — cost = computation.)
+- [x] ✅ **L389 (`low-cost`)** — `low-cost` → **`low-overhead`**: "Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline." (author wording.)
 
 ## Page 12 (Discussion / Appendix)
 
-- [ ] ⭐💬🔖 **L403 (`…available to index.` / full-text coverage)** — de-novo problem: when you approach a **new** problem you can't know whether a gene name is absent because the paper isn't about that gene, uses a synonym, or has a general abstract. Gadi's recommendation: **"you should always use the full text when you approach a new problem. You should address this issue here."**
+- [x] ✅ **L403 (`…available to index.` / full-text coverage)** — addressed partial-coverage concern: noted it could in principle bias retrieval (full-text articles contribute many chunks vs one for abstract-only), but the full-dataset columns of Table~\ref{tab:s2_evidence_haspdf_full} show the effect is not dominant — mixed abstract/full-text retrieval still improves evidence finding under partial coverage. (author wording.)
 - [ ] 🚫 **L412 (`Appendix`)** — "I ran out of time to review the rest. sorry." → **no action** (reviewer stopped here).
 
 ---

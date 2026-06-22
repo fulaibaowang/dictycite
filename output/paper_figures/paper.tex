@@ -346,7 +346,7 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 \begin{figure}[!htbp]
 \centering
 \includegraphicsifexists[width=0.98\linewidth,height=0.3\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
-\caption{Effect of gene-aware query expansion. Three query variants are compared: the original query (the curator claim), the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) Change in MRR@10 relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
+\caption{Effect of gene-aware query expansion. Three query variants are compared: the original query (the curator claim), the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) The y-axis shows the change in MRR@10 (in MRR@10 units) relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
 \label{fig:qe}
 \end{figure}
 
@@ -384,11 +384,10 @@ Overall, full-text chunks provide the largest benefit on claims whose cited abst
 \label{sec:discussion}
 We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of a niche biological search: finding supporting citations for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
-This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a costly reranker is useful only if it improves over a strong
-lexical baseline on the target retrieval behavior.
+This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
 
-Gene-aware query expansion provides a complementary and low-cost way to improve the
-pipeline. In our controlled reranking analysis we fix the candidate pool and vary only the
+Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline.
+In our controlled reranking analysis we fix the candidate pool and vary only the
 reranker query, isolating a second route by which expansion helps: beyond
 retrieving more candidates at the first stage, it also gives the reranker better
 query-side context. These gains suggest that curated gene annotations can enrich
@@ -401,9 +400,11 @@ The full-text experiments show that abstracts are efficient but incomplete
 retrieval units. Body chunks help most when cited abstracts are insufficient, yet
 the remaining MRR gap indicates that full text also creates a harder ranking
 problem over noisier, more fine-grained candidates. In practice, not every article has open-access, machine-readable full text, so a
-system cannot assume that complete full text is available to index. The full-dataset columns of
-Table~\ref{tab:s2_evidence_haspdf_full} are therefore encouraging: mixed
-abstract/full-text retrieval can improve evidence finding under partial
+system cannot assume complete full-text coverage. This partial coverage could in
+principle bias retrieval, because full-text-covered articles contribute many chunks
+whereas abstract-only articles contribute only one. However, the full-dataset columns
+of Table~\ref{tab:s2_evidence_haspdf_full} suggest that this effect is not dominant:
+mixed abstract/full-text retrieval still improves evidence finding under partial
 coverage.
 
 Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact statements may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted statement. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
