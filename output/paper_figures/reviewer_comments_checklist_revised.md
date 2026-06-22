@@ -67,7 +67,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 10 (Fig. 3 + full-text results)
 
 - [x] ✅ **L348/354 (Fig. 3 / QE text, `curator claim`)** — unified to "original query" (matching the legend): bridged once at first mention (L342: "the original query (the curator claim)"), then "original query" in the Fig. 3 caption and prose (L349/353/355). Kept "curator claim" only where it contrasts with the cited abstract.
-- [x] ✅ **L348 (Fig. 3 panel `(d)`)** — defined the y-axis in the **caption** instead of re-rendering (author chose not to touch the figure): "(d) The y-axis shows the change in MRR@10 (in MRR@10 units) relative to the original-query baseline…". Note: panel (d) is in raw MRR@10 units, not percentage points (deltas computed as v−body on the 0–1 scale in query_expansion_sweeping.py), so "percentage points" was deliberately avoided.
+- [x] ✅ **L348 (Fig. 3 panel `(d)`)** — re-rendered fig4_candidate_qe_main.png with an on-axis y-label "Δ MRR@10" (query_expansion_sweeping.py: set_ylabel + panel made slimmer via box_aspect 1.3 and wider left spacer). Caption also names it. Units are raw MRR@10, not percentage points (deltas = v−body on the 0–1 scale), confirmed by the re-render (Δ ≈ 0.009–0.058), so "percentage points" was deliberately avoided.
 - [x] ✅ **L360** — `…limiting for claims whose cited abstracts…` → `claims where the cited abstracts…` *(this is the same "whose" Gadi's two overlapping marks both point at)*
 - [x] ✅ **L~ (full-text)** — L359 subsection title: "…evidence is missing from abstracts" → "…missing from **the** abstracts".
 - [x] ✅ **L372** — `…already close to ceiling…` → "close to **the** ceiling".

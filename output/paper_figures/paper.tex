@@ -346,7 +346,7 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 \begin{figure}[!htbp]
 \centering
 \includegraphicsifexists[width=0.98\linewidth,height=0.3\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
-\caption{Effect of gene-aware query expansion. Three query variants are compared: the original query (the curator claim), the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) The y-axis shows the change in MRR@10 (in MRR@10 units) relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
+\caption{Effect of gene-aware query expansion. Three query variants are compared: the original query (the curator claim), the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) Change in MRR@10 (y-axis, in MRR@10 units) relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
 \label{fig:qe}
 \end{figure}
 

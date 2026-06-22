@@ -709,7 +709,7 @@ fig = plt.figure(figsize=(13.0, 4.0))
 # Equal-width panels; spacer cols absorb y tick labels between (b,c) and (c,d).
 gs = GridSpec(
     1, 6, figure=fig,
-    width_ratios=[1.0, 1.0, 0.30, 1.0, 0.22, 1.0],
+    width_ratios=[1.0, 1.0, 0.30, 1.0, 0.40, 1.0],
     wspace=0.03,
 )
 ax_a = fig.add_subplot(gs[0])
@@ -776,7 +776,7 @@ ax_c.grid(True, axis="y", alpha=0.35)
 ax_c.grid(True, axis="x", alpha=0.35)
 
 
-# Panel (d): Δ MRR@10 vs baseline (no QE) — metric named in title; y-axis label omitted.
+# Panel (d): Δ MRR@10 vs baseline (no QE) — metric named in title and on the y-axis label.
 # Two nested bars per reranker — Δ MRR@10 (synonyms − body) and Δ MRR@10 (long − body) —
 # same blue gradient as panels (a)–(c) so QE intensity is visually consistent.
 # The diminishing bar height left-to-right tells the orthogonality story:
@@ -813,7 +813,7 @@ ax_d.axhline(0, color="black", linewidth=0.6)
 ax_d.set_xticks(xpos)
 ax_d.set_xticklabels(inset_reranker_order, rotation=45, ha="right", fontsize=_FIG4_FS_TICK - 1)
 ax_d.tick_params(axis="y", pad=1)
-ax_d.set_ylabel("")
+ax_d.set_ylabel("Δ MRR@10", fontsize=_FIG4_FS_YLABEL, labelpad=2)
 ax_d.set_title("(d) Δ MRR@10 vs no QE", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_d.grid(True, axis="y", alpha=0.35)
 
@@ -832,8 +832,10 @@ for qf in ["body", "synonyms", "long"]:
                                  linewidth=s["lw"], label=s["label"]))
 for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.tick_params(axis="both", which="major", labelsize=_FIG4_FS_TICK)
-for _ax in (ax_a, ax_b, ax_c, ax_d):
+for _ax in (ax_a, ax_b, ax_c):
     _ax.set_box_aspect(1)
+# Panel (d) is made slimmer (taller-than-wide) to leave room for its y-axis label.
+ax_d.set_box_aspect(1.3)
 
 fig.tight_layout(
     rect=(0.02, 0.10, 0.99, 0.84),
