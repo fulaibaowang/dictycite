@@ -59,10 +59,12 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 9 (Table 2)
 
-- [ ] ✏️ **L310/caption — Table 2 title** — strike `Worked examples` (reconsider the framing).
-- [ ] 💬🔖 **L317** — `…The competing article shares location vocabulary…` — "**why is it 'competing'?** do you mean the next article in the ranked list?" (define/relabel).
-- [ ] ⭐💬🔖 **L308–335 (Table 2 overall)** — Gadi (3 separate notes): "It is hard to follow this example. I still think this table format is **not suitable**… I don't understand the **arrow** notation and I don't fully understand what the **ranks** mean. Please **reconsider your position on using this table**." On Example 3: "Here your intention is a bit clearer because there are only two elements… but you already lost me as a sympathetic reader." → **reconsider Table 2** (arrows `$\rightarrow$`, rank semantics).
-- [ ] ⭐💬🔖 **L308 (`Table 2.`)** — "If you insist on using this table, please **move it after Figure 3**. It is hard to jump back and forth since the main text is not aligned with the order of these display items."
+- [x] ✅ **Table 2 — removed entirely.** Conceded Gadi's table-design argument (no real columns; cells too long). Deleted Table 2 from Results and folded the three examples into the relevant subsections as short prose, avoiding arrows:
+  - Results opener: "…we use short query-level examples within each subsection to illustrate the mechanisms behind these results."
+  - §6.1 (DymA): 3 sentences; rank direction conveyed by wording ("moved it down to 60th", "ranked first") rather than an explicit gloss.
+  - §6.2 (DetA/DET1): 2 sentences ("moved the cited article from 39th to first under BGE-m3").
+  - §6.3 (gefE): 2 sentences ("ranked 54th … ranked first").
+  This subsumes L310 (drop "Worked examples"), L317 ("competing" relabel), L308–335 (format/arrows/ranks), and L308 placement (no float to position anymore).
 
 ## Page 10 (Fig. 3 + full-text results)
 
@@ -90,7 +92,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Recurring themes (cross-cutting)
 
 1. ✅ **`curator-written` → `curator-generated` everywhere** — DONE (all 6 occurrences). Gadi's explicit, repeated request — *written* understates the curator's inference and reference-selection work.
-2. ⭐ **Table 2 still not working** — arrow notation and rank semantics are unclear; Gadi asks us to reconsider the table entirely, and at minimum **move it after Fig. 3** and align the main-text order with the display items.
+2. ✅ **Table 2 removed** — conceded Gadi's table-design argument; the three examples now live as short prose in §6.1/§6.2/§6.3 (no arrows; rank direction stated once).
 3. **Define "cost"** (compute time vs. dollars) for "costly reranker" / "low-cost expansion" (L386, L389).
 4. **Jargon / clarity for biologists:** define "residual markup" (L159), explain the Δ in Table 1 (L273), replace casual "buckets" with "groups"/"cases", label the Fig. 3(d) y-axis.
 5. **Add missing numbers / examples:** count of excluded claims (L167); pkaC/cAMP non-biologist gene-name explanation (L172); Rosengarten-abstract worked example + **its reference** (L180).

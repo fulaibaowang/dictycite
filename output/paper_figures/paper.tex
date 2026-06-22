@@ -57,7 +57,7 @@ Bla\v{z} Zupan\inst{1,2}\orcidID{0000-0002-5864-7056}}
 \authorrunning{Y. Wang et al.}
 
 \institute{
-Faculty of Computer and Information Science, University of Ljubljana,
+University of Ljubljana, Faculty of Computer and Information Science,
 Ve\v{c}na pot 113, 1000 Ljubljana, Slovenia\\
 \email{\{yun.wang,tomaz.curk,blaz.zupan\}@fri.uni-lj.si}
 \and
@@ -253,8 +253,8 @@ We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradee
 We organize the results around three questions: whether cross-encoder reranking
 adds value beyond first-stage retrieval baselines, whether curated gene
 annotations help compact biological queries, and whether full-text chunks improve
-retrieval when abstracts lack sufficient evidence. The aggregate trends in Table~\ref{tab:ranker_comparison} and Figs.~\ref{fig:qe}--\ref{fig:evidence_haspdf}
-are illustrated by three query-level examples in Table~\ref{tab:qual_examples}.
+retrieval when abstracts lack sufficient evidence. The aggregate trends are reported in Table~\ref{tab:ranker_comparison} and Figs.~\ref{fig:qe}--\ref{fig:evidence_haspdf};
+we use short query-level examples within each subsection to illustrate the mechanisms behind these results.
 
 \subsection{Reranking gains are model-dependent}
 \label{sec:results_reranking}
@@ -291,51 +291,13 @@ Ragnarok   & External BM25+RankZephyr      & 7B          & 0.566 & $-2.7$ [$-4.8
 \end{table}
 The per-query analysis shows the same pattern (Fig.~\ref{fig:s1}): MiniLM-L12 hurts more
 queries than it helps, BGE-m3 is nearly balanced, and MedCPT and BGE-Gemma shift
-more queries toward positive deltas. One query-level failure mode is that a general reranker can promote articles
-sharing phenotype or location terms while weakening the gene-specific cue
-captured by BM25; Example~1 in Table~\ref{tab:qual_examples} gives a concrete case. Thus, reranking condensed
+more queries toward positive deltas. A concrete failure case is the query
+``DymA localizes to the phagosome and the cleavage furrow.'' BM25 ranked the
+cited article second, whereas MiniLM-L12 moved it down to 60th. The article
+ranked first by MiniLM-L12 matched broad location terms, such as cleavage furrow
+and phagocytic cup, but lacked the DymA-specific signal. Thus, reranking condensed
 biological statements is useful only when the reranker preserves the task-relevant
 lexical signal.
-
-\begin{table}[!t]
-\centering
-\caption{Worked examples of curator-claim retrieval and evaluation. Each block
-shows how a curator-generated claim becomes the query, how the cited PubMed article
-defines the evaluation target, and how rank changes reveal the mechanism behind
-an aggregate result. The three examples correspond to the three result sections
-(reranking, gene-aware query expansion, full-text retrieval) and are illustrative
-rather than additional quantitative evidence.}
-\label{tab:qual_examples}
-\begingroup
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.20cm}>{\raggedright\arraybackslash}p{8.70cm}@{}}
-\toprule
-\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 1: reranker loses lexical specificity} \; (\S\ref{sec:results_reranking})} \\
-\midrule
-Curator claim & DymA localizes to the phagosome and the cleavage furrow. \\
-Evidence contrast & The cited article (PMID 23679940) contains the gene-specific cue: ``DymA and DlpA were associated with actin filaments at the furrow.'' The competing article shares location vocabulary (``cleavage furrow'', ``phagocytic cup'') but not the DymA signal. \\
-Ranking change & Cited article: BM25 rank 2 $\rightarrow$ MiniLM-L12 rank 60; BGE-Gemma rank 3. Competing article: MiniLM-L12 rank 1. \\
-Interpretation & A general reranker can over-weight phenotype/location overlap while weakening the gene-specific lexical signal captured by BM25. \\
-\midrule
-\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 2: gene-aware expansion resolves synonym mismatch} \; (\S\ref{sec:results_qe})} \\
-\midrule
-Curator claim & DetA is involved in cell-type specification during development. \\
-Evidence contrast & The curator claim uses DetA, while the cited article uses the synonym DET1; query expansion appends \texttt{DET1}, matching the cited article's title/abstract. \\
-Ranking change & Cited article (PMID 21193547) under BGE-m3: original query rank 39 $\rightarrow$ +synonyms rank 1; +synonyms/products rank 1. \\
-Interpretation & Trusted gene synonyms can close vocabulary gaps between compact curator wording and article wording. \\
-\midrule
-\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{10.90cm}@{}}{\textbf{Example 3: full-text chunks recover missing detailed evidence} \; (\S\ref{sec:results_fulltext})} \\
-\midrule
-Curator claim & \emph{gefE} null mutants are less sensitive to DIF than wild type. \\
-Evidence contrast & The cited abstract is broad (``gefE is required for normal lineage priming and salt and pepper differentiation''), while a body-text passage is specific (``\emph{gefE}$^{-}$ cells are less sensitive to DIF than wild type cells\ldots''). \\
-Ranking change & Cited article (PMID 24282234) under BGE-m3: abstract-only corpus rank 54 $\rightarrow$ +full-text chunks rank 1. \\
-Interpretation & Full-text chunks help when the cited abstract supports the general context but omits the detailed evidence behind the curator claim. \\
-\bottomrule
-\end{tabular}
-\endgroup
-\end{table}
 
 \subsection{Gene-aware query expansion improves retrieval and benefits BGE-m3 and MedCPT}
 \label{sec:results_qe}
@@ -352,7 +314,7 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 
 At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b). For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original query, and expansion adds less than one point (CIs cross zero).
 
-Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. Example~2 in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the cited abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original query.
+Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. A clear example is the query ``DetA is involved in cell-type specification during development.'' The cited article uses the synonym DET1 rather than DetA. In the controlled reranking setting, adding this curated synonym moved the cited article from 39th to first under BGE-m3. The synonym supplies the surface form the article actually uses, closing the vocabulary gap between the compact curator wording and the article text. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original query.
 
 \FloatBarrier
 
@@ -373,7 +335,7 @@ The main effect of full-text chunks is at the retrieval stage. For abstract-insu
 
 The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting.
 
-At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). Example~3 in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
+At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
 
 Overall, full-text chunks provide the largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient group. The remaining gap to the abstract-supported groups indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
 
@@ -384,10 +346,10 @@ Overall, full-text chunks provide the largest benefit on claims whose cited abst
 \label{sec:discussion}
 We built a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of a niche biological search: finding supporting citations for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
-This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together, because a reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
+This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together because a reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
 
 Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline.
-In our controlled reranking analysis we fix the candidate pool and vary only the
+In our controlled reranking analysis, we fix the candidate pool and vary only the
 reranker query, isolating a second route by which expansion helps: beyond
 retrieving more candidates at the first stage, it also gives the reranker better
 query-side context. These gains suggest that curated gene annotations can enrich
@@ -410,7 +372,6 @@ coverage.
 Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact statements may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted statement. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
 \FloatBarrier
-% \clearpage
 \section*{Appendix}
 \FloatBarrier
 % The supplement figure uses page-float placement so the supplement page is
