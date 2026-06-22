@@ -18,7 +18,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 2 (Intro)
 
-- [ ] ✏️ **L91** — `…asked to retrieve the paper cited as supporting evidence…` → `retrieve **a proper reference**` *(simplify wording)*
+- [x] ✅ **L91** — `…asked to retrieve the paper cited as supporting evidence in a curated knowledge base?` → `…asked to retrieve a proper supporting reference from a curated knowledge base?`
 - [ ] ⭐✏️ **L93–97** — the "two common strategies … should be evaluated rather than assumed **to the retrieval**" sentence: Gadi struck `should be evaluated rather than assumed to the retrieval.` and rewrote the clause to a colon list → "…can carry substantial signal**:** semantic reranking, which reorders the retrieved articles using a selective model, and query expansion, which adds related terms to the search query." (drop the "should be evaluated rather than assumed" framing)
 - [x] ✅ **L98–99** — `studies of chemotaxis, motility, phago-…` → `chemotaxis, cell motility, phago-…`
 - [ ] ✏️ **L101** — `curator-written notes` → `curator-generated` *(recurring)*
