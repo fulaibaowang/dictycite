@@ -814,7 +814,7 @@ ax_d.set_xticks(xpos)
 ax_d.set_xticklabels(inset_reranker_order, rotation=45, ha="right", fontsize=_FIG4_FS_TICK - 1)
 ax_d.tick_params(axis="y", pad=1)
 ax_d.set_ylabel("Δ MRR@10", fontsize=_FIG4_FS_YLABEL, labelpad=2)
-ax_d.set_title("(d) Δ MRR@10 vs no QE", fontsize=_FIG4_FS_TITLE, fontweight="bold")
+ax_d.set_title("(d) Query-expansion gain", fontsize=_FIG4_FS_TITLE, fontweight="bold")
 ax_d.grid(True, axis="y", alpha=0.35)
 
 if all_deltas:
@@ -832,10 +832,8 @@ for qf in ["body", "synonyms", "long"]:
                                  linewidth=s["lw"], label=s["label"]))
 for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.tick_params(axis="both", which="major", labelsize=_FIG4_FS_TICK)
-for _ax in (ax_a, ax_b, ax_c):
+for _ax in (ax_a, ax_b, ax_c, ax_d):
     _ax.set_box_aspect(1)
-# Panel (d) is made slimmer (taller-than-wide) to leave room for its y-axis label.
-ax_d.set_box_aspect(1.3)
 
 fig.tight_layout(
     rect=(0.02, 0.10, 0.99, 0.84),
