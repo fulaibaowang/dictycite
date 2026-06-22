@@ -22,8 +22,8 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L93–94** — took Gadi's edit: colon list, dropped "more", and dropped the "rather than assumed to improve retrieval" over-claim → "In this setting, we evaluate two common strategies: semantic reranking, which reorders the retrieved articles using a selective model, and query expansion, which adds related terms to the search query." (the "not assumed, must be evaluated" point is carried by the Results/Discussion.)
 - [x] ✅ **L98–99** — `studies of chemotaxis, motility, phago-…` → `chemotaxis, cell motility, phago-…`
 - [ ] ✏️ **L101** — `curator-written notes` → `curator-generated` *(recurring)*
-- [ ] ✏️ **L102** — `converted into a controlled evidence … retrieve the cited article` → `retrieve **a proper citation to an** article`
-- [ ] 💬🔖 **L117** — `such cases remain challenging.` — "say 2–3 words about **why** it is challenging."
+- [x] ✅ **L102–104** — `…retrieve the cited article from a domain-specific literature corpus.` → `…retrieve a proper citation to an article from a domain-specific literature corpus.`
+- [ ] ⏸️ **L117** — `such cases remain challenging.` — "say 2–3 words about **why** it is challenging." **Deferred** (skipped for now).
 - [ ] ✏️ **L~ (intro motivation)** — `papers` → `citations` (caret) in the "motivation … papers" sentence
 
 ## Page 3 (Related work / Dataset)
