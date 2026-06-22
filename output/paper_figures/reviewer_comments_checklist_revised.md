@@ -66,17 +66,17 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 10 (Fig. 3 + full-text results)
 
-- [ ] 💬🔖 **L348/354 (Fig. 3 / QE text, `curator claim`)** — "the legend defines it as **'original query'**, so this is confusing." → unify wording between caption legend and prose ("original query" vs "original curator claim").
+- [x] ✅ **L348/354 (Fig. 3 / QE text, `curator claim`)** — unified to "original query" (matching the legend): bridged once at first mention (L342: "the original query (the curator claim)"), then "original query" in the Fig. 3 caption and prose (L349/353/355). Kept "curator claim" only where it contrasts with the cited abstract.
 - [ ] 💬🔖 **L348 (Fig. 3 panel `(d)`)** — "**Define the y-axis in the image**" (figure asset — re-render fig5/fig3 with a y-axis label on panel d).
 - [x] ✅ **L360** — `…limiting for claims whose cited abstracts…` → `claims where the cited abstracts…` *(this is the same "whose" Gadi's two overlapping marks both point at)*
-- [ ] ✏️ **L~ (full-text)** — `Full-text chunks … abstracts` → insert `the` ("**the** abstracts")
-- [ ] ✏️ **L372** — `…already close to ceiling…` → minor caret `the` near "to ceiling"
+- [x] ✅ **L~ (full-text)** — L359 subsection title: "…evidence is missing from abstracts" → "…missing from **the** abstracts".
+- [x] ✅ **L372** — `…already close to ceiling…` → "close to **the** ceiling".
 - [x] ✅ **L371/373/377 (`buckets`)** — replaced all 5 occurrences with **`groups`** (Gadi: "too casual; use 'groups' or 'cases'").
 
 ## Page 11 (Discussion)
 
-- [ ] ✏️ **L377** — `provide their largest benefit` → strike `their largest` *(reword)*
-- [ ] ✏️ **L~ (discussion)** — `benchmark of niche…` → insert `a` ("**a** benchmark of niche…")
+- [x] ✅ **L377** — `provide their largest benefit` → "provide **the** largest benefit" (dropped "their").
+- [x] ✅ **L~ (discussion)** — inserted `a` at L385: "a realistic form of **a** niche biological search" (author edit).
 - [ ] ⭐💬🔖 **L386 (`a costly reranker`)** — "could you explain this term? why is one reranker more costly than another? Is it the actual cost in **$** or measured in **compute time**?" → define cost.
 - [ ] 💬🔖 **L389 (`low-cost`)** — "same as above re. cost" → define alongside L386.
 
