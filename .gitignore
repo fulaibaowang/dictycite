@@ -26,6 +26,7 @@ output/paper_figures/*
 !output/paper_figures/table*.csv
 !output/paper_figures/paper.tex
 !output/paper_figures/*.bib
+!output/paper_figures/reviewer_comments_checklist_revised.md
 scripts/public/article_fetching/output/
 # Zenodo deposit staging: keep README only; data files live on Zenodo
 zenodo_release/*

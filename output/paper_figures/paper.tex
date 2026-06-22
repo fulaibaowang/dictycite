@@ -71,7 +71,7 @@ Baylor Plaza, Houston, TX 77030, USA\\
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-written biological queries linked to PubMed-indexed articles, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. Reranking and gene-aware query expansion both improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, while curated annotations help clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases remain harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-generated biological queries linked to PubMed-indexed articles, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, whereas curated annotations help clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}.
 
 \keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
@@ -79,7 +79,7 @@ Biological literature retrieval systems are often developed and evaluated using 
 \section{Introduction}
 
 Biological literature retrieval systems are usually developed and benchmarked
-on broad biomedical corpora and general search tasks. However, much biological
+on broad biomedical corpora and general search tasks. However, a large amount of biological
 knowledge is maintained in narrower model-organism communities, such as
 \emph{D. discoideum}, \emph{D. melanogaster}, \emph{C. elegans}. In these settings, the literature is
 smaller, terminology is more organism-specific, and relevant evidence may depend
@@ -96,9 +96,9 @@ setting, two common strategies---semantic reranking, which reorders the retrieve
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
 widely used in biology, including studies of chemotaxis,
-motility, phagocytosis, and multicellular development.
+cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
-gene summary pages contain curator-written notes with inline citations. This
+gene summary pages contain curator-generated notes with inline citations. This
 structure allows the curation record to be converted into a controlled evidence
 retrieval task: given a compact biological statement, retrieve the cited
 article from a domain-specific literature corpus.
@@ -120,7 +120,7 @@ such cases remain challenging.
 Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen track~\cite{coordinators-trec2025-papers-proc-4}, as well as through curation-oriented search and annotation systems such as Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting papers for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
 
 Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval~\cite{robertson_probabilistic_2009}, dense retrieval~\cite{li_making_2023}, reciprocal rank fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking~\cite{bajaj_ms_2018}, and LLM-based rerankers are widely used components.
-Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. Rather than proposing a new architecture, we use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
+Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. We use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
 
 Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated annotations for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
 
@@ -133,7 +133,7 @@ reranker domain fit, curated gene annotations, and full-text evidence.
 \label{sec:dataset}
 
 We constructed a \emph{Dictyostelium} literature retrieval dataset from dictyBase gene summary pages.
-Each retrieval instance is derived from a curator-written biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as the relevance judgment. 
+Each retrieval instance is derived from a curator-generated biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as the relevance judgment. 
 The dataset contains 1,656 curator-claim queries from 862 unique \emph{Dictyostelium} genes, linked to 1,289 unique PubMed articles and evaluated against a 20,447-article Europe PMC abstract corpus. 
 In addition to the query--article relevance pairs, the dataset includes structured gene annotations for gene-aware query expansion and LLM-assisted evidence labels for stratified analysis of whether the cited abstract contains sufficient evidence for the curator claim. 
 The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenodo.20308282}{10.5281/zenodo.20308282}.
@@ -144,8 +144,8 @@ The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenod
 \caption{Construction of a retrieval instance from a dictyBase gene page. 
 (A) The source page for gene \emph{pkaC} 
 (\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene
-annotations and curator-written notes with inline citations. 
-(B) A curator-written claim is extracted as the query, and its inline citation 
+annotations and curator-generated notes with inline citations. 
+(B) A curator-generated claim is extracted as the query, and its inline citation 
 is mapped to a PubMed-indexed article used as the cited relevance judgment. 
 Auxiliary fields are used in later experiments: gene annotations support 
 gene-aware query expansion, and the LLM-assisted evidence label supports the 
@@ -228,11 +228,11 @@ Because an article is split into several chunks, the same article can appear mul
 \section{Experimental setup}
 \label{sec:experimental_setup}
 
-We evaluate all systems under fixed retrieval depths, fusion settings, and significance-testing procedures. This section defines the metrics and compared systems; implementation details are given in the Appendix.
+We evaluate all systems under fixed retrieval depths, fusion settings, and significance-testing procedures. This section defines the metrics and compared systems; implementation details are provided in the Appendix.
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-We report Recall@K for first-stage retrieval and MRR@K for the final reranked output. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
+We report Recall@K for the first-stage retrieval and MRR@K for the final reranked output. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited evidence, not retrieval of all relevant articles.
 
 Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker as a fixed, recall-oriented candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
 
@@ -270,7 +270,7 @@ depend on reranker fit rather than on adding a reranking stage alone.
 
 \begin{table}[!htbp]
 \centering
-\caption{Ranker comparison on the full dataset (1,656 queries). Model size denotes the approximate number of parameters for neural rerankers; ``--'' indicates systems without a neural reranker. MRR@10 is mean reciprocal rank at cutoff 10, with higher values indicating better top-rank performance. $\Delta$ vs.\ BM25 reports the difference in MRR@10 from the BM25 baseline in percentage points; brackets show 95\% paired-bootstrap confidence intervals.}
+\caption{Ranker comparison on the full dataset (1,656 queries). Model size denotes the approximate number of parameters for neural rerankers; ``--'' indicates systems without a neural reranker. MRR@10 is the mean reciprocal rank at cutoff 10, where higher values indicate better top-rank performance. $\Delta$ vs.\ BM25 reports the difference in MRR@10 from the BM25 baseline in percentage points; brackets show 95\% paired-bootstrap confidence intervals.}
 \label{tab:ranker_comparison}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -299,7 +299,7 @@ lexical signal.
 \begin{table}[!t]
 \centering
 \caption{Worked examples of curator-claim retrieval and evaluation. Each block
-shows how a curator-written claim becomes the query, how the cited PubMed article
+shows how a curator-generated claim becomes the query, how the cited PubMed article
 defines the evaluation target, and how rank changes reveal the mechanism behind
 an aggregate result. The three examples correspond to the three result sections
 (reranking, gene-aware query expansion, full-text retrieval) and are illustrative
@@ -340,7 +340,7 @@ Interpretation & Full-text chunks help when the cited abstract supports the gene
 \label{sec:results_qe}
 We next evaluate gene-aware query expansion on the 563-query subset for which dictyBase synonym and product fields are available. We compare the original curator claim with two expanded variants: adding gene synonyms, and adding both synonyms and product descriptions.
 
-At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b), with dense retrieval gaining more since it starts from a lower original-query baseline.
+
 
 \begin{figure}[!htbp]
 \centering
@@ -349,7 +349,7 @@ At the retrieval stage, expansion substantially improves recall for both BM25 an
 \label{fig:qe}
 \end{figure}
 
-For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
+At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b). For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original curator claim, and expansion adds less than one point (CIs cross zero).
 
 Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. Example~2 in Table~\ref{tab:qual_examples} shows the mechanism: appending a curated synonym (DET1) resolves a vocabulary gap between the curator claim and the cited abstract. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original curator claim.
 
@@ -357,7 +357,7 @@ Overall, gene-aware expansion improves first-stage recall and provides clear dow
 
 \subsection{Full-text chunks benefit claims whose evidence is missing from abstracts}
 \label{sec:results_fulltext}
-The previous experiments used the abstract corpus. This setting is limiting for claims whose cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
+The previous experiments used the abstract corpus. This setting is limiting for claims where the cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
 
 We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset, and Table~\ref{tab:s2_evidence_haspdf_full} extends it to the full dataset, where full-text coverage is partial.
 
@@ -368,13 +368,13 @@ We stratify queries by the evidence-level labels introduced in the Dataset secti
 \label{fig:evidence_haspdf}
 \end{figure}
 
-The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported buckets. The other two buckets were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
+The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported groups. The other two groups were already close to ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
 
-The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported buckets under the same chunked setting.
+The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting.
 
 At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). Example~3 in Table~\ref{tab:qual_examples} illustrates the mechanism: the cited abstract carries broad context, while a body-text chunk contains the detailed evidence the curator claim depends on.
 
-Overall, full-text chunks provide their largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient bucket. The remaining gap to the abstract-supported buckets indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
+Overall, full-text chunks provide their largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient group. The remaining gap to the abstract-supported groups indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
 
 
 
