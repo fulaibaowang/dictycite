@@ -35,16 +35,16 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 4 (Dataset)
 
 - [x] ✅ **L167** — appended the magnitude only (author-edited wording): "…absent from the Europe PMC abstract corpus, removing about 2\% of the claims in total." (43/2,063 claims excluded ≈ 2%, computed from notebook 04 funnel 2,063→2,040→2,020.)
-- [ ] ⭐💬🔖 **L172 (product description)** — add a non-biologist explanation of why query expansion uses gene synonyms/products. Gadi's suggested text: *"This is a common practice in such databases because the relevant literature does not always include the consensus gene name. For example, the pkaC gene encodes a protein named PKA-C that performs the activity of a protein kinase regulated by the small second messenger cyclic adenosine monophosphate; the literature refers to the gene, protein, and activity using the full name or the common initials cAMP."*
+- [x] ✅ **L172** — added Gadi's non-biologist explanation (tightened to 2 sentences) after "…product description.": "Maintaining such alternative names is common practice, because the relevant literature does not always use the consensus gene name. For example, the gene \emph{pkaC} (Fig.~\ref{fig:dataset}A) encodes the protein PKA-C, …" — points to Fig. 1A, which shows the pkaC gene page (same running example as L165 / Fig. 1B).
 
 ## Page 5 (Evidence labels / counts)
 
-- [ ] ⭐💬✏️ **L180** — after `This gap creates an important distinction…` add a concrete example. Gadi's text: *"For example, the abstract of the article by Rosengarten et al. 2015 does not mention the gene name pkaC or any of its common synonyms [ref# — please add to the reference list]."* (ties to the pkaC example already at L165; **add the reference**.)
-- [ ] ✏️ **L192–195 (counts)** — make the parentheticals explicit: `654 (585)` → `654 (585 **in the has-PDF subset**)` and `387 (350)` → `387 (350 **in the has-PDF subset**)`
+- [x] ✅ **L180** — added a concrete example before "This gap creates an important distinction…": "For example, in the \emph{pkaC} instance shown in Fig.~\ref{fig:dataset}B, the cited abstract describes the study at a broad level, but not the specific expression pattern stated in the curator claim." Used the Fig. 1B running example instead of Gadi's Rosengarten wording; **reference deliberately not added** (Rosengarten still uncited at L165 and absent from ds_paper_revised.bib — left as-is per author).
+- [x] ✅ **L192–195 (counts)** — made the parentheticals explicit: `654 (585)` → `654 (585 in the has-PDF subset)` and `387 (350)` → `387 (350 in the has-PDF subset)`.
 
 ## Page 6
 
-- [ ] 🔖 **L180 (`This`)** — highlight only, no comment. Likely another bare `This` sentence-opener flag (recurring) — name the referent.
+- [x] ✅ **L180 (`This`)** — referent named: now reads "This gap creates an important distinction…", and the preceding sentence supplies the concrete pkaC example it refers back to.
 
 ## Page 7 (Experimental setup)
 

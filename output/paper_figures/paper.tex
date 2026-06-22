@@ -169,7 +169,7 @@ The remaining claims were cleaned and deduplicated.
 Near-duplicate or semantically similar claims were grouped within each gene, and one representative claim was retained as the final query. 
 
 \paragraph{Gene annotations for query expansion.}
-For each gene page, dictyBase provides structured gene annotations such as the canonical gene name, alternative gene names, and product description.
+For each gene page, dictyBase provides structured annotations that connect a canonical gene name to alternative gene names, protein names, and product descriptions. These annotations are useful because relevant papers do not always use the canonical gene name. For example, \emph{pkaC} (Fig.~\ref{fig:dataset}A) encodes PKA-C, the catalytic subunit of cAMP-dependent protein kinase A, where cAMP stands for cyclic adenosine monophosphate. A paper may therefore refer to the gene, the protein, the kinase activity, or cAMP without using \emph{pkaC} itself.
 We retain these fields for query expansion only, not as part of the original query.
 They are used only in the gene-aware query-expansion experiments described in Section~\ref{sec:gene_qe}, where these annotations can be appended to the query when the relevant gene mention is unambiguously resolved. 
 This expansion setting is available for 563 queries.
@@ -177,7 +177,9 @@ This expansion setting is available for 563 queries.
 \paragraph{Evidence labels and full-text subset.}
 Curator citations define article-level relevance, but they do not guarantee that 
 the cited abstract contains the specific evidence needed to support the full 
-curator claim. This gap creates an important distinction for retrieval evaluation: 
+curator claim. 
+For example, in the \emph{pkaC} instance shown in Fig.~\ref{fig:dataset}B, the cited abstract describes the study at a broad level, but not the specific expression pattern stated in the curator claim.
+This gap creates an important distinction for retrieval evaluation: 
 some queries can be answered from abstracts alone, whereas others 
 may require evidence from the article body even when the cited PMID is correct. 
 To characterize this distinction, we assigned an evidence-level label to each 
@@ -190,8 +192,8 @@ cited PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
 queries. Because labels are assigned to claim--article pairs rather than queries,
 label counts can exceed the number of queries. In the full dataset,
 \emph{abstract supports detail} accounts for 816 pairs (707 in the has-PDF
-subset), \emph{abstract supports core} for 654 (585), and \emph{abstract
-insufficient} for 387 (350).
+subset), \emph{abstract supports core} for 654 (585 in the has-PDF subset), and \emph{abstract
+insufficient} for 387 (350 in the has-PDF subset).
 
 \FloatBarrier
 \section{Retrieval pipeline and variants}
@@ -222,7 +224,7 @@ We use structured gene annotations from dictyBase to test whether gene-aware que
 \label{sec:fulltext_variant}
 To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant, where each article is split into smaller text segments, or chunks, that can be retrieved separately. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
 
-Because an article is split into several chunks, the same article can appear multiple times in a chunk-level ranking, while our relevance judgments are defined per article. We therefore collapse the chunk ranking back to articles: each article takes the rank of its highest-ranked chunk. This lets us compare the abstract-only and chunked corpora on the same article-level relevance judgments.
+Because an article is split into several chunks, the same article can appear multiple times in a chunk-level ranking, while our relevance judgments are defined per article. We therefore collapse the chunk ranking back to articles: each article takes the rank of its highest-ranked chunk. The resulting article-level ranking lets us compare the abstract-only and chunked corpora on the same article-level relevance judgments.
 
 \FloatBarrier
 \section{Experimental setup}
