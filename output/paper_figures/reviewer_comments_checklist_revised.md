@@ -54,8 +54,8 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 8 (Results / Table 1)
 
 - [x] ✅ **L273 (Table 1 caption)** — `MRR@10 is mean reciprocal rank at cutoff 10, with higher values indicating better…` → `is the mean reciprocal rank at cutoff 10, where higher values indicate better…`
-- [ ] 💬🔖 **L273 (Table 1 caption, `…confidence intervals.`)** — **explain what the Δ means** (i.e., a larger difference means that…).
-- [ ] ✏️ **L260–262** — `used as a recall-oriented candidate generator, but by itself scores below BM25 at MRR@10, indicating that higher recall does not automatically improve…` → reword (strike `by itself scores below` / `generator, recall does`) → insert `alone` → "…higher recall **alone** does not automatically improve the top ranks."
+- [x] ✅ **L273 (Table 1 caption, `…confidence intervals.`)** — explained Δ: added "positive values indicate improvement over BM25" before the confidence-intervals clause (author-tightened wording).
+- [x] ✅ **L260–262** — reworded: dropped redundant "by itself", inserted "alone" → "…but scores below BM25 at MRR@10, indicating that higher recall alone does not improve the top ranks." (author also dropped "automatically").
 
 ## Page 9 (Table 2)
 
