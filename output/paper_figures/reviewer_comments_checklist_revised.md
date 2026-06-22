@@ -24,7 +24,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [ ] ✏️ **L101** — `curator-written notes` → `curator-generated` *(recurring)*
 - [x] ✅ **L102–104** — `…retrieve the cited article from a domain-specific literature corpus.` → `…retrieve a proper citation to an article from a domain-specific literature corpus.`
 - [ ] ⏸️ **L117** — `such cases remain challenging.` — "say 2–3 words about **why** it is challenging." **Deferred** (skipped for now).
-- [ ] ✏️ **L~ (intro motivation)** — `papers` → `citations` (caret) in the "motivation … papers" sentence
+- [x] ✅ **L120 + L384** — `supporting papers` → `supporting citations` (both occurrences, for consistency).
 
 ## Page 3 (Related work / Dataset)
 
