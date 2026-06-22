@@ -21,7 +21,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 - [x] ✅ **L91** — `…asked to retrieve the paper cited as supporting evidence in a curated knowledge base?` → `…asked to retrieve a proper supporting reference from a curated knowledge base?`
 - [x] ✅ **L93–94** — took Gadi's edit: colon list, dropped "more", and dropped the "rather than assumed to improve retrieval" over-claim → "In this setting, we evaluate two common strategies: semantic reranking, which reorders the retrieved articles using a selective model, and query expansion, which adds related terms to the search query." (the "not assumed, must be evaluated" point is carried by the Results/Discussion.)
 - [x] ✅ **L98–99** — `studies of chemotaxis, motility, phago-…` → `chemotaxis, cell motility, phago-…`
-- [ ] ✏️ **L101** — `curator-written notes` → `curator-generated` *(recurring)*
+- [x] ✅ **L101** — `curator-written notes` → `curator-generated` *(recurring; done globally in ca8aad6 — see L74/101/136/147/148/304)*
 - [x] ✅ **L102–104** — `…retrieve the cited article from a domain-specific literature corpus.` → `…retrieve a proper citation to an article from a domain-specific literature corpus.`
 - [ ] ⏸️ **L117** — `such cases remain challenging.` — "say 2–3 words about **why** it is challenging." **Deferred** (skipped for now).
 - [x] ✅ **L120 + L384** — `supporting papers` → `supporting citations` (both occurrences, for consistency).
@@ -29,7 +29,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 ## Page 3 (Related work / Dataset)
 
 - [x] ✅ **L123** — deleted `Rather than proposing a new architecture, we` → "…PubMed-scale retrieval. **We use** these standard components…" *(eyeball: this drops the "not a new architecture" scope disclaimer — revert if you want to keep that positioning.)*
-- [ ] ⭐💬🔖 **L101/136/147/148/302 (and L74)** — `curator-written`: **"Please change this everywhere to 'generated'."** Gadi's reasoning: *written* describes only part of the curator's work — they read the literature, make logical inferences, and decide on a suitable set of references. He did not change it throughout; we must (6 occurrences: L74, 101, 136, 147, 148, 302).
+- [x] ✅ **L101/136/147/148/302 (and L74)** — `curator-written` → `curator-generated` **everywhere**: all 6 occurrences (L74, 101, 136, 147, 148, 304) converted in ca8aad6; verified zero `curator-written` remain. Gadi's reasoning: *written* describes only part of the curator's work — they read the literature, make logical inferences, and decide on a suitable set of references.
 - [x] ✅ **L159** — instead of defining the jargon, removed it: `removing residual markup, decoding HTML entities, and normalizing whitespace` → `removing formatting tags and normalizing whitespace` (less distracting, no IR jargon).
 
 ## Page 4 (Dataset)
