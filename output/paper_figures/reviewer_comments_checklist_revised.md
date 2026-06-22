@@ -30,7 +30,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 - [x] ✅ **L123** — deleted `Rather than proposing a new architecture, we` → "…PubMed-scale retrieval. **We use** these standard components…" *(eyeball: this drops the "not a new architecture" scope disclaimer — revert if you want to keep that positioning.)*
 - [ ] ⭐💬🔖 **L101/136/147/148/302 (and L74)** — `curator-written`: **"Please change this everywhere to 'generated'."** Gadi's reasoning: *written* describes only part of the curator's work — they read the literature, make logical inferences, and decide on a suitable set of references. He did not change it throughout; we must (6 occurrences: L74, 101, 136, 147, 148, 302).
-- [ ] 💬🔖 **L159** — `removing residual markup` — **define** "residual markup".
+- [x] ✅ **L159** — instead of defining the jargon, removed it: `removing residual markup, decoding HTML entities, and normalizing whitespace` → `removing formatting tags and normalizing whitespace` (less distracting, no IR jargon).
 
 ## Page 4 (Dataset)
 
