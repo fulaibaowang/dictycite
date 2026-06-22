@@ -34,7 +34,7 @@ Legend: ✏️ = inline edit (delete struck text → insert caret text) · 💬 
 
 ## Page 4 (Dataset)
 
-- [ ] 💬🔖 **L167** — `…cited articles were absent from the Europe PMC abstract corpus.` — **say how many claims were excluded.** Likely small, but readers/reviewers need the number; a large number could indicate systematic error in the procedure.
+- [x] ✅ **L167** — appended the magnitude only (author-edited wording): "…absent from the Europe PMC abstract corpus, removing about 2\% of the claims in total." (43/2,063 claims excluded ≈ 2%, computed from notebook 04 funnel 2,063→2,040→2,020.)
 - [ ] ⭐💬🔖 **L172 (product description)** — add a non-biologist explanation of why query expansion uses gene synonyms/products. Gadi's suggested text: *"This is a common practice in such databases because the relevant literature does not always include the consensus gene name. For example, the pkaC gene encodes a protein named PKA-C that performs the activity of a protein kinase regulated by the small second messenger cyclic adenosine monophosphate; the literature refers to the gene, protein, and activity using the full name or the common initials cAMP."*
 
 ## Page 5 (Evidence labels / counts)

@@ -164,7 +164,7 @@ Queries were derived from curator notes on dictyBase gene summary pages.
 These notes consist of compact biological statements supported by inline citations, as illustrated in Fig.~\ref{fig:dataset}. 
 For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as the reference article for evaluation.
 Because dictyBase uses internal publication identifiers, we first mapped cited publications to PubMed IDs. 
-Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus.
+Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus, removing about 2\% of the claims in total.
 The remaining claims were cleaned and deduplicated. 
 Near-duplicate or semantically similar claims were grouped within each gene, and one representative claim was retained as the final query. 
 
