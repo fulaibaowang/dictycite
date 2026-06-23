@@ -261,7 +261,7 @@ we use short query-level examples within each subsection to illustrate the mecha
 On the 1,656-query dataset, BM25 is a strong baseline for top-ranked evidence
 retrieval (MRR@10 = 0.593; Table~\ref{tab:ranker_comparison}). BM25+Dense fusion
 is used as a recall-oriented candidate generator, but
-scores below BM25 at MRR@10, indicating that higher recall alone does not improve the top ranks. Cross-encoder reranking is also not uniformly beneficial:
+scores below BM25 at MRR@10, indicating that higher candidate recall does not automatically translate into better top-ranked results. Cross-encoder reranking is also not uniformly beneficial:
 the lightweight MiniLM-L12 reranker hurts performance, and BGE-m3 gives
 only a small, non-significant gain. Clear improvements appear for the biomedical
 MedCPT reranker and the high-capacity BGE-Gemma model, which improve MRR@10 by
@@ -346,7 +346,7 @@ Overall, full-text chunks provide the largest benefit on claims whose cited abst
 \label{sec:discussion}
 We built and released a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of a niche biological search: finding supporting citations for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
-This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together because a reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
+This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together. A reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
 
 Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline.
 In our controlled reranking analysis, we fix the candidate pool and vary only the
