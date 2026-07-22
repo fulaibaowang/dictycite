@@ -65,8 +65,10 @@ hybrid_metrics["method"] = "BM25 Dense Fusion"
 
 output_dir = workflow_dir / "figures"
 output_dir.mkdir(parents=True, exist_ok=True)
-# Consolidated paper figures land here; diagnostic plots stay under output_dir.
-paper_figures_dir = base_dir / "output" / "paper_figures"
+# Consolidated paper figures land here (Overleaf-aligned Figures/); diagnostics stay under output_dir
+# or paper_figures/diagnostics (not inside Figures/).
+paper_figures_root = base_dir / "output" / "paper_figures"
+paper_figures_dir = paper_figures_root / "Figures"
 paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 splits = ["7a_dicty_gold_llm_public"]
@@ -1801,8 +1803,8 @@ else:
     # Fig S3 is no longer included in the paper (Table S2 in paper.tex now
     # reports the has-PDF and full-dataset numbers side by side). The function
     # is still called because `n_all` feeds `_caption_table` below; the PNG
-    # is redirected to a diagnostics subdir so paper_figures/ stays clean.
-    _diag_dir = paper_figures_dir / "diagnostics"
+    # is redirected to a diagnostics subdir so Figures/ stays clean.
+    _diag_dir = paper_figures_root / "diagnostics"
     _diag_dir.mkdir(parents=True, exist_ok=True)
     n_all = _plot_retrieval_rerank_overlay(
         level_qrels,

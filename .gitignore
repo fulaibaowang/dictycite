@@ -21,12 +21,29 @@ dicty_fulltext_corpus/v2/corpus.jsonl
 # Paper-figures release: PNGs, table .md/.csv, and the LaTeX source/bib.
 !output/paper_figures/
 output/paper_figures/*
-!output/paper_figures/*.png
+!output/paper_figures/Figures/
+!output/paper_figures/Figures/*.png
 !output/paper_figures/table*.md
 !output/paper_figures/table*.csv
 !output/paper_figures/paper.tex
+!output/paper_figures/main.tex
+!output/paper_figures/FIGURES.md
 !output/paper_figures/*.bib
+!output/paper_figures/llncs.cls
+!output/paper_figures/splncs04.bst
 !output/paper_figures/reviewer_comments_checklist_revised.md
+# LaTeX build artifacts
+output/paper_figures/*.aux
+output/paper_figures/*.bbl
+output/paper_figures/*.blg
+output/paper_figures/*.fdb_latexmk
+output/paper_figures/*.fls
+output/paper_figures/*.log
+output/paper_figures/*.out
+output/paper_figures/*.synctex.gz
+output/paper_figures/*.toc
+output/paper_figures/paper.pdf
+output/paper_figures/main.pdf
 scripts/public/article_fetching/output/
 # Zenodo deposit staging: keep README only; data files live on Zenodo
 zenodo_release/*
@@ -50,3 +67,5 @@ logs/
 .claude/
 # Reviewer checklist — kept local, not pushed
 output/paper_figures/reviewer_comments_checklist_revised.md
+output/paper_figures/reviewer_comments_checklist_DS.md
+output/paper_figures/draft_intro_relatedwork_DS.md

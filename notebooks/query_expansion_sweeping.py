@@ -52,8 +52,8 @@ def _resolve_repo_root() -> Path:
 
 root = _resolve_repo_root()
 
-# Consolidated paper figures land here; diagnostic plots stay in per-workflow figures/ dirs.
-paper_figures_dir = root / "output" / "paper_figures"
+# Consolidated paper figures land here (Overleaf-aligned Figures/); diagnostics stay in per-workflow figures/ dirs.
+paper_figures_dir = root / "output" / "paper_figures" / "Figures"
 paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 

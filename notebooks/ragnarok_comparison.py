@@ -70,8 +70,8 @@ baseline_dir = base_dir / "output" / "ragnarok_baseline"
 goldset_jsonl = base_dir / "output" / "dicty_gold_build" / "7a_dicty_gold_llm_public.jsonl"
 output_dir = baseline_dir / "figures"
 output_dir.mkdir(parents=True, exist_ok=True)
-# Consolidated paper figures land here; diagnostic plots stay under output_dir.
-paper_figures_dir = base_dir / "output" / "paper_figures"
+# Consolidated paper figures land here (Overleaf-aligned Figures/); diagnostics stay under output_dir.
+paper_figures_dir = base_dir / "output" / "paper_figures" / "Figures"
 paper_figures_dir.mkdir(parents=True, exist_ok=True)
 
 SPLIT = "7a_dicty_gold_llm_public"
