@@ -88,9 +88,7 @@ broadly shared biomedical vocabulary. Retrieval behavior in such domains may
 therefore differ from what is observed in large-scale biomedical question answering
 or general literature search.
 
-Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Systems that perform well on broad literature-search
-benchmarks may behave differently in narrower biological domains, where exact
-gene names, aliases, and phenotype terms can carry substantial signal. Two commonly used strategies that we evaluate in this setting are semantic reranking, which reorders initially retrieved articles using a more selective relevance model, and query expansion, which enriches the query with related terms.
+Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Two commonly used strategies that we evaluate in this setting are semantic reranking, which reorders initially retrieved articles using a more selective relevance model, and query expansion, which enriches the query with related terms.
 
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Maintaining
