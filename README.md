@@ -17,7 +17,7 @@ Full schema: [`DATA_PREP.md`](docs/DATA_PREP.md).
 
 ## Pipeline
 
-- **Build the goldset** — curator notes → publication ID mapping → cleaning → LLM labelling → public export. See [`DATA_PREP.md`](docs/DATA_PREP.md) and [`USAGE.md`](docs/USAGE.md).
+- **Build the goldset** — curator notes → publication ID mapping → cleaning → LLM labelling → public export. See [`DATA_PREP.md`](docs/DATA_PREP.md) and [`USAGE.md`](docs/USAGE.md). The evidence-level labelling prompt is in [`dicty_claim_labeler.py`](scripts/public/data_prep/dicty_claim_labeler.py).
 - **Fetch articles** — Europe PMC / PubMed metadata and full text. See [`article_fetching/`](scripts/public/article_fetching/README.md).
 - **Retrieval and reranking** — BM25 + dense → RRF fusion → cross-encoder rerank → post-rerank fusion. The stack is a git subtree of the standalone [`RAG-scripts`](https://github.com/fulaibaowang/RAG-scripts) project; its README has the pipeline flowchart and parameter reference.
 - **Full-text / chunked corpus** — indexing chunked PDFs alongside abstracts. See [`FULLTEXT.md`](docs/FULLTEXT.md).

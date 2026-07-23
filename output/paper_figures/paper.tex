@@ -228,14 +228,14 @@ the cited abstract contains the specific evidence needed to support the full
 curator claim. 
 For example, in the \emph{pkaC} instance shown in Fig.~\ref{fig:dataset}B, the cited abstract describes the study at a broad level, but not the specific expression pattern stated in the curator claim.
 This gap creates an important distinction for retrieval evaluation: 
-some queries can be answered from abstracts alone, whereas others 
+for some claims, the relevant evidence is already present in the abstract, whereas others 
 may require evidence from the article body even when the cited PMID is correct. 
-To characterize this distinction, we assigned an evidence-level label to each 
-claim--article pair to indicate whether the cited abstract: (i) supports the detailed claim; 
-(ii) supports only the core statement; or (iii) is insufficient, suggesting that 
-the cited article may require full-text evidence. The third label does not mark 
+We assigned an LLM-assisted evidence-level label to each
+claim--article pair to indicate whether the cited abstract: (i) supports the detailed claim---explicitly supports both the main assertion and its relevant specific details;
+(ii) supports only the core statement---the main assertion (for example, that a gene is involved in a process) but not the accompanying details (such as a specific developmental stage, condition, or magnitude); or (iii) is insufficient, suggesting that 
+the abstract does not explicitly support the relevant relationship. The third label does not mark 
 the citation as irrelevant; rather, it identifies cases where the supporting 
-evidence may lie outside the abstract. These labels define the strata for evaluating whether full-text retrieval helps when abstracts provide different levels of evidence. We therefore construct a full-text corpus for articles with accessible PDFs, covering 1,124 cited PubMed articles. Queries with at least one
+evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps when abstracts provide different levels of evidence. We therefore construct a full-text corpus for articles with accessible PDFs, covering 1,124 cited PubMed articles. Queries with at least one
 cited PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
 queries. Table~\ref{tab:composition} summarizes the benchmark composition by
 evidence level, reporting both the number of distinct curator claims
@@ -287,7 +287,9 @@ Stage 2 reranks the fused candidates with a cross-encoder and combines the reran
 
 \subsection{Gene-aware query expansion}
 \label{sec:gene_qe}
-We use structured gene annotations from dictyBase to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. We compare two expanded query variants with the original claim: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
+We use structured gene annotations from dictyBase to test whether gene-aware query expansion improves retrieval and downstream reranking. For each curator claim, we detect gene mentions using dictyBase gene IDs, canonical names, and synonyms, while filtering short, generic, or highly ambiguous aliases. We compare two expanded query variants with the original claim: (i) + synonyms, which appends the canonical gene name and selected synonyms, and (ii) + synonyms \& products, which additionally appends a short product description. These nested
+variants represent progressively richer curated context, from alternative gene
+names to additional functional description. Gene IDs are used only for matching and are not appended to the query. The same expanded query text is used for both retrieval and reranking.
 
 \subsection{Chunked full-text corpus variant}
 \label{sec:fulltext_variant}
@@ -313,7 +315,7 @@ For significance testing, we use paired bootstrap resampling over queries with B
 \label{sec:systems_compared}
 We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}). The rerankers are MiniLM-L12 (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{wang_minilm_2020,noauthor_cross-encoder-ms-marco-minilm-l12-v2_2026}, BGE-m3 (BAAI/bge-reranker-v2-m3)~\cite{chen_m3-embedding_2024,noauthor_baaibge-reranker-v2-m3_2026}, MedCPT (ncbi/MedCPT-Cross-Encoder)~\cite{noauthor_ncbimedcpt-cross-encoder_2026}, and BGE-Gemma (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026}, representing small general-purpose, strong multilingual, PubMed-trained biomedical, and large LLM-based CE reranking settings.
 
-We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradeep_ragnarok_2025,pradeep_rankzephyr_2023}. Ragnarok is an independently maintained retrieval-and-listwise-reranking pipeline using RankZephyr, a 7B listwise LLM reranker. We do not retune Ragnarok on the dictyBase dataset, so this comparison is intended as a contextual reference rather than a parameter-matched baseline.
+We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradeep_ragnarok_2025,pradeep_rankzephyr_2023}. Ragnarok is an independently maintained retrieval-and-listwise-reranking pipeline using RankZephyr, a 7B listwise LLM reranker, and is intended as a contextual reference.
 
 
 \section{Results}
@@ -456,7 +458,7 @@ Several limitations remain. The queries were automatically extracted, cleaned, a
 \subsection*{Implementation details}
 
 BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
-Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024} and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024}, included in the repository, and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \begin{figure}[H]
 \centering
