@@ -88,7 +88,7 @@ broadly shared biomedical vocabulary. Retrieval behavior in such domains may
 therefore differ from what is observed in large-scale biomedical question answering
 or general literature search.
 
-Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when given a compact biological statement and asked to retrieve a proper supporting reference from a curated knowledge base? Systems that perform well on broad literature-search
+Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Systems that perform well on broad literature-search
 benchmarks may behave differently in narrower biological domains, where exact
 gene names, aliases, and phenotype terms can carry substantial signal. In this
 setting, we evaluate two common strategies: semantic reranking, which reorders the retrieved articles using a selective model, and query expansion, which adds related terms to the search query.
@@ -98,10 +98,11 @@ structured annotations, textual summaries, and links to supporting literature~\c
 widely used in biology, including studies of chemotaxis,
 cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
-gene summary pages contain curator-generated notes with inline citations. This
-structure allows the curation record to be converted into a controlled evidence
-retrieval task: given a compact biological statement, retrieve a proper citation to an
-article from a domain-specific literature corpus.
+gene summary pages contain curator-authored biological claims with inline
+citations. We use each claim as a declarative retrieval query and its cited
+article as an article-level relevance judgment. Each claim specifies the
+biological entities, relationship, and often the phenotype, condition, or temporal
+detail for which relevant literature is sought.
 
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
