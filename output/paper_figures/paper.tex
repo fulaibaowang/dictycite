@@ -189,11 +189,32 @@ the cited article may require full-text evidence. The third label does not mark
 the citation as irrelevant; rather, it identifies cases where the supporting 
 evidence may lie outside the abstract. These labels define the strata for evaluating whether full-text retrieval helps when abstracts provide different levels of evidence. We therefore construct a full-text corpus for articles with accessible PDFs, covering 1,124 cited PubMed articles. Queries with at least one
 cited PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
-queries. Because labels are assigned to claim--article pairs rather than queries,
-label counts can exceed the number of queries. In the full dataset,
-\emph{abstract supports detail} accounts for 816 pairs (707 in the has-PDF
-subset), \emph{abstract supports core} for 654 (585 in the has-PDF subset), and \emph{abstract
-insufficient} for 387 (350 in the has-PDF subset).
+queries. Table~\ref{tab:composition} summarizes the benchmark composition by
+evidence level, reporting both the number of distinct curator claims
+and the number of claim--article citation pairs.
+
+\begin{table}[!htbp]
+\centering
+\caption{Benchmark composition by abstract-evidence level. \emph{Pairs} count
+claim--article citations, with each cited article assigned one evidence label;
+\emph{claims} count distinct curator claims associated with each evidence level.
+Because a single claim may cite articles assigned to different evidence levels,
+the per-level claim counts can sum to more than the total number of distinct
+claims. The benchmark contains an average of 1.22 cited articles per claim.}
+\label{tab:composition}
+\scriptsize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & Supports detail & Supports core & Insufficient & Total \\
+\midrule
+Full --- claims    & 816 & 654 & 387 & 1{,}656 claims \\
+Full --- pairs     & 844 & 762 & 422 & 2{,}028 pairs  \\
+has-PDF --- claims & 707 & 585 & 350 & 1{,}480 claims \\
+has-PDF --- pairs  & 732 & 672 & 378 & 1{,}782 pairs  \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \FloatBarrier
 \section{Retrieval pipeline and variants}
@@ -222,7 +243,7 @@ We use structured gene annotations from dictyBase to test whether gene-aware que
 
 \subsection{Chunked full-text corpus variant}
 \label{sec:fulltext_variant}
-To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant, where each article is split into smaller text segments, or chunks, that can be retrieved separately. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
+To test whether evidence beyond abstracts improves retrieval, we compare the abstract-only corpus with a chunked full-text variant, where each article is split into smaller text segments, or chunks, that can be retrieved separately. In the abstract-only setting, each document is one PubMed abstract; in the full-text setting, each article is represented by an abstract chunk and body-text chunks. Body text is segmented by a greedy paragraph-based chunker (target 1{,}500 characters, hard cap 1{,}800, 200-character overlap, and a 300-character minimum; figure and table captions form separate chunks), giving on average about 24 body chunks per article across the 3{,}556 articles with accessible full text. The same retrieval, fusion, reranking, and post-rerank fusion steps are then applied without changing the pipeline parameters.
 
 Because an article is split into several chunks, the same article can appear multiple times in a chunk-level ranking, while our relevance judgments are defined per article. We therefore collapse the chunk ranking back to articles: each article takes the rank of its highest-ranked chunk. The resulting article-level ranking lets us compare the abstract-only and chunked corpora on the same article-level relevance judgments.
 

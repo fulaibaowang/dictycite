@@ -26,7 +26,6 @@ output/paper_figures/*
 !output/paper_figures/table*.md
 !output/paper_figures/table*.csv
 !output/paper_figures/paper.tex
-!output/paper_figures/main.tex
 !output/paper_figures/FIGURES.md
 !output/paper_figures/*.bib
 !output/paper_figures/llncs.cls
@@ -43,6 +42,7 @@ output/paper_figures/*.out
 output/paper_figures/*.synctex.gz
 output/paper_figures/*.toc
 output/paper_figures/paper.pdf
+output/paper_figures/main.*
 output/paper_figures/main.pdf
 scripts/public/article_fetching/output/
 # Zenodo deposit staging: keep README only; data files live on Zenodo
