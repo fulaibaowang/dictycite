@@ -378,7 +378,7 @@ We stratify queries by the evidence-level labels introduced in the Dataset secti
 
 \begin{figure}[!htbp]
 \centering
-\includegraphicsifexists[width=0.92\textwidth,keepaspectratio]{Figures/fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png}
+\includegraphicsifexists[width=0.88\textwidth,keepaspectratio]{Figures/fig5_evidence_level_retrieval_recall_rerank_mrr_haspdf.png}
 \caption{Retrieval and reranking by abstract-evidence level on the has-PDF subset. The upper row shows first-stage Recall@K from BM25+Dense RRF retrieval. The lower row shows post-rerank MRR@K using BGE-m3. Columns correspond to \emph{abstract supports detail} (n=707), \emph{abstract supports core} (n=585), and \emph{abstract insufficient} (n=350). Solid lines show the abstract-only baseline; dashed lines show the corpus augmented with full-text chunks.}
 \label{fig:evidence_haspdf}
 \end{figure}
@@ -424,7 +424,7 @@ of Table~\ref{tab:s2_evidence_haspdf_full} suggest that this effect is not domin
 mixed abstract/full-text retrieval still improves evidence finding under partial
 coverage.
 
-Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted claim. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
+Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
 \FloatBarrier
 \section*{Appendix}
