@@ -71,7 +71,7 @@ Baylor Plaza, Houston, TX 77030, USA\\
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-generated biological queries linked to PubMed-indexed articles, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, whereas curated annotations help clarify compact biological queries by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is additionally archived on Zenodo.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-authored biological claims used as declarative retrieval queries, with their inline-cited PubMed articles as relevance judgments, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, whereas curated annotations help clarify compact claims by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is additionally archived on Zenodo.
 
 \keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
@@ -100,9 +100,9 @@ cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
 gene summary pages contain curator-authored biological claims with inline
 citations. We use each claim as a declarative retrieval query and its cited
-article as an article-level relevance judgment. Each claim specifies the
-biological entities, relationship, and often the phenotype, condition, or temporal
-detail for which relevant literature is sought.
+article as an article-level relevance judgment. These claims may describe gene products, functions, expression
+patterns, phenotypes, regulatory interactions, or biological processes, often
+with additional developmental, experimental, or temporal context.
 
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
