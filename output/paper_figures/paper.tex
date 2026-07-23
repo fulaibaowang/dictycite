@@ -142,18 +142,21 @@ curator-authored claims.
 Modern retrieval systems commonly use two-stage pipelines that combine
 efficient first-stage retrieval with more expensive reranking. Lexical
 retrieval~\cite{robertson_probabilistic_2009}, dense retrieval, reciprocal rank
-fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking, and LLM-based
+fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking~\cite{bajaj_ms_2018}, and LLM-based
 rerankers are widely used components. Biomedical rerankers such as MedCPT further
 demonstrate the value of domain adaptation for PubMed-scale
-retrieval~\cite{jin_medcpt_2023}. We use these standard components to examine
+retrieval~\cite{jin_medcpt_2023}. Cross-domain evaluations such as BEIR show
+substantial variation in retrieval effectiveness across datasets, while BM25
+remains a robust baseline~\cite{thakur_beir_2021}. We use these standard components to examine
 how reranker capacity and domain fit affect retrieval in a focused
 model-organism corpus, where a small number of organism-specific lexical cues
 may carry substantial relevance signal.
 
 Query expansion and full-text retrieval are established strategies in biomedical
 search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms,
-concept-based expansion, and more recently generated query terms to reduce
-vocabulary mismatch~\cite{lu_empirical_2009,wang_query2doc_2023}. Full-text and
+and concept-based expansion~\cite{lu_empirical_2009}, and more recently language
+models that generate expansion terms or hypothetical documents~\cite{gao_precise_2023,wang_query2doc_2023},
+to reduce vocabulary mismatch. Full-text and
 passage-level retrieval can additionally recover evidence that is absent from
 abstracts, although indexing finer-grained text introduces a larger and noisier
 candidate space~\cite{kim_towards_2022}. We study these strategies using curated
@@ -248,13 +251,13 @@ has-PDF
 \section{Retrieval pipeline and variants}
 \label{sec:pipeline}
 
-This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments.
-To make the pipeline easier to follow, we briefly define the main terms. BM25 ranks articles by overlap with the query's exact words, whereas dense retrieval ranks by semantic similarity between learned query and article vectors. Reciprocal Rank Fusion (RRF) merges ranked lists, favoring articles near the top of either. Reranking reorders a retrieved candidate list with a more expensive model. Recall@K measures whether a cited article appears in the top K candidates; MRR@K rewards ranking it near the top.
+This section describes the retrieval pipeline and the query and corpus variants evaluated in the experiments.
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
-Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}).
-Given a query, Stage 1 retrieves candidate articles using two complementary retrievers over the abstract corpus: keyword-based BM25 retrieval and dense semantic retrieval. The two ranked lists are merged with RRF to form a single candidate pool. Stage 2 then reranks this pool with a cross-encoder. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking, retaining a small amount of first-stage signal. The first stage is optimized for high Recall@K at large candidate depths, whereas the reranking stage is evaluated by MRR@K at small K.
+Our pipeline follows a two-stage retrieval-and-reranking design (Fig.~\ref{fig:pipeline}). Given a query, Stage~1 retrieves candidate articles from the abstract corpus using two complementary methods: BM25, which emphasizes overlap with the query's exact terms, and dense retrieval, which ranks articles by semantic similarity between learned query and article representations. Reciprocal Rank Fusion (RRF) merges the two ranked lists, favoring articles ranked highly by either method, to form a single candidate pool.
+
+In Stage~2, a cross-encoder reranks this pool using a more computationally expensive query--article relevance model. The final output combines the cross-encoder ranking with the original retrieval-fusion ranking through a second RRF step, retaining a small amount of first-stage signal. Stage~1 is designed to achieve high recall at large candidate depths, whereas Stage~2 aims to place cited articles near the top of the final ranking.
 
 \begin{figure}[!htbp]
 \centering
@@ -285,7 +288,7 @@ We evaluate all systems under fixed retrieval depths, fusion settings, and signi
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@10 is our primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature. First-stage retrieval is assessed by Recall@K.
+We assess first-stage retrieval with Recall@K, which measures whether a cited article appears among the top $K$ retrieved candidates, and the final ranking with MRR@K, which gives greater weight to placing the first cited article near the top. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@10 is our primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature.
 
 Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker as a fixed, recall-oriented candidate depth.
 
@@ -401,9 +404,12 @@ Gene-aware query expansion provides a complementary, low-overhead way to improve
 In our controlled reranking analysis, we fix the candidate pool and vary only the
 reranker query, isolating a second route by which expansion helps: beyond
 retrieving more candidates at the first stage, it also gives the reranker better
-query-side context. These gains suggest that curated gene annotations can enrich
-compact claims with missing gene vocabulary without substantially increasing
-reranking noise. More broadly, trusted gene annotations plus a smaller domain-suitable
+query-side context. These gains suggest that curated gene annotations enrich
+compact claims with the missing gene vocabulary the reranker needs. In contrast
+to free-text or generatively expanded queries, which can add untrusted terms that
+a cross-encoder is sensitive to, expansion drawn from a trusted, entity-linked
+source improves the reranker's query-side context without introducing comparable
+noise. More broadly, trusted gene annotations plus a smaller domain-suitable
 reranker may be a more efficient operating point than relying only on larger
 LLM-based rerankers.
 
