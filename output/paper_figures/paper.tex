@@ -98,8 +98,8 @@ terms, are the two strategies we evaluate in this setting.
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Maintaining
 these resources depends heavily on expert biocuration, and text-mining systems
-have supported activities such as article prioritization and annotation
-\cite{biocreative_kinome_2018,van_auken_text_2012}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
+have supported activities such as article prioritization and
+annotation~\cite{van_auken_text_2012}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
 widely used in biology, including studies of chemotaxis,
 cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
@@ -126,25 +126,21 @@ closing the gap to claims whose evidence is already present in abstracts.
 
 Biomedical literature retrieval has been studied through benchmarks and shared
 tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen
-track~\cite{coordinators-trec2025-papers-proc-4}. Existing benchmarks differ in
-how they formulate the information need, define the search corpus, and obtain
-relevance judgments. BioASQ, for example, uses expert-authored biomedical
-questions and associated relevant literature. A related query formulation
-appears in SciFact and SciFact-Open, where declarative scientific claims are
-used to retrieve evidence-bearing abstracts as part of a broader verification
-task that also includes evidence selection and support-or-refute classification
-\cite{wadden_fact_2020,wadden_scifact-open_2022}. Our benchmark shares the use
-of a declarative claim as the retrieval query, but derives its queries and
-targets from naturally occurring curator claim--citation links in a
-model-organism knowledge base. It additionally provides an organism-scoped
-literature corpus and structured gene annotations that can be used as
-query-side retrieval signals. Curation-oriented systems such as
-Textpresso~\cite{muller_textpresso_2004} and
-PubTator~\cite{wei_pubtator_2013} support biomedical literature search and
-annotation, and Textpresso has also been applied to literature-based curation at
-dictyBase~\cite{van_auken_text_2012}. These systems provide tools for curation
-workflows, whereas our work contributes a benchmark for retrieval conditioned
-on existing curator-authored claims.
+track~\cite{coordinators-trec2025-papers-proc-4}, which differ in how they
+formulate the information need, define the corpus, and obtain relevance
+judgments. BioASQ, for example, uses expert-authored biomedical questions.
+Closer to our formulation, SciFact and SciFact-Open use declarative scientific
+claims to retrieve evidence-bearing abstracts, but within a verification task
+that also classifies support or refutation~\cite{wadden_fact_2020,wadden_scifact-open_2022}.
+We likewise use a declarative claim as the query, but derive claims and targets
+from naturally occurring curator claim--citation links in a model-organism
+knowledge base, with an organism-scoped corpus and structured gene annotations
+as query-side signals. Curation-oriented systems such as
+Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}
+support biomedical literature search and annotation, including
+text-mining-assisted curation at dictyBase~\cite{van_auken_text_2012}; our work
+instead contributes a retrieval benchmark conditioned on existing
+curator-authored claims.
 
 Modern retrieval systems commonly use two-stage pipelines that combine
 efficient first-stage retrieval with more expensive reranking. Lexical
@@ -163,15 +159,14 @@ may carry substantial relevance signal.
 
 Query expansion is a long-standing approach to reducing vocabulary mismatch in
 biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene
-synonyms, and concept-based expansion
-\cite{lu_evaluation_2009,lu_empirical_2009}. More recent approaches generate
-hypothetical documents or additional query terms using language models
-\cite{gao_precise_2023,wang_query2doc_2023}. Our expansion source is instead
-curated and entity-linked: we use dictyBase annotations associated with the
-gene identified in the claim. The two expansion variants represent increasing
-levels of annotation depth, from canonical gene names and synonyms to
-additional product descriptions, allowing us to examine whether progressively
-richer curated context continues to help or begins to introduce query noise.
+synonyms, and concept-based expansion~\cite{lu_empirical_2009}, and more recent
+methods use language models to generate additional query
+terms~\cite{wang_query2doc_2023}. Our expansion source is instead curated and
+entity-linked: we use dictyBase annotations associated with the gene identified
+in the claim. The two expansion variants represent increasing levels of
+annotation depth, from canonical gene names and synonyms to additional product
+descriptions, letting us examine whether progressively richer curated context
+continues to help or begins to introduce query noise.
 
 Full-text retrieval can recover relevant information that is absent from
 article abstracts, while passage-level indexing creates a larger and more
@@ -274,7 +269,7 @@ has-PDF --- pairs  & 732 & 672 & 378 & 1{,}782 pairs  \\
 \label{sec:pipeline}
 
 This section defines the retrieval pipeline and the two corpus/query variants evaluated in the experiments.
-To make the pipeline easier to follow, we briefly define the main retrieval terms used below. BM25 ranks articles mainly by overlap with the exact words in the query, whereas dense retrieval ranks articles by semantic similarity between learned query and article vectors. Reciprocal Rank Fusion (RRF) combines ranked lists by favoring articles that appear near the top of either list. Reranking reorders an already retrieved candidate list with a more computationally intensive model. Recall@K asks whether a known cited article appears within the top K retrieved candidates, with K denoting the cutoff rank. MRR@K rewards placing the cited article near the top of the final ranking.
+To make the pipeline easier to follow, we briefly define the main terms. BM25 ranks articles by overlap with the query's exact words, whereas dense retrieval ranks by semantic similarity between learned query and article vectors. Reciprocal Rank Fusion (RRF) merges ranked lists, favoring articles near the top of either. Reranking reorders a retrieved candidate list with a more expensive model. Recall@K measures whether a cited article appears in the top K candidates; MRR@K rewards ranking it near the top.
 
 \subsection{Two-stage retrieval pipeline}
 \label{sec:two_stage_pipeline}
@@ -308,9 +303,9 @@ We evaluate all systems under fixed retrieval depths, fusion settings, and signi
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-We report Recall@K for the first-stage retrieval and MRR@K for the final reranked output. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@K is used as the primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature.
+Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@10 is our primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature. First-stage retrieval is assessed by Recall@K.
 
-Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker as a fixed, recall-oriented candidate depth. Final rankings are evaluated at small K, primarily MRR@10.
+Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker as a fixed, recall-oriented candidate depth.
 
 For significance testing, we use paired bootstrap resampling over queries with B = 10,000 samples. We report 95\% percentile confidence intervals for per-query MRR@10 differences against the relevant baseline.
 
