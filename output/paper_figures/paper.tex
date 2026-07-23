@@ -90,10 +90,7 @@ or general literature search.
 
 Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Systems that perform well on broad literature-search
 benchmarks may behave differently in narrower biological domains, where exact
-gene names, aliases, and phenotype terms can carry substantial signal. Components such as semantic
-reranking, which reorders initially retrieved articles using a more selective
-relevance model, and query expansion, which enriches the query with related
-terms, are the two strategies we evaluate in this setting.
+gene names, aliases, and phenotype terms can carry substantial signal. Two commonly used strategies that we evaluate in this setting are semantic reranking, which reorders initially retrieved articles using a more selective relevance model, and query expansion, which enriches the query with related terms.
 
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Maintaining
@@ -123,58 +120,46 @@ recall and final ranking when abstracts omit detailed evidence, while not fully
 closing the gap to claims whose evidence is already present in abstracts.
 
 \section{Related Work}
-
 Biomedical literature retrieval has been studied through benchmarks and shared
 tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen
-track~\cite{coordinators-trec2025-papers-proc-4}, which differ in how they
-formulate the information need, define the corpus, and obtain relevance
-judgments. BioASQ, for example, uses expert-authored biomedical questions.
-Closer to our formulation, SciFact uses declarative scientific
-claims to retrieve evidence-bearing abstracts, but within a verification task
-that also classifies support or refutation~\cite{wadden_fact_2020}.
-We likewise use a declarative claim as the query, but derive claims and targets
-from naturally occurring curator claim--citation links in a model-organism
-knowledge base, with an organism-scoped corpus and structured gene annotations
-as query-side signals. Curation-oriented systems such as
-Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}
-support biomedical literature search and annotation, including
-text-mining-assisted curation at dictyBase~\cite{van_auken_text_2012}; our work
-instead contributes a retrieval benchmark conditioned on existing
+track~\cite{coordinators-trec2025-papers-proc-4}, including settings in which
+expert-authored biomedical questions are used to retrieve relevant literature
+from broad corpora. Closer to our query formulation, SciFact uses declarative
+scientific claims to retrieve evidence-bearing abstracts, but as part of a
+verification task that also classifies support or refutation
+\cite{wadden_fact_2020}. We likewise use a declarative claim as the query, but
+derive claims and retrieval targets from naturally occurring curator
+claim--citation links in a model-organism knowledge base, with an
+organism-scoped corpus and structured gene annotations available as query-side
+signals. Curation-oriented systems such as
+Textpresso~\cite{muller_textpresso_2004} and
+PubTator~\cite{wei_pubtator_2013} support biomedical literature search and
+annotation, including text-mining-assisted curation at
+dictyBase~\cite{van_auken_text_2012}. In contrast to these curation tools, our
+work contributes a retrieval benchmark conditioned on existing
 curator-authored claims.
 
 Modern retrieval systems commonly use two-stage pipelines that combine
 efficient first-stage retrieval with more expensive reranking. Lexical
-retrieval~\cite{robertson_probabilistic_2009}, dense
-retrieval~\cite{li_making_2023}, reciprocal rank
-fusion~\cite{cormack_reciprocal_2009}, cross-encoder
-reranking~\cite{bajaj_ms_2018}, and LLM-based rerankers are widely used
-components. Biomedical rerankers such as MedCPT further demonstrate the value
-of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}.
-Cross-domain evaluations such as BEIR show substantial variation in retrieval
-effectiveness across datasets, while BM25 remains a robust
-baseline~\cite{thakur_beir_2021}. We use these standard components to examine
+retrieval~\cite{robertson_probabilistic_2009}, dense retrieval, reciprocal rank
+fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking, and LLM-based
+rerankers are widely used components. Biomedical rerankers such as MedCPT further
+demonstrate the value of domain adaptation for PubMed-scale
+retrieval~\cite{jin_medcpt_2023}. We use these standard components to examine
 how reranker capacity and domain fit affect retrieval in a focused
 model-organism corpus, where a small number of organism-specific lexical cues
 may carry substantial relevance signal.
 
-Query expansion is a long-standing approach to reducing vocabulary mismatch in
-biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene
-synonyms, and concept-based expansion~\cite{lu_empirical_2009}, and more recent
-methods use language models to generate additional query
-terms~\cite{wang_query2doc_2023}. Our expansion source is instead curated and
-entity-linked: we use dictyBase annotations associated with the gene identified
-in the claim. The two expansion variants represent increasing levels of
-annotation depth, from canonical gene names and synonyms to additional product
-descriptions, letting us examine whether progressively richer curated context
-continues to help or begins to introduce query noise.
+Query expansion and full-text retrieval are established strategies in biomedical
+search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms,
+concept-based expansion, and more recently generated query terms to reduce
+vocabulary mismatch~\cite{lu_empirical_2009,wang_query2doc_2023}. Full-text and
+passage-level retrieval can additionally recover evidence that is absent from
+abstracts, although indexing finer-grained text introduces a larger and noisier
+candidate space~\cite{kim_towards_2022}. We study these strategies using curated
+dictyBase annotations for query expansion and by comparing abstract-only
+retrieval with retrieval over chunked full text.
 
-Full-text retrieval can recover relevant information that is absent from
-article abstracts, while passage-level indexing creates a larger and more
-fine-grained candidate space~\cite{kim_towards_2022}. We study this trade-off
-by comparing abstract-only retrieval with retrieval over abstracts and chunked
-article bodies. In particular, we examine whether access to full text improves
-the recovery and ranking of cited articles when the corresponding abstract does
-not contain the detailed evidence expressed in the curator claim.
 
 \section{Dataset}
 \label{sec:dataset}
@@ -209,8 +194,8 @@ All abstract-only retrieval and reranking experiments use this same corpus.
 
 \paragraph{Curator-derived queries and relevance judgments.}
 Queries were derived from curator notes on dictyBase gene summary pages. 
-These notes consist of compact biological statements supported by inline citations, as illustrated in Fig.~\ref{fig:dataset}. 
-For example, the statement that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as the reference article for evaluation.
+These notes consist of compact biological claims supported by inline citations, as illustrated in Fig.~\ref{fig:dataset}.
+For example, the claim that during normal development on a moist surface, \emph{pkaC} mRNA increases from an initially low level to a peak at 20 hours is extracted as a retrieval query, and the cited Rosengarten \emph{et al.} article is used as the reference article for evaluation.
 Because dictyBase uses internal publication identifiers, we first mapped cited publications to PubMed IDs. 
 Claims were excluded when their citations could not be mapped to PubMed or when the cited articles were absent from the Europe PMC abstract corpus, removing about 2\% of the claims in total.
 The remaining claims were cleaned and deduplicated. 
@@ -229,17 +214,13 @@ curator claim.
 For example, in the \emph{pkaC} instance shown in Fig.~\ref{fig:dataset}B, the cited abstract describes the study at a broad level, but not the specific expression pattern stated in the curator claim.
 This gap creates an important distinction for retrieval evaluation: 
 for some claims, the relevant evidence is already present in the abstract, whereas others 
-may require evidence from the article body even when the cited PMID is correct. 
+may require evidence from the article body. 
 We assigned an LLM-assisted evidence-level label to each
 claim--article pair to indicate whether the cited abstract: (i) supports the detailed claim---explicitly supports both the main assertion and its relevant specific details;
 (ii) supports only the core statement---the main assertion (for example, that a gene is involved in a process) but not the accompanying details (such as a specific developmental stage, condition, or magnitude); or (iii) is insufficient, suggesting that 
 the abstract does not explicitly support the relevant relationship. The third label does not mark 
 the citation as irrelevant; rather, it identifies cases where the supporting 
-evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps when abstracts provide different levels of evidence. We therefore construct a full-text corpus for articles with accessible PDFs, covering 1,124 cited PubMed articles. Queries with at least one
-cited PMID in this corpus form the has-PDF subset, containing 1,480 of the 1,656
-queries. Table~\ref{tab:composition} summarizes the benchmark composition by
-evidence level, reporting both the number of distinct curator claims
-and the number of claim--article citation pairs.
+evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps at different levels of abstract evidence. We construct a full-text corpus for articles with accessible PDFs (1,124 cited articles); queries with at least one such PMID form the has-PDF subset. Table~\ref{tab:composition} reports the resulting composition by evidence level, as distinct claims and as claim--article pairs.
 
 \begin{table}[!htbp]
 \centering
@@ -366,7 +347,7 @@ more queries toward positive deltas. A concrete failure case is the query
 cited article second, whereas MiniLM-L12 moved it down to 60th. The article
 ranked first by MiniLM-L12 matched broad location terms, such as cleavage furrow
 and phagocytic cup, but lacked the \emph{DymA}-specific signal. Thus, reranking condensed
-biological statements is useful only when the reranker preserves the task-relevant
+biological claims is useful only when the reranker preserves the task-relevant
 lexical signal.
 
 \subsection{Gene-aware query expansion improves retrieval and benefits BGE-m3 and MedCPT}
@@ -385,8 +366,6 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b). For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original query, and expansion adds less than one point (CIs cross zero).
 
 Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. A clear example is the query ``\emph{DetA} is involved in cell-type specification during development.'' The cited article uses the synonym \emph{DET1} rather than \emph{DetA}. In the controlled reranking setting, adding this curated synonym moved the cited article from 39th to first under BGE-m3. The synonym supplies the surface form the article actually uses, closing the vocabulary gap between the compact curator wording and the article text. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original query.
-
-\FloatBarrier
 
 \subsection{Full-text chunks benefit claims whose evidence is missing from the abstracts}
 \label{sec:results_fulltext}
@@ -414,7 +393,7 @@ Overall, full-text chunks provide the largest benefit on claims whose cited abst
 \FloatBarrier
 \section{Discussion}
 \label{sec:discussion}
-We built and released a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of a niche biological search: finding supporting citations for compact, gene-centered biological statements. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
+We built and released a benchmark for \emph{Dictyostelium} literature retrieval that reflects a realistic form of a niche biological search: finding supporting citations for compact, gene-centered biological claims. The benchmark's value is a combination of a new dataset and a test case for retrieval behavior that can differ from many open-domain QA settings. In this model-organism setting, gene symbols, pathway terms, phenotypes, and other organism-specific terms provide highly informative lexical cues. These cues help explain why BM25 remains strong and why reranking helps only when the model preserves these signals while adding useful semantic discrimination.
 
 This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together. A reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
 
@@ -439,7 +418,7 @@ of Table~\ref{tab:s2_evidence_haspdf_full} suggest that this effect is not domin
 mixed abstract/full-text retrieval still improves evidence finding under partial
 coverage.
 
-Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact statements may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted statement. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
+Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, an inline citation may support broader page context, may require context lost during claim extraction, or may occasionally point to a paper that does not clearly support the extracted claim. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
 \FloatBarrier
 \section*{Appendix}
