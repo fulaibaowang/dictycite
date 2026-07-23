@@ -129,9 +129,9 @@ tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen
 track~\cite{coordinators-trec2025-papers-proc-4}, which differ in how they
 formulate the information need, define the corpus, and obtain relevance
 judgments. BioASQ, for example, uses expert-authored biomedical questions.
-Closer to our formulation, SciFact and SciFact-Open use declarative scientific
+Closer to our formulation, SciFact uses declarative scientific
 claims to retrieve evidence-bearing abstracts, but within a verification task
-that also classifies support or refutation~\cite{wadden_fact_2020,wadden_scifact-open_2022}.
+that also classifies support or refutation~\cite{wadden_fact_2020}.
 We likewise use a declarative claim as the query, but derive claims and targets
 from naturally occurring curator claim--citation links in a model-organism
 knowledge base, with an organism-scoped corpus and structured gene annotations
@@ -243,23 +243,22 @@ and the number of claim--article citation pairs.
 
 \begin{table}[!htbp]
 \centering
-\caption{Benchmark composition by abstract-evidence level. \emph{Pairs} count
-claim--article citations, with each cited article assigned one evidence label;
-\emph{claims} count distinct curator claims associated with each evidence level.
-Because a single claim may cite articles assigned to different evidence levels,
-the per-level claim counts can sum to more than the total number of distinct
-claims. The benchmark contains an average of 1.22 cited articles per claim.}
+\caption{Benchmark composition by abstract-evidence level. Claim counts may
+overlap across levels because one claim can cite articles with different
+evidence labels. Overall, the benchmark contains 1.22 cited articles per claim.}
 \label{tab:composition}
-\scriptsize
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}llrrrr@{}}
 \toprule
- & Supports detail & Supports core & Insufficient & Total \\
+Dataset & Unit & Detail & Core & Insuf. & Total \\
 \midrule
-Full --- claims    & 816 & 654 & 387 & 1{,}656 claims \\
-Full --- pairs     & 844 & 762 & 422 & 2{,}028 pairs  \\
-has-PDF --- claims & 707 & 585 & 350 & 1{,}480 claims \\
-has-PDF --- pairs  & 732 & 672 & 378 & 1{,}782 pairs  \\
+Full
+  & Claims & 816 & 654 & 387 & 1{,}656 \\
+  & Pairs  & 844 & 762 & 422 & 2{,}028 \\
+\addlinespace
+has-PDF
+  & Claims & 707 & 585 & 350 & 1{,}480 \\
+  & Pairs  & 732 & 672 & 378 & 1{,}782 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -313,7 +312,7 @@ For significance testing, we use paired bootstrap resampling over queries with B
 
 \subsection{Systems compared}
 \label{sec:systems_compared}
-We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}). The rerankers are MiniLM-L12 (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{wang_minilm_2020,noauthor_cross-encoder-ms-marco-minilm-l12-v2_2026}, BGE-m3 (BAAI/bge-reranker-v2-m3)~\cite{chen_m3-embedding_2024,noauthor_baaibge-reranker-v2-m3_2026}, MedCPT (ncbi/MedCPT-Cross-Encoder)~\cite{noauthor_ncbimedcpt-cross-encoder_2026}, and BGE-Gemma (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026}, representing small general-purpose, strong multilingual, PubMed-trained biomedical, and large LLM-based CE reranking settings.
+We compare BM25, BM25+Dense retrieval fusion without reranking, four cross-encoder rerankers, and one external listwise reference system. All cross-encoder rerankers are applied to the same BM25+Dense RRF candidate pool (Fig.~\ref{fig:pipeline}). The rerankers are MiniLM-L12 (cross-encoder/ms-marco-MiniLM-L12-v2)~\cite{wang_minilm_2020}, BGE-m3 (BAAI/bge-reranker-v2-m3)~\cite{chen_m3-embedding_2024}, MedCPT (ncbi/MedCPT-Cross-Encoder)~\cite{jin_medcpt_2023}, and BGE-Gemma (BAAI/bge-reranker-v2-gemma)~\cite{noauthor_baaibge-reranker-v2-gemma_2026}, representing small general-purpose, strong multilingual, PubMed-trained biomedical, and large LLM-based CE reranking settings.
 
 We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradeep_ragnarok_2025,pradeep_rankzephyr_2023}. Ragnarok is an independently maintained retrieval-and-listwise-reranking pipeline using RankZephyr, a 7B listwise LLM reranker, and is intended as a contextual reference.
 
@@ -458,7 +457,7 @@ Several limitations remain. The queries were automatically extracted, cleaned, a
 \subsection*{Implementation details}
 
 BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
-Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024}, included in the repository, and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. Variants of this pipeline have also been used in BioASQ Task 14B submissions, but the conclusions reported here are based on the dictyBase benchmark and ablation analyses. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024}, included in the repository, and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. 
 
 \begin{figure}[H]
 \centering
