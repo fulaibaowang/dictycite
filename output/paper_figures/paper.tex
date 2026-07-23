@@ -107,7 +107,7 @@ with additional developmental, experimental, or temporal context.
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
 \emph{Dictyostelium}. We use this setting to examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated gene annotations
-help compact biological queries, and how full-text evidence changes retrieval
+help compact claims, and how full-text evidence changes retrieval
 when abstracts are insufficient.
 
 Our principal contribution is not a new retrieval architecture, but a benchmark
@@ -134,7 +134,7 @@ reranker domain fit, curated gene annotations, and full-text evidence.
 \label{sec:dataset}
 
 We constructed a \emph{Dictyostelium} literature retrieval dataset from dictyBase gene summary pages.
-Each retrieval instance is derived from a curator-generated biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as the relevance judgment. 
+Each retrieval instance is derived from a curator-authored biological claim and its inline literature citation: the claim becomes the query, and the cited PubMed-indexed articles are used as article-level relevance judgments.
 The dataset contains 1,656 curator-claim queries from 862 unique \emph{Dictyostelium} genes, linked to 1,289 unique PubMed articles and evaluated against a 20,447-article Europe PMC abstract corpus. 
 In addition to the query--article relevance pairs, the dataset includes structured gene annotations for gene-aware query expansion and LLM-assisted evidence labels for stratified analysis of whether the cited abstract contains sufficient evidence for the curator claim. 
 The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenodo.20308282}{10.5281/zenodo.20308282}.
@@ -145,8 +145,8 @@ The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenod
 \caption{Construction of a retrieval instance from a dictyBase gene page. 
 (A) The source page for gene \emph{pkaC} 
 (\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene
-annotations and curator-generated notes with inline citations. 
-(B) A curator-generated claim is extracted as the query, and its inline citation 
+annotations and curator-authored notes with inline citations. 
+(B) A curator-authored claim is extracted as the query, and its inline citation 
 is mapped to a PubMed-indexed article used as the cited relevance judgment. 
 Auxiliary fields are used in later experiments: gene annotations support 
 gene-aware query expansion, and the LLM-assisted evidence label supports the 
@@ -274,7 +274,7 @@ We also include Ragnarok BM25 + RankZephyr as an external reference~\cite{pradee
 
 We organize the results around three questions: whether cross-encoder reranking
 adds value beyond first-stage retrieval baselines, whether curated gene
-annotations help compact biological queries, and whether full-text chunks improve
+annotations help compact claims, and whether full-text chunks improve
 retrieval when abstracts lack sufficient evidence. The aggregate results are reported in Table~\ref{tab:ranker_comparison} and Figs.~\ref{fig:qe}--\ref{fig:evidence_haspdf};
 we use short query-level examples within each subsection to illustrate the mechanisms behind these results.
 
