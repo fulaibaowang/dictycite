@@ -96,7 +96,10 @@ relevance model, and query expansion, which enriches the query with related
 terms, are the two strategies we evaluate in this setting.
 
 Many model-organism databases maintain gene-centered pages that combine
-structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
+structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Maintaining
+these resources depends heavily on expert biocuration, and text-mining systems
+have supported activities such as article prioritization and annotation
+\cite{biocreative_kinome_2018,van_auken_text_2012}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
 widely used in biology, including studies of chemotaxis,
 cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
@@ -120,17 +123,63 @@ recall and final ranking when abstracts omit detailed evidence, while not fully
 closing the gap to claims whose evidence is already present in abstracts.
 
 \section{Related Work}
-Biomedical literature retrieval has been studied through broad benchmarks and shared tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen track~\cite{coordinators-trec2025-papers-proc-4}, as well as through curation-oriented search and annotation systems such as Textpresso~\cite{muller_textpresso_2004} and PubTator~\cite{wei_pubtator_2013}. These efforts cover biomedical question-answering, semantic indexing, text mining, and literature search support. Our work is related in motivation, but focuses on a different evaluation setting: retrieving supporting citations for compact, detailed, domain-specific biological queries, where terminology, synonyms, and curated annotations may affect retrieval differently from broad biomedical QA settings.
 
-Modern retrieval systems commonly use two-stage pipelines, combining efficient first-stage retrieval with more expensive reranking. Lexical retrieval~\cite{robertson_probabilistic_2009}, dense retrieval~\cite{li_making_2023}, reciprocal rank fusion~\cite{cormack_reciprocal_2009}, cross-encoder reranking~\cite{bajaj_ms_2018}, and LLM-based rerankers are widely used components.
-Biomedical rerankers such as MedCPT further show the value of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}. We use these standard components to examine how modern retrieval pipelines behave in a niche scientific retrieval setting.
+Biomedical literature retrieval has been studied through benchmarks and shared
+tasks such as BioASQ~\cite{tsatsaronis_overview_2015} and the TREC BioGen
+track~\cite{coordinators-trec2025-papers-proc-4}. Existing benchmarks differ in
+how they formulate the information need, define the search corpus, and obtain
+relevance judgments. BioASQ, for example, uses expert-authored biomedical
+questions and associated relevant literature. A related query formulation
+appears in SciFact and SciFact-Open, where declarative scientific claims are
+used to retrieve evidence-bearing abstracts as part of a broader verification
+task that also includes evidence selection and support-or-refute classification
+\cite{wadden_fact_2020,wadden_scifact-open_2022}. Our benchmark shares the use
+of a declarative claim as the retrieval query, but derives its queries and
+targets from naturally occurring curator claim--citation links in a
+model-organism knowledge base. It additionally provides an organism-scoped
+literature corpus and structured gene annotations that can be used as
+query-side retrieval signals. Curation-oriented systems such as
+Textpresso~\cite{muller_textpresso_2004} and
+PubTator~\cite{wei_pubtator_2013} support biomedical literature search and
+annotation, and Textpresso has also been applied to literature-based curation at
+dictyBase~\cite{van_auken_text_2012}. These systems provide tools for curation
+workflows, whereas our work contributes a benchmark for retrieval conditioned
+on existing curator-authored claims.
 
-Query expansion and full-text retrieval are long-standing topics in biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene synonyms, and concept-based expansion to reduce vocabulary mismatch, while full-text retrieval can recover evidence absent from abstracts~\cite{lu_evaluation_2009,lu_empirical_2009,kim_towards_2022}. We study both factors in a controlled setting by using curated annotations for query expansion and by comparing abstract-only retrieval with chunked full-text retrieval.
+Modern retrieval systems commonly use two-stage pipelines that combine
+efficient first-stage retrieval with more expensive reranking. Lexical
+retrieval~\cite{robertson_probabilistic_2009}, dense
+retrieval~\cite{li_making_2023}, reciprocal rank
+fusion~\cite{cormack_reciprocal_2009}, cross-encoder
+reranking~\cite{bajaj_ms_2018}, and LLM-based rerankers are widely used
+components. Biomedical rerankers such as MedCPT further demonstrate the value
+of domain adaptation for PubMed-scale retrieval~\cite{jin_medcpt_2023}.
+Cross-domain evaluations such as BEIR show substantial variation in retrieval
+effectiveness across datasets, while BM25 remains a robust
+baseline~\cite{thakur_beir_2021}. We use these standard components to examine
+how reranker capacity and domain fit affect retrieval in a focused
+model-organism corpus, where a small number of organism-specific lexical cues
+may carry substantial relevance signal.
 
-Taken together, prior work provides strong retrieval components and broad
-biomedical retrieval benchmarks, but less is known about their behavior in model-organism knowledge bases. Our work uses dictyBase
-claim--citation pairs as a controlled test case for this setting, with emphasis on
-reranker domain fit, curated gene annotations, and full-text evidence.
+Query expansion is a long-standing approach to reducing vocabulary mismatch in
+biomedical search. Prior work has used controlled vocabularies, MeSH terms, gene
+synonyms, and concept-based expansion
+\cite{lu_evaluation_2009,lu_empirical_2009}. More recent approaches generate
+hypothetical documents or additional query terms using language models
+\cite{gao_precise_2023,wang_query2doc_2023}. Our expansion source is instead
+curated and entity-linked: we use dictyBase annotations associated with the
+gene identified in the claim. The two expansion variants represent increasing
+levels of annotation depth, from canonical gene names and synonyms to
+additional product descriptions, allowing us to examine whether progressively
+richer curated context continues to help or begins to introduce query noise.
+
+Full-text retrieval can recover relevant information that is absent from
+article abstracts, while passage-level indexing creates a larger and more
+fine-grained candidate space~\cite{kim_towards_2022}. We study this trade-off
+by comparing abstract-only retrieval with retrieval over abstracts and chunked
+article bodies. In particular, we examine whether access to full text improves
+the recovery and ranking of cited articles when the corresponding abstract does
+not contain the detailed evidence expressed in the curator claim.
 
 \section{Dataset}
 \label{sec:dataset}
