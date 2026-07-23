@@ -20,10 +20,6 @@ against a **20,447**-article Europe PMC abstract corpus.
 - **`dictycite_goldset.jsonl`** - 1,656 queries.
   Curator-claim queries linked to cited PubMed articles, with LLM-assigned
   evidence-level labels.
-  Evidence-level distribution across the 2,028 claim-article pairs
-  (mean 1.22 citations per query):
-  `abstract_supports_detail` 844, `abstract_supports_core` 762,
-  `abstract_insufficient` 422.
 
 - **`dictycite_abstract_corpus.jsonl`** - 20,447 articles.
   Cleaned PubMed abstracts forming the retrieval corpus.
