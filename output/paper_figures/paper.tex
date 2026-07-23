@@ -90,8 +90,10 @@ or general literature search.
 
 Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Systems that perform well on broad literature-search
 benchmarks may behave differently in narrower biological domains, where exact
-gene names, aliases, and phenotype terms can carry substantial signal. In this
-setting, we evaluate two common strategies: semantic reranking, which reorders the retrieved articles using a selective model, and query expansion, which adds related terms to the search query.
+gene names, aliases, and phenotype terms can carry substantial signal. Components such as semantic
+reranking, which reorders initially retrieved articles using a more selective
+relevance model, and query expansion, which enriches the query with related
+terms, are the two strategies we evaluate in this setting.
 
 Many model-organism databases maintain gene-centered pages that combine
 structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
@@ -106,12 +108,12 @@ with additional developmental, experimental, or temporal context.
 
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
-\emph{Dictyostelium}. We use this setting to examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated gene annotations
-help compact claims, and how full-text evidence changes retrieval
+\emph{Dictyostelium}. We examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated gene annotations
+improve retrieval for compact claims, and how access to full-text evidence changes retrieval
 when abstracts are insufficient.
 
 Our principal contribution is not a new retrieval architecture, but a benchmark
-and analysis of retrieval behavior in a sparse model-organism domain. The
+and analysis of retrieval behavior in a focused model-organism domain. The
 results show that reranking gains depend strongly on model fit, that trusted
 gene annotations can reduce vocabulary mismatch, and that full-text chunks improve
 recall and final ranking when abstracts omit detailed evidence, while not fully
@@ -156,8 +158,9 @@ claim or whether full-text evidence may be needed.}
 \end{figure}
 
 \paragraph{Retrieval corpus.}
-We assembled the retrieval corpus by collecting PubMed-indexed articles related to \emph{Dictyostelium} from Europe PMC. 
-For the abstract-based experiments, we used the 20,447 records with available abstracts, which were cleaned by removing formatting tags and normalizing whitespace, resulting in a collection of 20,447 articles. 
+We assembled an organism-scoped retrieval corpus by collecting the full set of articles related to \emph{Dictyostelium} from Europe PMC. 
+We retained all records with available abstracts, yielding 20,447 articles
+after removing formatting tags and normalizing whitespace.
 All abstract-only retrieval and reranking experiments use this same corpus.
 
 \paragraph{Curator-derived queries and relevance judgments.}
