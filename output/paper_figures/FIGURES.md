@@ -9,7 +9,7 @@ Diagnostic / exploratory plots stay in their per-workflow `figures/` directories
 - [`table1_ranker_comparison.md`](table1_ranker_comparison.md) — Table 1, ranker comparison on full goldset (n=1,656). Now carries the headline ranker result that was previously Fig 3 (`fig3_main_ranker_comparison.png`).
 - Table 2 — qualitative claim/retrieval examples (`tab:qual_examples` in `paper.tex`); authored inline in the LaTeX source, no CSV here.
 - [`table_s1_qe_reranker.md`](table_s1_qe_reranker.md) — Table S1, QE × reranker on QE subset (n=563).
-- [`table_s2_evidence_haspdf_full.md`](table_s2_evidence_haspdf_full.md) — Table S2, evidence-level R@1000 and MRR@10 (BGE-m3) on the has-PDF subset and the full dataset side by side. Replaces both the previous per-reranker Table S2 and Fig S3.
+- [`table_s2_evidence_haspdf_full.md`](table_s2_evidence_haspdf_full.md) — Table S2, evidence-level R@1000 and MRR@10 (BGE-m3) with inline Δ and 95% paired-bootstrap CIs in each +Chk cell, stacked as a has-PDF block (gains, MRR CIs above zero) and a no-PDF block (hurt by the added chunks, MRR CIs below zero). Replaces both the previous per-reranker Table S2 and Fig S3.
 
 The prose for §3–§7 lives in the manuscript LaTeX source.
 
@@ -35,7 +35,7 @@ Manuscript figure numbers differ from the file numbers. `fig3_main_ranker_compar
 
 **Generated but not in the current manuscript** (still produced for diagnostic use):
 
-- `fig_s3_evidence_level_full_goldset.png` (`notebooks/report_7a.py`) — full-dataset evidence-level retrieval/rerank. The full-dataset numbers are now reported in Table S2 alongside has-PDF, saving a figure of space.
+- `fig_s3_evidence_level_full_goldset.png` (`notebooks/report_7a.py`) — full-dataset evidence-level retrieval/rerank. Table S2 now reports the has-PDF subset alongside its no-PDF complement instead of the full-dataset blend, saving a figure of space.
 - `fig_s4_per_query_chunked_delta_haspdf.png` (`notebooks/report_7a.py` §15) — per-query Δ MRR@10 (chunked − abstract) by evidence level, BGE-m3, has-PDF subset (1×3 panels; per-bucket n = 707 / 585 / 350 across 1,480 unique queries). Helped/hurt/unchanged decomposition of the chunked-corpus gain. Helped fraction grows monotonically with evidence difficulty (15.4% / 34.7% / 46.6%); hurt fraction is non-trivial on the easier buckets (10.0% / 16.2%) but small on `abstract_insufficient` (8.0%). The PNG is no longer tracked in this directory.
 
 ## Conventions

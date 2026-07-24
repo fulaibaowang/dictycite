@@ -1835,20 +1835,56 @@ else:
             per_level_qrels, rb, rc,
             [10], metric="mrr",
         )
+
+        # Paired-bootstrap 95% CI for the per-query change (chunked minus abstract)
+        # of a given metric, in percentage points. Matches the paper's global
+        # significance procedure (B=10,000 percentile CIs) so Table S2 deltas are
+        # consistent with Table 1 / Table S1 rather than introducing a different
+        # test. Used for both MRR@10 (rerank runs) and R@1000 (retrieval runs).
+        def _delta_ci(qrels_lvl, run_base, run_chk, score_fn, k, B=10000, seed=0):
+            d = []
+            for qid, rels in qrels_lvl.items():
+                d.append(score_fn(run_chk.get(str(qid), []), rels, k)
+                         - score_fn(run_base.get(str(qid), []), rels, k))
+            d = np.asarray(d, dtype=float)
+            if d.size == 0:
+                return 0.0, 0.0, 0.0
+            rng = np.random.default_rng(seed)
+            boot = np.array([d[rng.integers(0, d.size, d.size)].mean() for _ in range(B)])
+            lo, hi = np.percentile(boot, [2.5, 97.5])
+            return d.mean() * 100, lo * 100, hi * 100
+
         print(f"\n{label} — by evidence level:")
         print(f"  {'Level':28s} {'n':>4s}  "
-              f"{'R@100 base':>11s}  {'R@100 +chk':>11s}  "
               f"{'R@1000 base':>12s}  {'R@1000 +chk':>12s}  "
-              f"{'MRR@10 base':>11s}  {'MRR@10 +chk':>11s}")
+              f"{'dR@1000 pp [95% CI]':>24s}  "
+              f"{'MRR@10 base':>11s}  {'MRR@10 +chk':>11s}  "
+              f"{'dMRR@10 pp [95% CI]':>24s}")
         for lvl in levels:
             n = n_per.get(lvl, 0)
+            ql = per_level_qrels.get(lvl, {})
+            dr, rlo, rhi = _delta_ci(ql, run_retrieval_base, run_retrieval_chunked, _recall_at_k, 1000)
+            dm, mlo, mhi = _delta_ci(ql, rb, rc, _mrr_at_k, 10)
             print(f"  {EVIDENCE_FIG3_LABELS.get(lvl, lvl):28s} {n:4d}  "
-                  f"{rec_base[lvl][0]:11.4f}  {rec_chk[lvl][0]:11.4f}  "
                   f"{rec_base[lvl][1]:12.4f}  {rec_chk[lvl][1]:12.4f}  "
-                  f"{mrr_base[lvl][0]:11.4f}  {mrr_chk[lvl][0]:11.4f}")
+                  f"{dr:+6.1f} [{rlo:+6.1f},{rhi:+6.1f}]  "
+                  f"{mrr_base[lvl][0]:11.4f}  {mrr_chk[lvl][0]:11.4f}  "
+                  f"{dm:+6.1f} [{mlo:+6.1f},{mhi:+6.1f}]")
 
-    _caption_table(level_qrels_haspdf, n_hp, "Fig 5 (has-PDF)")
-    _caption_table(level_qrels,        n_all, "Fig S3 (all claims)")
+    # No-PDF complement: queries whose gold PMID(s) at a level have no chunked
+    # full text. Table S2 in paper.tex contrasts has-PDF (benefit) with no-PDF
+    # (coverage cost), since the added chunks can only push a no-PDF article's
+    # gold abstract down. Reported per stratum; n matches Table 2 (Full - has-PDF).
+    level_qrels_nopdf: dict[str, dict[str, set[str]]] = {}
+    for _lvl, _q2p in level_qrels.items():
+        _nop = {qid: pmids for qid, pmids in _q2p.items() if not (pmids & chunked_pmids_v2)}
+        if _nop:
+            level_qrels_nopdf[_lvl] = _nop
+    n_nopdf = {lvl: len(q) for lvl, q in level_qrels_nopdf.items()}
+
+    _caption_table(level_qrels_haspdf, n_hp,    "Fig 5 (has-PDF)")
+    _caption_table(level_qrels_nopdf,  n_nopdf, "Table S2 (no-PDF)")
+    _caption_table(level_qrels,        n_all,   "Fig S3 (all claims)")
 
     # Same evidence layout, MedCPT post-rerank fusion (abstract vs chunked v2).
     def _fig5_pick_post_fusion_tsv(wf: Path, split: str) -> Path | None:

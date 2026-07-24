@@ -71,7 +71,7 @@ Baylor Plaza, Houston, TX 77030, USA\\
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-authored biological claims used as declarative retrieval queries, with their inline-cited PubMed articles as relevance judgments, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking gains are strongly model-dependent, whereas curated annotations help clarify compact claims by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when cited abstracts lack sufficient evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is archived on Zenodo.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-authored biological claims used as declarative retrieval queries, with their inline-cited PubMed articles as relevance judgments, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking gains are strongly model-dependent, whereas curated annotations help clarify compact claims by reducing vocabulary mismatch. Where full text is available, adding body chunks to the retrieval corpus substantially improves candidate recall and top-rank performance for claims whose cited abstracts lack sufficient evidence, although these cases remain harder than claims supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is archived on Zenodo.
 
 \keywords{Biomedical literature retrieval \and Model organism \and Full-text retrieval \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
@@ -358,13 +358,13 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 
 At the retrieval stage, expansion substantially improves recall for both BM25 and dense retrieval (Fig.~\ref{fig:qe}a--b). For the reranking analysis, we fix the candidate pool to the one retrieved with the deepest expansion (+ synonyms \& products), and vary only the query text passed to the reranker, isolating the query-formulation effect from the recall improvement above. Expanded reranker queries improve MRR@10 for BGE-m3 and MedCPT under both expansion variants, with all four confidence intervals above zero (Fig.~\ref{fig:qe}c--d, Table~\ref{tab:s1_qe_reranker}). By contrast, BGE-Gemma already performs strongly with the original query, and expansion adds less than one point (CIs cross zero).
 
-Overall, gene-aware expansion improves first-stage recall and provides clear downstream benefit for BGE-m3 and MedCPT. A clear example is the query ``\emph{DetA} is involved in cell-type specification during development.'' The cited article uses the synonym \emph{DET1} rather than \emph{DetA}. In the controlled reranking setting, adding this curated synonym moved the cited article from 39th to first under BGE-m3. The synonym supplies the surface form the article actually uses, closing the vocabulary gap between the compact curator wording and the article text. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original query.
+A clear example is the query ``\emph{DetA} is involved in cell-type specification during development.'' The cited article uses the synonym \emph{DET1} rather than \emph{DetA}. In the controlled reranking setting, adding this curated synonym moved the cited article from 39th to first under BGE-m3. The synonym supplies the surface form the article actually uses, closing the vocabulary gap between the compact curator wording and the article text. The effect is much smaller for BGE-Gemma, indicating diminishing returns when the reranker already recovers much of the relevant signal from the original query.
 
 \subsection{Full-text chunks benefit claims whose evidence is missing from the abstracts}
 \label{sec:results_fulltext}
 The previous experiments used the abstract corpus. This setting is limiting for claims where the cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
 
-We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}. Fig.~\ref{fig:evidence_haspdf} reports the main comparison on the has-PDF subset, and Table~\ref{tab:s2_evidence_haspdf_full} extends it to the full dataset, where full-text coverage is partial.
+We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}, and report the main comparison on the has-PDF subset, whose cited articles have chunked full text (Fig.~\ref{fig:evidence_haspdf}).
 
 \begin{figure}[!htbp]
 \centering
@@ -375,13 +375,11 @@ We stratify queries by the evidence-level labels introduced in the Dataset secti
 
 The main effect of full-text chunks is at the retrieval stage. For abstract-insufficient claims, first-stage Recall@1000 rises from 0.78 to 0.97 (Fig.~\ref{fig:evidence_haspdf}, upper panel), nearly closing the gap to the two abstract-supported groups. The other two groups were already close to the ceiling under the abstract-only corpus and therefore show only small recall gains. Thus, when the cited abstract lacks the required evidence, adding full-text chunks substantially improves whether the cited PMID appears in the candidate pool.
 
-The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting.
+The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting. The gain is significant across all three strata (95\% paired-bootstrap CIs above zero; Table~\ref{tab:s2_evidence_haspdf_full}).
 
 At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
 
-Overall, full-text chunks provide the largest benefit on claims whose cited abstracts lack sufficient evidence. They nearly close the first-stage recall gap and more than double post-rerank MRR@10 for the abstract-insufficient group. The remaining gap to the abstract-supported groups indicates that full-text retrieval is not only a candidate-generation problem: after relevant papers enter the pool, ranking them among chunk-derived candidates remains more difficult.
-
-
+This benefit is concentrated among queries whose cited set gains full-text representation. For the complementary no-PDF queries, none of whose cited articles contributes body chunks, adding chunks leaves Recall@1000 unchanged or lower and significantly reduces post-rerank MRR@10 in all three strata (Table~\ref{tab:s2_evidence_haspdf_full}). These relevant articles gain no additional retrieval units but must compete against the added chunks. We return to this coverage trade-off in the Discussion.
 
 \FloatBarrier
 \section{Discussion}
@@ -390,29 +388,9 @@ We built and released a benchmark for \emph{Dictyostelium} literature retrieval 
 
 This finding has a practical implication for standard two-stage retrieval systems: cross-encoder reranking should not be treated as a default upgrade to the retrieval pipeline. In niche biological search, model choice, latency, and domain fit should be evaluated together. A reranking stage that adds substantial computation is useful only if it improves over a strong lexical baseline on the target retrieval task. 
 
-Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline.
-In our controlled reranking analysis, we fix the candidate pool and vary only the
-reranker query, isolating a second route by which expansion helps: beyond
-retrieving more candidates at the first stage, it also gives the reranker better
-query-side context. These gains suggest that curated gene annotations enrich
-compact claims with the missing gene vocabulary the reranker needs. In contrast
-to free-text or generatively expanded queries, which can add untrusted terms that
-a cross-encoder is sensitive to, expansion drawn from a trusted, entity-linked
-source improves the reranker's query-side context without introducing comparable
-noise. More broadly, trusted gene annotations plus a smaller domain-suitable
-reranker may be a more efficient operating point than relying only on larger
-LLM-based rerankers.
+Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline. In our controlled reranking analysis, we fix the candidate pool and vary only the reranker query, showing that expansion helps not only by retrieving more candidates but also by supplying gene vocabulary missing from compact claims. Unlike free-text or generated expansions, trusted entity-linked annotations are less likely to introduce noisy terms to which a cross-encoder may be sensitive. More broadly, trusted gene annotations paired with a smaller domain-suitable reranker may offer a more efficient operating point than relying only on larger LLM-based rerankers.
 
-The full-text experiments show that abstracts are efficient but incomplete
-retrieval units. Body chunks help most when cited abstracts are insufficient, yet
-the remaining MRR gap indicates that full text also creates a harder ranking
-problem over noisier, more fine-grained candidates. In practice, not every article has open-access, machine-readable full text, so a
-system cannot assume complete full-text coverage. This partial coverage could in
-principle bias retrieval, because full-text-covered articles contribute many chunks
-whereas abstract-only articles contribute only one. However, the full-dataset columns
-of Table~\ref{tab:s2_evidence_haspdf_full} suggest that this effect is not dominant:
-mixed abstract/full-text retrieval still improves evidence finding under partial
-coverage.
+The full-text experiments show that abstracts are efficient but incomplete retrieval units. Body chunks help most when cited abstracts are insufficient, although the remaining MRR gap shows that recovering body evidence does not eliminate the ranking challenge. Incomplete coverage also creates an asymmetry: covered articles gain additional retrieval units, whereas abstract-only articles face a larger candidate space. Naively pooling abstracts and body chunks can therefore disadvantage abstract-only articles, suggesting that coverage-aware indexing or fusion warrants further evaluation.
 
 Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
@@ -442,9 +420,9 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 \end{figure}
 
 % Fig S3 (evidence-level retrieval/rerank on the full dataset) replaced by
-% Table~\ref{tab:s2_evidence_haspdf_full}, which puts the has-PDF and full-dataset
-% numbers side by side. Saves a figure of vertical space without losing the
-% partial-coverage story.
+% Table~\ref{tab:s2_evidence_haspdf_full}, which contrasts the has-PDF subset
+% with its no-PDF complement (with bootstrap CIs on the MRR@10 change). Saves a
+% figure of vertical space while making the partial-coverage story explicit.
 
 % \clearpage
 \FloatBarrier
@@ -470,32 +448,49 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{First-stage Recall@1000 and post-rerank MRR@10 (BGE-m3) by
-abstract-evidence level, shown for the has-PDF subset
-(Fig.~\ref{fig:evidence_haspdf}) and for the full 1,656-query dataset with
-partial full-text coverage. Full-dataset gains are diluted because some cited
-PMIDs lack chunked-corpus coverage, but the qualitative pattern is unchanged.}
-\label{tab:s2_evidence_haspdf_full}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}l rcccc rcccc@{}}
-\toprule
- & \multicolumn{5}{c}{has-PDF subset} & \multicolumn{5}{c}{full dataset} \\
-\cmidrule(lr){2-6}\cmidrule(l){7-11}
- & & \multicolumn{2}{c}{R@1000} & \multicolumn{2}{c}{MRR@10}
- & & \multicolumn{2}{c}{R@1000} & \multicolumn{2}{c}{MRR@10} \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){8-9}\cmidrule(l){10-11}
-Evidence level & $n$ & Abs & +Chk & Abs & +Chk & $n$ & Abs & +Chk & Abs & +Chk \\
-\midrule
-\emph{Abstract supports detail} & 707 & 0.993 & 0.997 & 0.802 & 0.843 & 816 & 0.993 & 0.997 & 0.803 & 0.829 \\
-\emph{Abstract supports core}   & 585 & 0.986 & 0.998 & 0.505 & 0.636 & 654 & 0.982 & 0.992 & 0.503 & 0.608 \\
-\emph{Abstract insufficient}    & 350 & 0.784 & 0.972 & 0.161 & 0.385 & 387 & 0.788 & 0.949 & 0.164 & 0.357 \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
+  \centering
+  \caption{Recall@1000 and BGE-m3 MRR@10 for abstract-only (Abs) and
+  abstract-plus-chunks (+Chk) retrieval, stratified by abstract-evidence level
+  and full-text coverage. Has-PDF queries have at least one cited article with
+  chunked full text; no-PDF queries have none. In each +Chk column, parentheses
+  report the change from Abs ($\Delta$, in percentage points) with 95\%
+  paired-bootstrap confidence intervals ($B=10{,}000$). Counts are per stratum and
+  may overlap across evidence levels.}
+  \label{tab:s2_evidence_haspdf_full}
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l r cc cc@{}}
+  \toprule
+   & & \multicolumn{2}{c}{R@1000}
+     & \multicolumn{2}{c}{MRR@10} \\
+  \cmidrule(lr){3-4}\cmidrule(l){5-6}
+  Evidence level & $n$ & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
+    & +Chk ($\Delta$ [95\% CI]) \\
+  \midrule
+  \multicolumn{6}{@{}l}{\emph{Has-PDF queries}} \\
+  \emph{Detail}
+    & 707 & 0.993 & 0.997 ($+0.4$ [$-0.1$, $+1.1$]) & 0.802
+    & 0.843 ($+4.2$ [$+2.3$, $+6.2$]) \\
+  \emph{Core}
+    & 585 & 0.986 & 0.998 ($+1.2$ [$+0.5$, $+2.1$]) & 0.505
+    & 0.636 ($+13.1$ [$+10.2$, $+15.9$]) \\
+  \emph{Insufficient}
+    & 350 & 0.784 & 0.972 ($+18.8$ [$+14.8$, $+23.0$]) & 0.161
+    & 0.385 ($+22.5$ [$+18.5$, $+26.4$]) \\
+  \addlinespace
+  \multicolumn{6}{@{}l}{\emph{No-PDF queries}} \\
+  \emph{Detail}
+    & 109 & 1.000 & 1.000 ($0.0$) & 0.815
+    & 0.731 ($-8.4$ [$-12.6$, $-4.6$]) \\
+  \emph{Core}
+    & 69 & 0.957 & 0.957 ($0.0$) & 0.431
+    & 0.332 ($-9.9$ [$-14.4$, $-5.7$]) \\
+  \emph{Insufficient}
+    & 37 & 0.838 & 0.757 ($-8.1$ [$-18.9$, $+0.0$]) & 0.170
+    & 0.086 ($-8.4$ [$-14.5$, $-3.3$]) \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
 
 \begin{credits}
 \subsubsection{\ackname} This publication is co-funded by the European Union's Horizon Europe research and innovation program under the Marie Sk\l{}odowska-Curie COFUND Postdoctoral Programme grant agreement No.~101081355--SMASH, and by the Republic of Slovenia and the European Union from the European Regional Development Fund. We thank the FRIDA cluster at the University of Ljubljana and HPC Vega at IZUM for providing the computational resources used in this work.

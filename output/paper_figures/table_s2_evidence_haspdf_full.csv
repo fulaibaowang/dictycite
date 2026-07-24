@@ -1,4 +1,4 @@
-evidence_level,n_haspdf,r1000_haspdf_abs,r1000_haspdf_chunked,mrr10_haspdf_abs,mrr10_haspdf_chunked,n_full,r1000_full_abs,r1000_full_chunked,mrr10_full_abs,mrr10_full_chunked
-Abstract supports detail,707,0.993,0.997,0.802,0.843,816,0.993,0.997,0.803,0.829
-Abstract supports core,585,0.986,0.998,0.505,0.636,654,0.982,0.992,0.503,0.608
-Abstract insufficient,350,0.784,0.972,0.161,0.385,387,0.788,0.949,0.164,0.357
+evidence_level,n_haspdf,r1000_haspdf_abs,r1000_haspdf_chunked,dr1000_haspdf_pp,dr1000_haspdf_ci_lo,dr1000_haspdf_ci_hi,mrr10_haspdf_abs,mrr10_haspdf_chunked,dmrr10_haspdf_pp,dmrr10_haspdf_ci_lo,dmrr10_haspdf_ci_hi,n_nopdf,r1000_nopdf_abs,r1000_nopdf_chunked,dr1000_nopdf_pp,dr1000_nopdf_ci_lo,dr1000_nopdf_ci_hi,mrr10_nopdf_abs,mrr10_nopdf_chunked,dmrr10_nopdf_pp,dmrr10_nopdf_ci_lo,dmrr10_nopdf_ci_hi
+Abstract supports detail,707,0.993,0.997,0.4,-0.1,1.1,0.802,0.843,4.2,2.3,6.2,109,1.000,1.000,0.0,0.0,0.0,0.815,0.731,-8.4,-12.6,-4.6
+Abstract supports core,585,0.986,0.998,1.2,0.5,2.1,0.505,0.636,13.1,10.2,15.9,69,0.957,0.957,0.0,0.0,0.0,0.431,0.332,-9.9,-14.4,-5.7
+Abstract insufficient,350,0.784,0.972,18.8,14.8,23.0,0.161,0.385,22.5,18.5,26.4,37,0.838,0.757,-8.1,-18.9,0.0,0.170,0.086,-8.4,-14.5,-3.3
