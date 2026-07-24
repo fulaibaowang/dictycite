@@ -71,9 +71,9 @@ Baylor Plaza, Houston, TX 77030, USA\\
 \emergencystretch=3em
 
 \begin{abstract}
-Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-authored biological claims used as declarative retrieval queries, with their inline-cited PubMed articles as relevance judgments, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking is most useful when the model is well suited to biological evidence matching, whereas curated annotations help clarify compact claims by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when abstracts omit supporting evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is additionally archived on Zenodo.
+Biological literature retrieval systems are often developed and evaluated using broad biomedical corpora and general-purpose search tasks. However, many curated knowledge bases operate in narrower model-organism domains, where the literature is sparse and terminology is organism-specific. We introduce a retrieval benchmark from dictyBase for \emph{Dictyostelium}, a model organism in cell and developmental biology. The benchmark consists of curator-authored biological claims used as declarative retrieval queries, with their inline-cited PubMed articles as relevance judgments, together with structured gene annotations. Using this benchmark, we study three factors in niche biological retrieval: cross-encoder reranking, gene-aware query expansion, and abstract-only versus full-text retrieval. We report that reranking and gene-aware query expansion improve retrieval selectively: reranking gains are strongly model-dependent, whereas curated annotations help clarify compact claims by reducing vocabulary mismatch. Full-text chunks substantially improve retrieval when cited abstracts lack sufficient evidence, increasing both candidate recall and top-rank performance, although these cases are harder than queries supported by abstracts. Data and code are publicly available at \url{https://github.com/fulaibaowang/dictycite}, and the benchmark dataset is archived on Zenodo.
 
-\keywords{Information retrieval \and Biomedical NLP \and Model organism \and Cross-encoder reranker \and Query expansion \and \emph{Dictyostelium}.}
+\keywords{Biomedical literature retrieval \and Model organism \and Full-text retrieval \and Query expansion \and \emph{Dictyostelium}.}
 \end{abstract}
 
 \section{Introduction}
@@ -91,10 +91,8 @@ or general literature search.
 Such differences raise a practical question for scientific retrieval systems: how well do standard retrieval pipelines work when a detailed biological claim is used as a query to retrieve relevant literature? Two commonly used strategies that we evaluate in this setting are semantic reranking, which reorders initially retrieved articles using a more selective relevance model, and query expansion, which enriches the query with related terms.
 
 Many model-organism databases maintain gene-centered pages that combine
-structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. Maintaining
-these resources depends heavily on expert biocuration, and text-mining systems
-have supported activities such as article prioritization and
-annotation~\cite{van_auken_text_2012}. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
+structured annotations, textual summaries, and links to supporting literature~\cite{ozturk-colak_flybase_2024,harris_wormbase_2020}. These
+resources rely heavily on expert biocuration. Among these resources, dictyBase covers \emph{Dictyostelium}, a social amoeba
 widely used in biology, including studies of chemotaxis,
 cell motility, phagocytosis, and multicellular development.
 dictyBase is especially useful for studying retrieval in this setting because its
@@ -129,13 +127,7 @@ verification task that also classifies support or refutation
 derive claims and retrieval targets from naturally occurring curator
 claim--citation links in a model-organism knowledge base, with an
 organism-scoped corpus and structured gene annotations available as query-side
-signals. Curation-oriented systems such as
-Textpresso~\cite{muller_textpresso_2004} and
-PubTator~\cite{wei_pubtator_2013} support biomedical literature search and
-annotation, including text-mining-assisted curation at
-dictyBase~\cite{van_auken_text_2012}. In contrast to these curation tools, our
-work contributes a retrieval benchmark conditioned on existing
-curator-authored claims.
+signals. 
 
 Modern retrieval systems commonly use two-stage pipelines that combine
 efficient first-stage retrieval with more expensive reranking. Lexical
@@ -440,7 +432,7 @@ Several limitations remain. The queries were automatically extracted, cleaned, a
 \subsection*{Implementation details}
 
 BM25 retrieval uses PyTerrier~\cite{macdonald_pyterrier_2020} over a Terrier index with the default BM25 weighting model. Dense retrieval uses abhinand/MedEmbed-small-v0.1~\cite{noauthor_abhinandmedembed-small-v01_nodate} to encode queries and documents, with cosine similarity over an HNSW index. Retrieval fusion uses RRF with $k=60$ and equal weights for BM25 and dense retrieval. Cross-encoder rerankers receive the top 1,000 fused candidates and are run with \texttt{max\_length}=512. Final rankings are produced by post-rerank fusion: RRF combines the reranker top 200 with the retrieval-fusion top 200 using weights 0.8 and 0.2, respectively. These settings keep the final ranking primarily reranker-driven while preserving part of the retrieval-stage signal.
-Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024}, included in the repository, and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. 
+Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\cite{grattafiori_llama_2024}, included in the repository, and frozen for all downstream analyses. Code, workflow configurations, and the public dataset (released as the dictyBase citation goldset) are available at \url{https://github.com/fulaibaowang/dictycite}; the repository also includes the reusable retrieval/reranking pipeline used in the experiments. The Ragnarok comparison uses code from \url{https://github.com/castorini/ragnarok}.
 
 \begin{figure}[H]
 \centering

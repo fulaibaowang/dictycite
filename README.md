@@ -4,7 +4,7 @@ DictyCite is a public *Dictyostelium discoideum* claim–citation goldset paired
 
 ## Dataset
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX) <!-- TODO: replace with real DOI -->
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20308282.svg)](https://doi.org/10.5281/zenodo.20308282)
 
 | File | Records | Description |
 |---|---|---|
