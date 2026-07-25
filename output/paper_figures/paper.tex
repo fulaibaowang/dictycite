@@ -165,17 +165,14 @@ The dataset is available on Zenodo under DOI \href{https://doi.org/10.5281/zenod
 
 \begin{figure}[!htbp]
 \centering
-\includegraphicsifexists[width=0.98\linewidth,height=0.48\textheight,keepaspectratio]{Figures/fig1_dataset2.png}
+\includegraphicsifexists[width=0.96\linewidth,height=0.48\textheight,keepaspectratio]{Figures/fig1_dataset2.png}
 \caption{Construction of a retrieval instance from a dictyBase gene page. 
 (A) The source page for gene \emph{pkaC} 
 (\url{http://dictybase.org/gene/DDB_G0283907}) contains structured gene
 annotations and curator-authored notes with inline citations. 
 (B) A curator-authored claim is extracted as the query, and its inline citation 
 is mapped to a PubMed-indexed article used as the cited relevance judgment. 
-Auxiliary fields are used in later experiments: gene annotations support 
-gene-aware query expansion, and the LLM-assisted evidence label supports the 
-full-text analysis by marking whether the cited abstract is sufficient for the 
-claim or whether full-text evidence may be needed.}
+Auxiliary fields drive later experiments: gene annotations for query expansion, and the LLM-assisted evidence label for the full-text analysis.}
 \label{fig:dataset}
 \end{figure}
 
@@ -213,26 +210,24 @@ claim--article pair to indicate whether the cited abstract: (i) supports the det
 (ii) supports only the core statement---the main assertion (for example, that a gene is involved in a process) but not the accompanying details (such as a specific developmental stage, condition, or magnitude); or (iii) is insufficient, suggesting that 
 the abstract does not explicitly support the relevant relationship. The third label does not mark 
 the citation as irrelevant; rather, it identifies cases where the supporting 
-evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps at different levels of abstract evidence. We construct a full-text corpus for articles with accessible PDFs (1,124 cited articles); queries with at least one such PMID form the has-PDF subset. Table~\ref{tab:composition} reports the resulting composition by evidence level, as distinct claims and as claim--article pairs.
+evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps at different levels of abstract evidence. We construct a full-text corpus for articles with accessible PDFs (1,124 cited articles); queries with at least one such PMID form the has-PDF subset, and those with none form the no-PDF subset. Table~\ref{tab:composition} reports the resulting composition by evidence level. Because one claim can cite multiple articles, the 1{,}656 claims comprise 2{,}028 claim--article pairs (1.22 per claim). Across these pairs, 41.6\% support the detailed claim, 37.6\% support the core claim, and 20.8\% are insufficient; claim counts overlap across evidence levels because cited articles can carry different labels.
 
 \begin{table}[!htbp]
 \centering
-\caption{Benchmark composition by abstract-evidence level. Claim counts may
-overlap across levels because one claim can cite articles with different
-evidence labels. Overall, the benchmark contains 1.22 cited articles per claim.}
+\caption{Benchmark composition by abstract-evidence level, in distinct claims.
+Within each level, a claim is has-PDF if any of its cited articles has full text
+and no-PDF otherwise.}
 \label{tab:composition}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}llrrrr@{}}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-Dataset & Unit & Detail & Core & Insuf. & Total \\
+Evidence level & Full & has-PDF & no-PDF \\
 \midrule
-Full
-  & Claims & 816 & 654 & 387 & 1{,}656 \\
-  & Pairs  & 844 & 762 & 422 & 2{,}028 \\
-\addlinespace
-has-PDF
-  & Claims & 707 & 585 & 350 & 1{,}480 \\
-  & Pairs  & 732 & 672 & 378 & 1{,}782 \\
+\emph{Abstract supports detail} & 816 & 707 & 109 \\
+\emph{Abstract supports core}   & 654 & 585 &  69 \\
+\emph{Abstract insufficient}    & 387 & 350 &  37 \\
+\midrule
+Total & 1{,}656 & 1{,}480 & 210 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -252,9 +247,7 @@ In Stage~2, a cross-encoder reranks this pool using a more computationally expen
 \begin{figure}[!htbp]
 \centering
 \includegraphicsifexists[width=0.86\linewidth,height=0.28\textheight,keepaspectratio]{Figures/fig2_pipeline_dicty.png}
-\caption{Two-stage retrieval and reranking pipeline. 
-Stage 1 builds a recall-oriented candidate pool by fusing BM25 and dense retrieval with RRF. 
-Stage 2 reranks the fused candidates with a cross-encoder and combines the reranker order with the original retrieval-fusion order through a second RRF step to produce the final ranking.}
+\caption{Two-stage retrieval and reranking pipeline. Stage 1 fuses BM25 and dense retrieval with RRF into a recall-oriented candidate pool; Stage 2 reranks it with a cross-encoder and merges that order with the Stage-1 fusion through a second RRF.}
 \label{fig:pipeline}
 \end{figure}
 
@@ -315,7 +308,7 @@ depend on reranker fit rather than on adding a reranking stage alone.
 
 \begin{table}[!htbp]
 \centering
-\caption{Ranker comparison on the full dataset (1,656 queries). Model size denotes the approximate number of parameters for neural rerankers; ``--'' indicates systems without a neural reranker. MRR@10 is the mean reciprocal rank at cutoff 10, where higher values indicate better top-rank performance. $\Delta$ vs.\ BM25 reports the difference in MRR@10 from the BM25 baseline in percentage points; positive values indicate improvement over BM25, and brackets show 95\% paired-bootstrap confidence intervals.}
+\caption{Ranker comparison on the full dataset (1,656 queries). Model size is the approximate parameter count for neural rerankers; ``--'' marks systems without one. $\Delta$ vs.\ BM25 is the MRR@10 difference from the BM25 baseline in percentage points, with brackets showing 95\% paired-bootstrap confidence intervals.}
 \label{tab:ranker_comparison}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -352,7 +345,7 @@ We next evaluate gene-aware query expansion on the 563-query subset for which di
 \begin{figure}[!htbp]
 \centering
 \includegraphicsifexists[width=0.98\linewidth,height=0.3\textheight,keepaspectratio]{Figures/fig4_candidate_qe_main.png}
-\caption{Effect of gene-aware query expansion. Three query variants are compared: the original query (the curator claim), the claim plus gene synonyms, and the claim plus both gene synonyms and product descriptions. (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) Change in MRR@10 (y-axis, in MRR@10 units) relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
+\caption{Effect of gene-aware query expansion. Three query variants are compared: the original claim and the two gene-expansion variants (+synonyms, +synonyms \& products; Section~\ref{sec:gene_qe}). (a) BM25 Recall@K, (b) dense Recall@K, and (c) mean MRR@K after BGE-m3 reranking, each plotted against the cutoff rank K on the x-axis. (d) Change in MRR@10 relative to the original-query baseline for BGE-m3, MedCPT, and BGE-Gemma; the two bars per reranker are the two expansion variants, and positive values indicate that expansion improved the final ranking. Paired-bootstrap confidence intervals for the MRR@10 deltas are reported in Table~\ref{tab:s1_qe_reranker}.}
 \label{fig:qe}
 \end{figure}
 
@@ -377,7 +370,7 @@ The main effect of full-text chunks is at the retrieval stage. For abstract-insu
 
 The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting. The gain is significant across all three strata (95\% paired-bootstrap CIs above zero; Table~\ref{tab:s2_evidence_haspdf_full}).
 
-At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.6\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
+At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.9\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
 
 This benefit is concentrated among queries whose cited set gains full-text representation. For the complementary no-PDF queries, none of whose cited articles contributes body chunks, adding chunks leaves Recall@1000 unchanged or lower and significantly reduces post-rerank MRR@10 in all three strata (Table~\ref{tab:s2_evidence_haspdf_full}). These relevant articles gain no additional retrieval units but must compete against the added chunks. We return to this coverage trade-off in the Discussion.
 
@@ -429,7 +422,7 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 
 \begin{table}[H]
 \centering
-\caption{Effect of gene-aware query expansion on the query-expansion subset. Each cell reports MRR@10. For expanded-query variants, parentheses report the paired-bootstrap difference from the original-query baseline for the same reranker, in percentage points, with 95\% confidence intervals.}
+\caption{Effect of gene-aware query expansion on the query-expansion subset. Each cell reports MRR@10. For expanded-query variants, parentheses report the difference from the original-query baseline for the same reranker, in percentage points, with 95\% paired-bootstrap confidence intervals.}
 \label{tab:s1_qe_reranker}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -449,13 +442,14 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
 
 \begin{table}[H]
   \centering
-  \caption{Recall@1000 and BGE-m3 MRR@10 for abstract-only (Abs) and
-  abstract-plus-chunks (+Chk) retrieval, stratified by abstract-evidence level
-  and full-text coverage. Has-PDF queries have at least one cited article with
-  chunked full text; no-PDF queries have none. In each +Chk column, parentheses
-  report the change from Abs ($\Delta$, in percentage points) with 95\%
-  paired-bootstrap confidence intervals ($B=10{,}000$). Counts are per stratum and
-  may overlap across evidence levels.}
+  \caption{Recall@1000 and BGE-m3 MRR@10 for abstract-only (Abs) versus
+  abstract-plus-chunks (+Chk) retrieval, by abstract-evidence level and
+  full-text coverage. Queries are split by coverage---has-PDF (at least one
+  cited article with chunked full text) versus no-PDF (none)---and scored on the
+  same all-query runs against their covered and uncovered citations,
+  respectively. In each +Chk column, parentheses give the change from Abs
+  ($\Delta$, percentage points) with 95\% paired-bootstrap confidence intervals.
+  Counts are per stratum and may overlap across evidence levels.}
   \label{tab:s2_evidence_haspdf_full}
   \scriptsize
   \setlength{\tabcolsep}{4pt}
@@ -468,24 +462,24 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
     & +Chk ($\Delta$ [95\% CI]) \\
   \midrule
   \multicolumn{6}{@{}l}{\emph{Has-PDF queries}} \\
-  \emph{Detail}
+  \emph{Abstract supports detail}
     & 707 & 0.993 & 0.997 ($+0.4$ [$-0.1$, $+1.1$]) & 0.802
     & 0.843 ($+4.2$ [$+2.3$, $+6.2$]) \\
-  \emph{Core}
+  \emph{Abstract supports core}
     & 585 & 0.986 & 0.998 ($+1.2$ [$+0.5$, $+2.1$]) & 0.505
     & 0.636 ($+13.1$ [$+10.2$, $+15.9$]) \\
-  \emph{Insufficient}
+  \emph{Abstract insufficient}
     & 350 & 0.784 & 0.972 ($+18.8$ [$+14.8$, $+23.0$]) & 0.161
     & 0.385 ($+22.5$ [$+18.5$, $+26.4$]) \\
   \addlinespace
   \multicolumn{6}{@{}l}{\emph{No-PDF queries}} \\
-  \emph{Detail}
+  \emph{Abstract supports detail}
     & 109 & 1.000 & 1.000 ($0.0$) & 0.815
     & 0.731 ($-8.4$ [$-12.6$, $-4.6$]) \\
-  \emph{Core}
+  \emph{Abstract supports core}
     & 69 & 0.957 & 0.957 ($0.0$) & 0.431
     & 0.332 ($-9.9$ [$-14.4$, $-5.7$]) \\
-  \emph{Insufficient}
+  \emph{Abstract insufficient}
     & 37 & 0.838 & 0.757 ($-8.1$ [$-18.9$, $+0.0$]) & 0.170
     & 0.086 ($-8.4$ [$-14.5$, $-3.3$]) \\
   \bottomrule
@@ -493,7 +487,7 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
   \end{table}
 
 \begin{credits}
-\subsubsection{\ackname} This publication is co-funded by the European Union's Horizon Europe research and innovation program under the Marie Sk\l{}odowska-Curie COFUND Postdoctoral Programme grant agreement No.~101081355--SMASH, and by the Republic of Slovenia and the European Union from the European Regional Development Fund. We thank the FRIDA cluster at the University of Ljubljana and HPC Vega at IZUM for providing the computational resources used in this work.
+\subsubsection{\ackname} This publication is co-funded by the European Union's Horizon Europe research and innovation program under the Marie Sk\l{}odowska-Curie COFUND Postdoctoral Programme grant agreement No.~101081355--SMASH, and by the Republic of Slovenia and the European Union from the European Regional Development Fund. We thank the FRIDA cluster at the University of Ljubljana and HPC Vega at IZUM for providing the computational resources used in this work. We also thank the anonymous reviewers for their constructive comments.
 
 \subsubsection{Disclaimer.} Co-funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or European Research Executive Agency. Neither the European Union nor the granting authority can be held responsible for them.
 
