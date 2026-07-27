@@ -223,9 +223,9 @@ and no-PDF otherwise.}
 \toprule
 Evidence level & Full & has-PDF & no-PDF \\
 \midrule
-\emph{Abstract supports detail} & 816 & 707 & 109 \\
-\emph{Abstract supports core}   & 654 & 585 &  69 \\
-\emph{Abstract insufficient}    & 387 & 350 &  37 \\
+\emph{abstract supports detail} & 816 & 707 & 109 \\
+\emph{abstract supports core}   & 654 & 585 &  69 \\
+\emph{abstract insufficient}    & 387 & 350 &  37 \\
 \midrule
 Total & 1{,}656 & 1{,}480 & 210 \\
 \bottomrule
@@ -383,9 +383,9 @@ This finding has a practical implication for standard two-stage retrieval system
 
 Gene-aware query expansion provides a complementary, low-overhead way to improve the pipeline. In our controlled reranking analysis, we fix the candidate pool and vary only the reranker query, showing that expansion helps not only by retrieving more candidates but also by supplying gene vocabulary missing from compact claims. Unlike free-text or generated expansions, trusted entity-linked annotations are less likely to introduce noisy terms to which a cross-encoder may be sensitive. More broadly, trusted gene annotations paired with a smaller domain-suitable reranker may offer a more efficient operating point than relying only on larger LLM-based rerankers.
 
-The full-text experiments show that abstracts are efficient but incomplete retrieval units. Body chunks help most when cited abstracts are insufficient, although the remaining MRR gap shows that recovering body evidence does not eliminate the ranking challenge. Incomplete coverage also creates an asymmetry: covered articles gain additional retrieval units, whereas abstract-only articles face a larger candidate space. Naively pooling abstracts and body chunks can therefore disadvantage abstract-only articles, suggesting that coverage-aware indexing or fusion warrants further evaluation.
+The full-text experiments show that abstracts are efficient but incomplete retrieval units. Body chunks help most when cited abstracts are insufficient, although the remaining MRR gap shows that recovering body evidence does not eliminate the ranking challenge. Incomplete coverage also creates an asymmetry: an article without full text contributes a single retrieval unit while competing against many chunks from articles that have it. Naive pooling therefore penalizes such articles, and coverage-aware indexing or fusion warrants evaluation.
 
-Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
+Several limitations remain. The queries were automatically extracted, cleaned, and deduplicated from dictyBase pages using rule-based procedures rather than being rewritten or reviewed in detail by domain experts. Some compact claims may therefore depend on surrounding page or paragraph context and be less self-contained than manually written search queries. In addition, inline citations provide useful retrieval targets but not exhaustive or definitive relevance judgments: other relevant articles may exist but remain unlabeled, and some difficult cases may reflect claim--citation mismatch rather than retrieval failure. For example, a citation may support the surrounding note rather than the extracted sentence, may depend on context lost during extraction, or may simply be an imperfect curator choice. The benchmark is therefore best interpreted as a cited-article retrieval task rather than a complete relevance benchmark. Finally, the evidence-level labels are LLM-assisted analysis labels, not definitive expert annotations. Future work should extend the benchmark with expert-reviewed queries, broader model-organism coverage, and evidence-level evaluation of generated answers.
 
 \FloatBarrier
 \section*{Appendix}
@@ -461,25 +461,25 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
   Evidence level & $n$ & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
     & +Chk ($\Delta$ [95\% CI]) \\
   \midrule
-  \multicolumn{6}{@{}l}{\emph{Has-PDF queries}} \\
-  \emph{Abstract supports detail}
+  \multicolumn{6}{@{}l}{\emph{has-PDF queries}} \\
+  \emph{abstract supports detail}
     & 707 & 0.993 & 0.997 ($+0.4$ [$-0.1$, $+1.1$]) & 0.802
     & 0.843 ($+4.2$ [$+2.3$, $+6.2$]) \\
-  \emph{Abstract supports core}
+  \emph{abstract supports core}
     & 585 & 0.986 & 0.998 ($+1.2$ [$+0.5$, $+2.1$]) & 0.505
     & 0.636 ($+13.1$ [$+10.2$, $+15.9$]) \\
-  \emph{Abstract insufficient}
+  \emph{abstract insufficient}
     & 350 & 0.784 & 0.972 ($+18.8$ [$+14.8$, $+23.0$]) & 0.161
     & 0.385 ($+22.5$ [$+18.5$, $+26.4$]) \\
   \addlinespace
-  \multicolumn{6}{@{}l}{\emph{No-PDF queries}} \\
-  \emph{Abstract supports detail}
+  \multicolumn{6}{@{}l}{\emph{no-PDF queries}} \\
+  \emph{abstract supports detail}
     & 109 & 1.000 & 1.000 ($0.0$) & 0.815
     & 0.731 ($-8.4$ [$-12.6$, $-4.6$]) \\
-  \emph{Abstract supports core}
+  \emph{abstract supports core}
     & 69 & 0.957 & 0.957 ($0.0$) & 0.431
     & 0.332 ($-9.9$ [$-14.4$, $-5.7$]) \\
-  \emph{Abstract insufficient}
+  \emph{abstract insufficient}
     & 37 & 0.838 & 0.757 ($-8.1$ [$-18.9$, $+0.0$]) & 0.170
     & 0.086 ($-8.4$ [$-14.5$, $-3.3$]) \\
   \bottomrule
