@@ -1,6 +1,6 @@
 # Full-Text Extension to the Retrieval Index
 
-> Collaborator / coding-agent handoff (place `manual/` + `v2/corpus.jsonl`, rebuild commands): [`FULLTEXT_AGENT.md`](FULLTEXT_AGENT.md).
+> Collaborator / coding-agent handoff (place `manual/` + `output/pdf_extraction/v2/` + `v2/corpus.jsonl`, rebuild commands): [`FULLTEXT_AGENT.md`](FULLTEXT_AGENT.md).
 
 This document describes how full-text PDF content is added alongside the gold
 abstracts in the DictyCite retrieval pipeline, what fraction of the public

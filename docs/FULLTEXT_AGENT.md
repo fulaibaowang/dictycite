@@ -10,27 +10,37 @@ Deeper design / coverage numbers: [`FULLTEXT.md`](FULLTEXT.md). Schema of the co
 |---|---|---|
 | This repo (clone) | — | Scripts + abstracts in git |
 | `pdfs/` (~3,573 `<pmid>.pdf`) | Outside the repo | You already have this dump |
-| `manual/` (68 `<pmid>.pdf`) | Outside the repo | **Transferred separately** — gap fills not in `pdfs/` |
-| `dicty_fulltext_corpus/v2/corpus.jsonl` | In the clone | **Transferred separately** (gitignored; do not commit) |
+| `manual/` (68 `<pmid>.pdf`) | Outside the repo | **Transferred** — gap fills not in `pdfs/` |
+| `output/pdf_extraction/v2/` | In the clone | **Transferred** (~331MB) — cleaned bodies + chunks |
+| `dicty_fulltext_corpus/v2/corpus.jsonl` | In the clone | **Transferred** (gitignored; do not commit) |
 
-Put the transferred corpus at exactly:
+Place transferred trees at those exact paths:
 
 ```text
 dicty_fulltext_corpus/v2/corpus.jsonl
+output/pdf_extraction/v2/
+  body/<pmid>.txt          # contiguous cleaned full text (use this for "original" text)
+  references/<pmid>.txt
+  chunks.jsonl             # body/caption chunks that feed the corpus
+  flag_report.jsonl        # per-PDF clean flags / skips
 ```
 
-Put `manual/` next to your existing `pdfs/`, e.g.:
+Put `manual/` next to your existing `pdfs/`:
 
 ```text
 <path>/dictybase_papers/pdfs/     # yours
 <path>/dictybase_papers/manual/   # transferred
 ```
 
-`manual/` is only the papers that were missing from the original dump and were added later for goldset coverage. When cleaning, pass **both** dirs (`manual/` last so it wins on any PMID overlap).
+`manual/` is only papers missing from the original dump, added later for goldset coverage. When re-cleaning from PDFs, pass **both** dirs (`manual/` last so it wins on PMID overlap).
 
-Retrieval can use the transferred `v2/corpus.jsonl` as-is. Rebuilding needs both PDF folders.
+**What to use when:**
+- Retrieval → `corpus.jsonl` as-is
+- Continuous paper text → `output/pdf_extraction/v2/body/<pmid>.txt`
+- Rebuild corpus without re-cleaning PDFs → `build_corpus.py` on `v2/chunks.jsonl` + `7c` abstracts
+- Full re-parse from PDFs → need `pdfs/` + `manual/` (commands below)
 
-**Do not commit** the v2 corpus or PDF trees (copyright). `v1/corpus.jsonl` in git is a smaller legacy subset only.
+**Do not commit** the v2 corpus, `output/pdf_extraction/v2/`, or PDF trees (copyright). `v1/corpus.jsonl` in git is a smaller legacy subset only.
 
 ## Code that builds the corpus
 
