@@ -425,14 +425,14 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 \caption{Effect of gene-aware query expansion on the query-expansion subset. Each cell reports MRR@10. For expanded-query variants, parentheses report the difference from the original-query baseline for the same reranker, in percentage points, with 95\% paired-bootstrap confidence intervals.}
 \label{tab:s1_qe_reranker}
 \scriptsize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{6pt}
 \begin{tabular}{@{}l c c c@{}}
 \toprule
 Reranker & Original & + Synonyms & + Synonyms and products \\
 \midrule
-BGE-m3 & 0.576 & 0.623 ($+4.7$, [$+2.6$, $+6.8$]) & 0.622 ($+4.6$, [$+2.2$, $+7.1$]) \\
-MedCPT & 0.624 & 0.682 ($+5.8$, [$+3.7$, $+7.9$]) & 0.673 ($+5.0$, [$+2.7$, $+7.2$]) \\
-BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [$-0.6$, $+2.1$])$^{\dag}$ \\
+BGE-m3 & 0.576 & 0.623 ($+4.7$ [$+2.6$,$+6.8$]) & 0.622 ($+4.6$ [$+2.2$,$+7.1$]) \\
+MedCPT & 0.624 & 0.682 ($+5.8$ [$+3.7$,$+7.9$]) & 0.673 ($+5.0$ [$+2.7$,$+7.2$]) \\
+BGE-Gemma & 0.694 & 0.703 ($+0.9$ [$-0.5$,$+2.3$])$^{\dag}$ & 0.701 ($+0.7$ [$-0.6$,$+2.1$])$^{\dag}$ \\
 \bottomrule
 \end{tabular}
 
@@ -449,39 +449,39 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$, [$-0.5$, $+2.3$])$^{\dag}$ & 0.701 ($+0.7$, [
   same all-query runs against their covered and uncovered citations,
   respectively. In each +Chk column, parentheses give the change from Abs
   ($\Delta$, percentage points) with 95\% paired-bootstrap confidence intervals.
-  Counts are per stratum and may overlap across evidence levels.}
+  Stratum sizes are given in Table~\ref{tab:composition}; strata may overlap because cited articles of one claim can carry different labels.}
   \label{tab:s2_evidence_haspdf_full}
   \scriptsize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{@{}l r cc cc@{}}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}l cc cc@{}}
   \toprule
-   & & \multicolumn{2}{c}{R@1000}
+   & \multicolumn{2}{c}{R@1000}
      & \multicolumn{2}{c}{MRR@10} \\
-  \cmidrule(lr){3-4}\cmidrule(l){5-6}
-  Evidence level & $n$ & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
+  \cmidrule(lr){2-3}\cmidrule(l){4-5}
+  Evidence level & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
     & +Chk ($\Delta$ [95\% CI]) \\
   \midrule
-  \multicolumn{6}{@{}l}{\emph{has-PDF queries}} \\
+  \multicolumn{5}{@{}l}{\emph{has-PDF queries}} \\
   \emph{abstract supports detail}
-    & 707 & 0.993 & 0.997 ($+0.4$ [$-0.1$, $+1.1$]) & 0.802
-    & 0.843 ($+4.2$ [$+2.3$, $+6.2$]) \\
+    & 0.993 & 0.997 ($+0.4$ [$-0.1$,$+1.1$]) & 0.802
+    & 0.843 ($+4.2$ [$+2.3$,$+6.2$]) \\
   \emph{abstract supports core}
-    & 585 & 0.986 & 0.998 ($+1.2$ [$+0.5$, $+2.1$]) & 0.505
-    & 0.636 ($+13.1$ [$+10.2$, $+15.9$]) \\
+    & 0.986 & 0.998 ($+1.2$ [$+0.5$,$+2.1$]) & 0.505
+    & 0.636 ($+13.1$ [$+10.2$,$+15.9$]) \\
   \emph{abstract insufficient}
-    & 350 & 0.784 & 0.972 ($+18.8$ [$+14.8$, $+23.0$]) & 0.161
-    & 0.385 ($+22.5$ [$+18.5$, $+26.4$]) \\
+    & 0.784 & 0.972 ($+18.8$ [$+14.8$,$+23.0$]) & 0.161
+    & 0.385 ($+22.5$ [$+18.5$,$+26.4$]) \\
   \addlinespace
-  \multicolumn{6}{@{}l}{\emph{no-PDF queries}} \\
+  \multicolumn{5}{@{}l}{\emph{no-PDF queries}} \\
   \emph{abstract supports detail}
-    & 109 & 1.000 & 1.000 ($0.0$) & 0.815
-    & 0.731 ($-8.4$ [$-12.6$, $-4.6$]) \\
+    & 1.000 & 1.000 ($0.0$) & 0.815
+    & 0.731 ($-8.4$ [$-12.6$,$-4.6$]) \\
   \emph{abstract supports core}
-    & 69 & 0.957 & 0.957 ($0.0$) & 0.431
-    & 0.332 ($-9.9$ [$-14.4$, $-5.7$]) \\
+    & 0.957 & 0.957 ($0.0$) & 0.431
+    & 0.332 ($-9.9$ [$-14.4$,$-5.7$]) \\
   \emph{abstract insufficient}
-    & 37 & 0.838 & 0.757 ($-8.1$ [$-18.9$, $+0.0$]) & 0.170
-    & 0.086 ($-8.4$ [$-14.5$, $-3.3$]) \\
+    & 0.838 & 0.757 ($-8.1$ [$-18.9$,$+0.0$]) & 0.170
+    & 0.086 ($-8.4$ [$-14.5$,$-3.3$]) \\
   \bottomrule
   \end{tabular}
   \end{table}
