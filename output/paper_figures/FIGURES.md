@@ -30,13 +30,14 @@ Manuscript figure numbers differ from the file numbers. `fig3_main_ranker_compar
 
 | Paper | File | Source | Description |
 |---|---|---|---|
-| Fig S1 | `Figures/fig_s1_baseline_depths.png` | `notebooks/report_7a.py` | Two-stage pipeline illustration on the full goldset (n=1656). **Left** = Stage-1 mean Recall@K (BM25, Dense, BM25+Dense fusion) up to K=2000 — recall-focused first stage. **Right** = Stage-2 MRR@K (K≤50) for the fusion baseline vs BGE-m3 — ranking-focused second stage. Justifies the recall-then-rerank split: fusion already reaches ~0.97 recall by K=2000 while the reranker lifts MRR from ~0.57 to ~0.61. |
-| Fig S2 | `Figures/fig_s2_per_query_rerank_delta.png` | `notebooks/ragnarok_comparison.py` | Per-query MRR delta after reranking — distribution of gains/losses. |
+| Fig S1 | `Figures/fig_s1_per_query_rerank_delta.png` | `notebooks/ragnarok_comparison.py` | Per-query MRR delta after reranking — distribution of gains/losses. |
 
 **Generated but not in the current manuscript** (still produced for diagnostic use):
 
+- `Figures/fig_unused_baseline_depths.png` (`notebooks/report_7a.py`) — two-stage pipeline illustration on the full goldset (n=1656). **Left** = Stage-1 mean Recall@K (BM25, Dense, BM25+Dense fusion) up to K=2000 — recall-focused first stage. **Right** = Stage-2 MRR@K (K≤50) for the fusion baseline vs BGE-m3 — ranking-focused second stage. Justifies the recall-then-rerank split: fusion already reaches ~0.97 recall by K=2000 while the reranker lifts MRR from ~0.57 to ~0.61. Was Fig S1 in an earlier draft; dropped for space, which is why the remaining supplement figure was renamed `fig_s1_*`.
+
 - `fig_s3_evidence_level_full_goldset.png` (`notebooks/report_7a.py`) — full-dataset evidence-level retrieval/rerank. Table S2 now reports the has-PDF subset alongside its no-PDF complement instead of the full-dataset blend, saving a figure of space.
-- `fig_s4_per_query_chunked_delta_haspdf.png` (`notebooks/report_7a.py` §15) — per-query Δ MRR@10 (chunked − abstract) by evidence level, BGE-m3, has-PDF subset (1×3 panels; per-bucket n = 707 / 585 / 350 across 1,480 unique queries). Helped/hurt/unchanged decomposition of the chunked-corpus gain. Helped fraction grows monotonically with evidence difficulty (15.4% / 34.7% / 46.6%); hurt fraction is non-trivial on the easier buckets (10.0% / 16.2%) but small on `abstract_insufficient` (8.0%). The PNG is no longer tracked in this directory.
+- `fig_s4_per_query_chunked_delta_haspdf.png` (`notebooks/report_7a.py` §15) — per-query Δ MRR@10 (chunked − abstract) by evidence level, BGE-m3, has-PDF subset (1×3 panels; per-bucket n = 707 / 585 / 350 across 1,480 unique queries). Helped/hurt/unchanged decomposition of the chunked-corpus gain. Helped fraction grows monotonically with evidence difficulty (15.7% / 34.7% / 46.9%); hurt fraction is non-trivial on the easier buckets (9.9% / 16.1%) but small on `abstract_insufficient` (8.0%). The PNG is no longer tracked in this directory.
 
 ## Conventions
 

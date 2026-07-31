@@ -5,8 +5,8 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{multirow}
 \usepackage{amsmath}
+\usepackage{marvosym}  % \Letter, marks the corresponding author
 \usepackage{float}
 \usepackage{placeins}
 \usepackage{url}
@@ -49,7 +49,7 @@
 \title{Benchmarking Literature Retrieval for a Model Organism: A \emph{Dictyostelium} Case Study}
 \titlerunning{Model-Organism Literature Retrieval: \emph{Dictyostelium}}
 
-\author{Yun Wang\inst{1}\orcidID{0000-0002-2441-4182} \and
+\author{Yun Wang\inst{1}\orcidID{0000-0002-2441-4182}\textsuperscript{(\Letter)} \and
 Gad Shaulsky\inst{2}\orcidID{0000-0002-0532-0551} \and
 Toma\v{z} Curk\inst{1}\orcidID{0000-0003-4888-7256} \and
 Bla\v{z} Zupan\inst{1,2}\orcidID{0000-0002-5864-7056}}
@@ -104,7 +104,7 @@ with additional developmental, experimental, or temporal context.
 
 In this paper, we construct a citation-derived retrieval benchmark from
 dictyBase~\cite{fey_one_2013} and use it to study literature retrieval for
-\emph{Dictyostelium}. We examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated gene annotations
+\emph{Dictyostelium}. We examine three questions: whether reranking adds value beyond strong keyword-based retrieval, whether curated annotations
 improve retrieval for compact claims, and how access to full-text evidence changes retrieval
 when abstracts are insufficient.
 
@@ -210,24 +210,27 @@ claim--article pair to indicate whether the cited abstract: (i) supports the det
 (ii) supports only the core statement---the main assertion (for example, that a gene is involved in a process) but not the accompanying details (such as a specific developmental stage, condition, or magnitude); or (iii) is insufficient, suggesting that 
 the abstract does not explicitly support the relevant relationship. The third label does not mark 
 the citation as irrelevant; rather, it identifies cases where the supporting 
-evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps at different levels of abstract evidence. We construct a full-text corpus for articles with accessible PDFs (1,124 cited articles); queries with at least one such PMID form the has-PDF subset, and those with none form the no-PDF subset. Table~\ref{tab:composition} reports the resulting composition by evidence level. Because one claim can cite multiple articles, the 1{,}656 claims comprise 2{,}028 claim--article pairs (1.22 per claim). Across these pairs, 41.6\% support the detailed claim, 37.6\% support the core claim, and 20.8\% are insufficient; claim counts overlap across evidence levels because cited articles can carry different labels.
+evidence may lie outside the abstract. The labeling prompt is released with the dataset and code. These labels define the strata for evaluating whether full-text retrieval helps at different levels of abstract evidence. Labels attach to claim--article pairs: because one claim can cite multiple articles, the 1{,}656 claims comprise 2{,}028 claim--article pairs (1.22 per claim), of which 41.6\% support the detailed claim, 37.6\% support the core claim, and 20.8\% are insufficient. A claim enters every stratum whose label its cited articles carry: a claim citing three articles, two labelled \emph{core} and one \emph{insufficient}, contributes three pairs, two claim--stratum entries, and one distinct claim. We construct a full-text corpus for articles with accessible PDFs (1,124 cited articles); within a stratum, a claim is has-PDF if at least one of its articles carrying that label has full text, and no-PDF otherwise. Table~\ref{tab:composition} reports the composition.
 
 \begin{table}[!htbp]
 \centering
-\caption{Benchmark composition by abstract-evidence level, in distinct claims.
-Within each level, a claim is has-PDF if any of its cited articles has full text
-and no-PDF otherwise.}
+\caption{Benchmark composition by abstract-evidence stratum. Strata overlap
+because a claim enters each stratum represented among its cited articles. For
+claim--stratum entries, has-PDF means at least one cited article carrying that
+label has full text; for distinct claims, at least one cited article has full
+text.}
 \label{tab:composition}
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-Evidence level & Full & has-PDF & no-PDF \\
+Evidence stratum & All & has-PDF & no-PDF \\
 \midrule
 \emph{abstract supports detail} & 816 & 707 & 109 \\
 \emph{abstract supports core}   & 654 & 585 &  69 \\
 \emph{abstract insufficient}    & 387 & 350 &  37 \\
 \midrule
-Total & 1{,}656 & 1{,}480 & 210 \\
+Claim--stratum entries & 1{,}857 & 1{,}642 & 215 \\
+Distinct claims        & 1{,}656 & 1{,}480 & 176 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -271,11 +274,11 @@ We evaluate all systems under fixed retrieval depths, fusion settings, and signi
 
 \subsection{Metrics, candidate depths, and significance testing}
 \label{sec:metrics_significance}
-We assess first-stage retrieval with Recall@K, which measures whether a cited article appears among the top $K$ retrieved candidates, and the final ranking with MRR@K, which gives greater weight to placing the first cited article near the top. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@10 is our primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature.
+We assess first-stage retrieval with Recall@K, which measures whether a cited article appears among the top $K$ retrieved candidates, and the final ranking with MRR@K, which gives greater weight to placing the first cited article near the top. Because our judgments are derived from inline citations rather than exhaustive relevance assessments, MRR@10 is our primary final-ranking metric and should be interpreted as measuring retrieval of known cited articles, not retrieval of all relevant literature. In stratified comparisons, each claim is scored once per evidence stratum against only its cited articles carrying that label, so results are averaged over claim--stratum entries.
 
 Pipeline parameters were fixed before the dictyBase experiments and were not tuned on this dataset. We retrieve 5,000 candidates per retriever, fuse the BM25 and dense lists, and pass the top 1,000 fused candidates to the reranker as a fixed, recall-oriented candidate depth.
 
-For significance testing, we use paired bootstrap resampling over queries with B = 10,000 samples. We report 95\% percentile confidence intervals for per-query MRR@10 differences against the relevant baseline.
+For significance testing, we use paired bootstrap resampling over queries (within a stratum for stratified comparisons) with B = 10,000 samples. We report 95\% percentile confidence intervals for per-query MRR@10 differences against the relevant baseline.
 
 \subsection{Systems compared}
 \label{sec:systems_compared}
@@ -304,11 +307,11 @@ only a small, non-significant gain. Clear improvements appear for the biomedical
 MedCPT reranker and the high-capacity BGE-Gemma model, which improve MRR@10 by
 +5.7 and +11.4 percentage points, respectively. The external Ragnarok
 BM25+RankZephyr reference remains below BM25, further suggesting that gains
-depend on reranker fit rather than on adding a reranking stage alone.
+depend on reranker fit.
 
 \begin{table}[!htbp]
 \centering
-\caption{Ranker comparison on the full dataset (1,656 queries). Model size is the approximate parameter count for neural rerankers; ``--'' marks systems without one. $\Delta$ vs.\ BM25 is the MRR@10 difference from the BM25 baseline in percentage points, with brackets showing 95\% paired-bootstrap confidence intervals.}
+\caption{Ranker comparison on all 1,656 claims. Model size is the approximate parameter count for neural rerankers; ``--'' marks systems without one. $\Delta$ vs.\ BM25 is the MRR@10 difference from the BM25 baseline in percentage points, with brackets showing 95\% paired-bootstrap confidence intervals.}
 \label{tab:ranker_comparison}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -357,7 +360,7 @@ A clear example is the query ``\emph{DetA} is involved in cell-type specificatio
 \label{sec:results_fulltext}
 The previous experiments used the abstract corpus. This setting is limiting for claims where the cited abstracts do not contain sufficient evidence. We therefore evaluate the same retrieval-and-reranking pipeline on the chunked full-text corpus variant (Section~\ref{sec:fulltext_variant}).
 
-We stratify queries by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}, and report the main comparison on the has-PDF subset, whose cited articles have chunked full text (Fig.~\ref{fig:evidence_haspdf}).
+We stratify claims by the evidence-level labels introduced in the Dataset section: \emph{abstract supports detail}, \emph{abstract supports core}, and \emph{abstract insufficient}, and report the main comparison on the has-PDF subset of each stratum, in which at least one cited article carrying that label has chunked full text (Fig.~\ref{fig:evidence_haspdf}).
 
 \begin{figure}[!htbp]
 \centering
@@ -370,9 +373,9 @@ The main effect of full-text chunks is at the retrieval stage. For abstract-insu
 
 The ranking stage also improves, although the evidence-level gap remains (Fig.~\ref{fig:evidence_haspdf}, lower panel). With BGE-m3, post-rerank MRR@10 on abstract-insufficient claims more than doubles from 0.16 to 0.39, yet stays well below the two abstract-supported groups under the same chunked setting. The gain is significant across all three strata (95\% paired-bootstrap CIs above zero; Table~\ref{tab:s2_evidence_haspdf_full}).
 
-At the per-query level, chunked full-text retrieval improved many more abstract-insufficient queries than it hurt (46.9\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
+At the per-query level, chunked full-text retrieval improved many more abstract-insufficient claims than it hurt (46.9\% improved, 8.0\% decreased). A typical case is the query ``\emph{gefE} null mutants are less sensitive to DIF than wild type.'' In the abstract-only corpus, the cited article ranked 54th because the abstract gives broad developmental context but omits the specific DIF-sensitivity evidence. With full-text chunks, the cited article ranked first because the relevant evidence appears in the article body.
 
-This benefit is concentrated among queries whose cited set gains full-text representation. For the complementary no-PDF queries, none of whose cited articles contributes body chunks, adding chunks leaves Recall@1000 unchanged or lower and significantly reduces post-rerank MRR@10 in all three strata (Table~\ref{tab:s2_evidence_haspdf_full}). These relevant articles gain no additional retrieval units but must compete against the added chunks. We return to this coverage trade-off in the Discussion.
+This benefit is concentrated where the cited articles carrying the label gain full-text representation. For the complementary no-PDF entries, whose cited articles carrying that label contribute no body chunks, adding chunks leaves Recall@1000 unchanged or lower and significantly reduces post-rerank MRR@10 in all three strata (Table~\ref{tab:s2_evidence_haspdf_full}). These relevant articles gain no additional retrieval units but must compete against the added chunks. We return to this coverage trade-off in the Discussion.
 
 \FloatBarrier
 \section{Discussion}
@@ -391,7 +394,8 @@ Several limitations remain. The queries were automatically extracted, cleaned, a
 \section*{Appendix}
 \FloatBarrier
 % The supplement figure uses page-float placement so the supplement page is
-% not crowded. (Former Fig S1 (baseline depths) and S3/S4 were dropped; S3's
+% not crowded. (The old baseline-depths figure and S3/S4 were dropped, and the
+% remaining supplement figure was renamed fig_s1_* to match its printed number; S3's
 % content now lives in Table~\ref{tab:s2_evidence_haspdf_full}.)
 \setcounter{figure}{0}
 \renewcommand{\thefigure}{S\arabic{figure}}
@@ -407,7 +411,7 @@ Evidence-level labels are produced once using a fixed Llama-3.3 prompt schema~\c
 
 \begin{figure}[H]
 \centering
-\includegraphicsifexists[width=0.88\linewidth,height=0.34\textheight,keepaspectratio]{Figures/fig_s2_per_query_rerank_delta.png}
+\includegraphicsifexists[width=0.88\linewidth,height=0.34\textheight,keepaspectratio]{Figures/fig_s1_per_query_rerank_delta.png}
 \caption{Per-query reranking effect relative to BM25. $\Delta$MRR@10 is computed as reranker minus BM25 and grouped as hurt, helped, or near tie using thresholds of $\pm0.025$. Similar aggregate scores mask different query-level behavior: MiniLM-L12 is mostly harmful, BGE-m3 is balanced, and MedCPT and BGE-Gemma shift more queries toward positive deltas.}
 \label{fig:s1}
 \end{figure}
@@ -443,13 +447,13 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$ [$-0.5$,$+2.3$])$^{\dag}$ & 0.701 ($+0.7$ [$-0
 \begin{table}[H]
   \centering
   \caption{Recall@1000 and BGE-m3 MRR@10 for abstract-only (Abs) versus
-  abstract-plus-chunks (+Chk) retrieval, by abstract-evidence level and
-  full-text coverage. Queries are split by coverage---has-PDF (at least one
-  cited article with chunked full text) versus no-PDF (none)---and scored on the
-  same all-query runs against their covered and uncovered citations,
-  respectively. In each +Chk column, parentheses give the change from Abs
+  abstract-plus-chunks (+Chk) retrieval, by abstract-evidence stratum and
+  full-text coverage. Within each stratum, claim--stratum entries are split by
+  coverage---has-PDF if at least one cited article carrying that label has
+  chunked full text, and no-PDF otherwise---and scored on the same all-query
+  runs against the cited articles carrying that label. In each +Chk column, parentheses give the change from Abs
   ($\Delta$, percentage points) with 95\% paired-bootstrap confidence intervals.
-  Stratum sizes are given in Table~\ref{tab:composition}; strata may overlap because cited articles of one claim can carry different labels.}
+  Stratum sizes are given in Table~\ref{tab:composition}.}
   \label{tab:s2_evidence_haspdf_full}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
@@ -458,10 +462,10 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$ [$-0.5$,$+2.3$])$^{\dag}$ & 0.701 ($+0.7$ [$-0
    & \multicolumn{2}{c}{R@1000}
      & \multicolumn{2}{c}{MRR@10} \\
   \cmidrule(lr){2-3}\cmidrule(l){4-5}
-  Evidence level & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
+  Evidence stratum & Abs & +Chk ($\Delta$ [95\% CI]) & Abs
     & +Chk ($\Delta$ [95\% CI]) \\
   \midrule
-  \multicolumn{5}{@{}l}{\emph{has-PDF queries}} \\
+  \multicolumn{5}{@{}l}{\emph{has-PDF entries}} \\
   \emph{abstract supports detail}
     & 0.993 & 0.997 ($+0.4$ [$-0.1$,$+1.1$]) & 0.802
     & 0.843 ($+4.2$ [$+2.3$,$+6.2$]) \\
@@ -472,7 +476,7 @@ BGE-Gemma & 0.694 & 0.703 ($+0.9$ [$-0.5$,$+2.3$])$^{\dag}$ & 0.701 ($+0.7$ [$-0
     & 0.784 & 0.972 ($+18.8$ [$+14.8$,$+23.0$]) & 0.161
     & 0.385 ($+22.5$ [$+18.5$,$+26.4$]) \\
   \addlinespace
-  \multicolumn{5}{@{}l}{\emph{no-PDF queries}} \\
+  \multicolumn{5}{@{}l}{\emph{no-PDF entries}} \\
   \emph{abstract supports detail}
     & 1.000 & 1.000 ($0.0$) & 0.815
     & 0.731 ($-8.4$ [$-12.6$,$-4.6$]) \\
