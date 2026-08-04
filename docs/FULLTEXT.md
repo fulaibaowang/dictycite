@@ -52,7 +52,7 @@ PDFs live in `/Users/yun/Documents/dictybase_papers/` and are named
 
 | Directory | Origin | Count |
 |---|---|---|
-| `pdfs/` | DictyBase archival paper dump (PMC + Sci-Hub historical pulls; tracked in `sources.csv`) | 3,573 |
+| `pdfs/` | DictyBase archival paper dump (PMC and other historical archive sources; tracked in `sources.csv`) | 3,573 |
 | `manual/` | Patched-in PDFs for goldset coverage gaps. Includes 7 PDFs manually placed during the v1 experiment, plus 61 auto-fetched from Europe PMC / PMC OA (script: `scripts/public/pdf_processing/fetch_pdfs.py`) | 68 |
 | **Total unique** | | **3,580** |
 
