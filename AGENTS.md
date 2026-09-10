@@ -40,9 +40,18 @@ The pipeline is [RAG-scripts](https://github.com/fulaibaowang/RAG-scripts), vend
 | How to run the pipeline, and what each parameter does | [scripts/public/shared_scripts/README.md](scripts/public/shared_scripts/README.md) |
 
 The configs that ran the paper's experiments are under `scripts/private_scripts/hpc_scripts/`. They
-were written for SLURM clusters and won't run elsewhere as they are. For a run's exact settings,
-trust the record the run writes (for example `retrieval/fusion/best_config.json`) over the config
-that launched it.
+were written for SLURM clusters and won't run elsewhere as they are. If you reuse one anyway, two
+settings in them are misleading:
+
+- **Retrieval fusion.** The paper uses RRF with k=60 and equal BM25/dense weights. The frida configs
+  set `RETRIEVAL_FUSION_K_RRF=150`, but the paper runs never used it: they ran an earlier fusion
+  step that swept k ∈ {60, 100} and three weightings and kept the best — k=60 with equal weights
+  (two variants in the 7d query-field sweep picked 1:2). The frozen pipeline applies the configured
+  k directly, so set 60 to match the paper.
+- **The `vega/` configs use pre-rename `HYBRID_*` variables**, which the pipeline silently ignores.
+
+For a run's exact settings, trust the record the run writes (for example
+`retrieval/fusion/best_config.json`) over the config that launched it.
 
 ## Editing
 
