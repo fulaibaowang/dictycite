@@ -2,16 +2,13 @@
 
 DictyCite is a public *Dictyostelium discoideum* claim–citation goldset paired with a two-stage retrieval pipeline (BM25 + dense → cross-encoder rerank) evaluated against it. The dataset is built from dictyBase curator notes and joined with cleaned Europe PMC abstracts. The repository contains the data preparation code, the retrieval pipeline, and the notebooks that produce all paper figures.
 
-**Paper version.** The camera-ready Discovery Science 2026 paper corresponds to tag
-[**`v0.3.0`**](https://github.com/fulaibaowang/dictycite/tree/v0.3.0) (`v0.2.0` is the submitted
-version). At that tag the vendored pipeline under `scripts/public/shared_scripts/` is identical to
-[RAG-scripts `40793a5`](https://github.com/fulaibaowang/RAG-scripts/commit/40793a5), and it is
-**frozen** there: RAG-scripts `main` has moved on and is the place to go for a maintained pipeline.
-For what was done, where each result comes from, and how to reproduce it, see [AGENTS.md](AGENTS.md).
+**Paper version.** The Discovery Science 2026 paper corresponds to tag
+[**`v0.3.0`**](https://github.com/fulaibaowang/dictycite/tree/v0.3.0). The vendored pipeline is frozen
+at that state; for a maintained version, use [RAG-scripts](https://github.com/fulaibaowang/RAG-scripts).
 
 ## Dataset
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20308282.svg)](https://doi.org/10.5281/zenodo.20308282)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20308282-blue)](https://doi.org/10.5281/zenodo.20308282)
 
 | File | Records | Description |
 |---|---|---|
@@ -57,7 +54,7 @@ Three notebooks produce all paper figures into [`output/paper_figures/Figures/`]
 - [`METHODS.md`](docs/METHODS.md) — goldset construction methods
 - [`RESULTS.md`](docs/RESULTS.md) — dataset statistics and labelling agreement
 - [`FULLTEXT.md`](docs/FULLTEXT.md) — full-text PDF corpus and chunked retrieval
-- [`AGENTS.md`](AGENTS.md) — guide to the repository (for people and coding agents): lineage, paper version, what is frozen
+- [`AGENTS.md`](AGENTS.md) — short orientation: what the repo is, what stays fixed, where to look
 
 ## License and acknowledgements
 
