@@ -30,6 +30,8 @@ output/paper_figures/*
 !output/paper_figures/*.bib
 !output/paper_figures/llncs.cls
 !output/paper_figures/splncs04.bst
+# Accepted manuscript with the Springer statement stamped on page 1 (not Apache-licensed)
+!output/paper_figures/dictycite_ds2026_accepted_manuscript.pdf
 !output/paper_figures/reviewer_comments_checklist_revised.md
 # LaTeX build artifacts
 output/paper_figures/*.aux
