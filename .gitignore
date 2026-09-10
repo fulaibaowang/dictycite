@@ -62,7 +62,8 @@ indexes/
 dicty_simulated_data/
 **/__pycache__/
 dictybase_files/ontology/
-CLAUDE.md
+AGENTS.local.md
+CLAUDE.local.md
 logs/
 .claude/
 # Reviewer checklist — kept local, not pushed
