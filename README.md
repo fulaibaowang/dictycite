@@ -9,18 +9,6 @@ This repository accompanies our Discovery Science 2026 paper:
 > Yun Wang, Gad Shaulsky, Tomaž Curk, Blaž Zupan. *Benchmarking Literature Retrieval for a Model Organism: A* Dictyostelium *Case Study.* Discovery Science (DS 2026), Lecture Notes in Computer Science, Springer, 2026 (to appear). \
 > **[[PDF]](output/paper_figures/dictycite_ds2026_accepted_manuscript.pdf)** (accepted manuscript)
 
-```bibtex
-@inproceedings{wang2026dictycite,
-  title     = {Benchmarking Literature Retrieval for a Model Organism: A \emph{Dictyostelium} Case Study},
-  author    = {Wang, Yun and Shaulsky, Gad and Curk, Toma{\v{z}} and Zupan, Bla{\v{z}}},
-  booktitle = {Discovery Science: 29th International Conference, DS 2026},
-  series    = {Lecture Notes in Computer Science},
-  publisher = {Springer},
-  year      = {2026},
-  note      = {To appear}
-}
-```
-
 The paper corresponds to tag [**`v0.3.0`**](https://github.com/fulaibaowang/dictycite/tree/v0.3.0). The vendored pipeline is frozen
 at that state; for a maintained version, use [RAG-scripts](https://github.com/fulaibaowang/RAG-scripts).
 
