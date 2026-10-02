@@ -7,7 +7,8 @@ DictyCite is a public *Dictyostelium discoideum* claim–citation goldset paired
 This repository accompanies our Discovery Science 2026 paper:
 
 > Yun Wang, Gad Shaulsky, Tomaž Curk, Blaž Zupan. *Benchmarking Literature Retrieval for a Model Organism: A* Dictyostelium *Case Study.* Discovery Science (DS 2026), Lecture Notes in Computer Science, Springer, 2026 (to appear). \
-> **[[PDF]](output/paper_figures/dictycite_ds2026_accepted_manuscript.pdf)** (accepted manuscript)
+> **[[PDF]](output/paper_figures/dictycite_ds2026_accepted_manuscript.pdf)** (accepted manuscript) ·
+> [[preprint]](output/paper_figures/dictycite_ds2026_submitted_manuscript.pdf) (submitted version, before peer review; tag [`v0.2.0`](https://github.com/fulaibaowang/dictycite/tree/v0.2.0))
 
 The paper corresponds to tag [**`v0.3.0`**](https://github.com/fulaibaowang/dictycite/tree/v0.3.0). The vendored pipeline is frozen
 at that state; for a maintained version, use [RAG-scripts](https://github.com/fulaibaowang/RAG-scripts).
