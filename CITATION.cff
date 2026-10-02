@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this code or the DictyCite dataset, please cite the paper below."
+title: "DictyCite: a Dictyostelium discoideum claim–citation dataset and retrieval benchmark"
+type: software
+authors:
+  - family-names: Wang
+    given-names: Yun
+    orcid: "https://orcid.org/0000-0002-2441-4182"
+    affiliation: "University of Ljubljana, Faculty of Computer and Information Science"
+  - family-names: Shaulsky
+    given-names: Gad
+    orcid: "https://orcid.org/0000-0002-0532-0551"
+    affiliation: "Baylor College of Medicine, Department of Molecular and Human Genetics"
+  - family-names: Curk
+    given-names: Tomaž
+    orcid: "https://orcid.org/0000-0003-4888-7256"
+    affiliation: "University of Ljubljana, Faculty of Computer and Information Science"
+  - family-names: Zupan
+    given-names: Blaž
+    orcid: "https://orcid.org/0000-0002-5864-7056"
+    affiliation: "University of Ljubljana, Faculty of Computer and Information Science"
+repository-code: "https://github.com/fulaibaowang/dictycite"
+license: Apache-2.0
+version: v0.3.0
+date-released: "2026-08-04"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20308282
+    description: "DictyCite dataset release (Zenodo)"
+keywords:
+  - Dictyostelium discoideum
+  - dictyBase
+  - information retrieval
+  - retrieval benchmark
+  - biomedical literature retrieval
+  - reranking
+  - query expansion
+preferred-citation:
+  type: conference-paper
+  title: "Benchmarking Literature Retrieval for a Model Organism: A Dictyostelium Case Study"
+  authors:
+    - family-names: Wang
+      given-names: Yun
+    - family-names: Shaulsky
+      given-names: Gad
+    - family-names: Curk
+      given-names: Tomaž
+    - family-names: Zupan
+      given-names: Blaž
+  collection-title: "Discovery Science (DS 2026)"
+  collection-type: proceedings
+  conference:
+    name: "Discovery Science 2026"
+  publisher:
+    name: Springer
+  year: 2026
