@@ -150,7 +150,8 @@ Two experimental arms:
 
 - **Baseline.** Index contains gold abstracts only (corpus.jsonl).
 - **Full-text.** Index contains gold abstracts **plus** body chunks from
-  `chunks.jsonl` for every PMID with a PDF (i.e. the ~1,145 PMIDs above).
+  `chunks.jsonl` for every PMID with a usable PDF (3,556 PMIDs in v2, of
+  which 1,124 are cited by the goldset).
   Per-PMID max-pooling is applied during evaluation to aggregate scores
   across an article's chunks back to a single document-level score.
 
@@ -170,6 +171,45 @@ Two reporting views:
 
 Both views are reported. The full-cohort view is the production-reality
 headline; the has-PDF view is the technique-effect estimate.
+
+## Caveat: full-text coverage favours the cited articles
+
+The PDF archive was assembled around the goldset (plus an older dictyBase
+dump), so cited articles are far more likely to have body chunks than the
+rest of the corpus. Counted over the 20,447 articles in
+`7c_articles_cleaned_abstract.jsonl` against `v2/chunks.jsonl`:
+
+| Articles | Chunked | Not chunked | Total | Chunked share |
+|---|---:|---:|---:|---:|
+| Cited by a 7a claim | 1,124 | 165 | 1,289 | 87.2% |
+| Not cited | 2,301 | 16,857 | 19,158 | 12.0% |
+| **All** | **3,425** | **17,022** | **20,447** | **16.8%** |
+
+The remaining 131 of the 3,556 chunked PMIDs have no row in 7c and enter the
+corpus as chunks only. At the claim level, 1,480 of the 1,656 claims cite at
+least one chunked article and 176 cite none. The gap widens with publication
+year: among articles from 2017 onward, 59 of 116 cited ones are chunked,
+against 2 of 5,028 uncited ones.
+
+A chunked article is represented by its abstract plus about 24 body chunks; an
+unchunked one by its abstract alone. For a has-PDF claim the cited article
+therefore has many retrieval units while most competing articles have one.
+What this means for reading the results:
+
+- **Comparison between evidence strata: sound.** Coverage is near 87% in all
+  three strata (table above), so every stratum gets the same advantage. The
+  much larger gain for `abstract_insufficient` reflects body-text content.
+  The `abstract_supports_detail` stratum starts near its ceiling, which also
+  limits its gain.
+- **Size of the has-PDF gain: specific to this corpus.** Part of it comes from
+  the cited article having more retrieval units than its competitors. With
+  even coverage across the corpus, the gain would likely be smaller. It is
+  not an estimate of what full text adds in general.
+- **The no-PDF entries measure the other side.** Their cited articles gain no
+  chunks but compete against the 87,028 added ones, and post-rerank MRR@10
+  falls by 8 to 10 points in each stratum (paper Table S2; Table 4 in the
+  published version). This shows the cost of partial coverage at this
+  coverage pattern. The groups are small (109, 69 and 37 claims).
 
 ## Reproducing the corpus
 
