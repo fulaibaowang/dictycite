@@ -38,6 +38,7 @@ The pipeline is [RAG-scripts](https://github.com/fulaibaowang/RAG-scripts), vend
 | Which notebook makes which figure or table | [output/paper_figures/FIGURES.md](output/paper_figures/FIGURES.md) (paper numbers differ from file names) |
 | The full-text corpus | [docs/FULLTEXT.md](docs/FULLTEXT.md) |
 | How to run the pipeline, and what each parameter does | [scripts/public/shared_scripts/README.md](scripts/public/shared_scripts/README.md) |
+| Reusing the abstract corpus and indexes for your own retrieval | [docs/REUSE.md](docs/REUSE.md) |
 
 The configs that ran the paper's experiments are under `scripts/private_scripts/hpc_scripts/`. They
 were written for SLURM clusters and won't run elsewhere as they are. If you reuse one anyway, two
