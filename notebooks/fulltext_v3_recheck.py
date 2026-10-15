@@ -274,6 +274,39 @@ cov_tab = pd.DataFrame([
 display(Markdown(md(cov_tab)))
 
 # %% [markdown]
+# ### 2b. Table 2 update: benchmark composition by stratum and full-text coverage
+#
+# Same definitions as the paper's Table 2: a claim enters each stratum represented among its
+# cited articles; a claim–stratum entry is has-PDF if at least one cited article carrying that
+# label has full text; a distinct claim is has-PDF if at least one of its cited articles has full
+# text. The v2 columns reproduce the paper's table.
+
+# %%
+def composition(cov):
+    by_level, by_claim = qrels("7a")
+    rows = {}
+    for lvl in LEVELS:
+        q = by_level[lvl]
+        has = sum(bool(p & cov) for p in q.values())
+        rows[LEVEL_LABELS[lvl].lower()] = (len(q), has, len(q) - has)
+    rows["Claim–stratum entries"] = tuple(map(sum, zip(*rows.values())))
+    has = sum(bool(p & cov) for p in by_claim.values())
+    rows["Distinct claims"] = (len(by_claim), has, len(by_claim) - has)
+    return rows
+
+
+comp = {k: composition(COV[k]) for k in ("v2", "v3")}
+assert list(comp["v2"].values()) == [(816, 707, 109), (654, 585, 69), (387, 350, 37),
+                                     (1857, 1642, 215), (1656, 1480, 176)], "v2 should match paper Table 2"
+table2 = pd.DataFrame([
+    {"Evidence stratum": k, "All": f"{a:,}",
+     "has-PDF v2 (paper)": f"{comp['v2'][k][1]:,}", "no-PDF v2 (paper)": f"{comp['v2'][k][2]:,}",
+     "has-PDF v3": f"{comp['v3'][k][1]:,}", "no-PDF v3": f"{comp['v3'][k][2]:,}"}
+    for k, (a, _, _) in comp["v3"].items()])
+display(Markdown(md(table2) + f"\n\nCited articles with full text: {len(cited & COV['v2']):,} (v2) → "
+                 f"{len(cited & COV['v3']):,} (v3) of {len(cited):,}."))
+
+# %% [markdown]
 # ## 3. Settings check: new abstract-only run vs the paper's
 #
 # The paper's abstract baseline (Vega) used 1000 rerank candidates and R200/H200 pools; the
@@ -513,7 +546,8 @@ display(Markdown(md(pd.DataFrame(qe_eff))))
 # ## 8. Summary
 #
 # - **Coverage.** v3 gives cited and uncited articles near-equal full-text coverage; v2 covered
-#   most cited articles and few uncited ones (§2).
+#   most cited articles and few uncited ones (§2). No-PDF claim–stratum entries halve, from
+#   215 to 109 (§2b, update of Table 2).
 # - **Baseline.** The rerun abstract arm matches the paper's abstract baseline, so the paper's
 #   comparison was like-for-like in its settings (§3).
 # - **Do the paper's findings hold?** The direction holds. Full text helps most where the
